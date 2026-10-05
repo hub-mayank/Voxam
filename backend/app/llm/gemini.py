@@ -25,8 +25,8 @@ class GeminiLLM:
         r.raise_for_status()
         return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
-    def complete_json(self, system, user):
-        return json.loads(self._call(system, user, 200, True))
+    def complete_json(self, system, user, max_tokens=200):
+        return json.loads(self._call(system, user, max_tokens, True))
 
     def complete_text(self, system, user, max_tokens=120):
         return self._call(system, user, max_tokens, False).strip()

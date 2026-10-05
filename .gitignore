@@ -1,5 +1,5 @@
 .env
 __pycache__/
-*.jsonl
+session*.jsonl
 .venv/
 .pytest_cache/

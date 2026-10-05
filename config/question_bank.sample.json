@@ -1,0 +1,23 @@
+[
+  {"id": "q001", "topic": "hash-tables", "type": "concept", "difficulty": 1,
+   "text": "Can you explain how a hash table works?",
+   "key_points": ["hash function maps key to index", "collision handling (chaining/open addressing)", "average O(1) lookup", "resizing/load factor"]},
+  {"id": "q002", "topic": "complexity", "type": "concept", "difficulty": 1,
+   "text": "What does Big-O notation tell us, and why do we care about it?",
+   "key_points": ["upper bound growth rate", "input size scaling", "ignores constants", "compare algorithms"]},
+  {"id": "q003", "topic": "databases", "type": "concept", "difficulty": 2,
+   "text": "What is an index in a database and what is the trade-off of adding one?",
+   "key_points": ["faster reads via tree/hash structure", "extra storage", "slower writes", "choose columns by query pattern"]},
+  {"id": "q004", "topic": "http", "type": "concept", "difficulty": 2,
+   "text": "What happens between typing a URL in a browser and seeing the page?",
+   "key_points": ["DNS resolution", "TCP/TLS handshake", "HTTP request/response", "rendering"]},
+  {"id": "q005", "topic": "processes", "type": "concept", "difficulty": 2,
+   "text": "What is the difference between a process and a thread?",
+   "key_points": ["separate vs shared memory space", "context switch cost", "isolation vs communication", "race conditions"]},
+  {"id": "q101", "topic": "debugging", "type": "applied", "difficulty": 2,
+   "text": "Your API was fast yesterday and today responses take ten seconds. Walk me through how you would find the cause.",
+   "key_points": ["check recent changes/deploys", "logs and metrics", "isolate DB vs app vs network", "reproduce then fix"]},
+  {"id": "q102", "topic": "design", "type": "applied", "difficulty": 3,
+   "text": "You need to build a URL shortener. How would you design it?",
+   "key_points": ["id generation/encoding", "storage choice", "redirect path latency", "scaling reads/caching"]}
+]

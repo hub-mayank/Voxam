@@ -1,0 +1,24 @@
+{
+  "viva_id": "demo-dsa-v1",
+  "prompt_version": "interviewer-v1",
+  "hard_limit_seconds": 900,
+  "answer_cap_seconds": 90,
+  "phases": [
+    {"name": "warmup",       "start": 0,   "end": 60,  "max_followups": 0},
+    {"name": "fundamentals", "start": 60,  "end": 300, "max_followups": 1},
+    {"name": "depth",        "start": 300, "end": 600, "max_followups": 2},
+    {"name": "applied",      "start": 600, "end": 780, "max_followups": 2},
+    {"name": "wrapup",       "start": 780, "end": 870, "max_followups": 0},
+    {"name": "scoring",      "start": 870, "end": 900, "max_followups": 0}
+  ],
+  "rubric": {
+    "version": "rubric-v1",
+    "dimensions": [
+      {"key": "conceptual",  "weight": 30, "five_means": "Explains core concepts correctly in own words"},
+      {"key": "depth",       "weight": 25, "five_means": "Handles follow-ups, explains trade-offs and why"},
+      {"key": "problem",     "weight": 20, "five_means": "Breaks applied problem into steps, sound approach"},
+      {"key": "practical",   "weight": 15, "five_means": "Speaks concretely about what they built and how"},
+      {"key": "communication","weight": 10, "five_means": "Clear, structured, concise answers"}
+    ]
+  }
+}

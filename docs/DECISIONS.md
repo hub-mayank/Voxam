@@ -20,6 +20,6 @@ Format: **ID title.** Decision. Why. Status (`accepted | proposed | pending`). D
 
 **D9 Hinglish.** STT must transcribe Hinglish well (the WER test needs ≥20 clips across Indian-accented English and Hinglish). Hinglish interviewing stays a stretch goal. Accepted. 2026-10-07.
 
-**D10 Student login = ID + one-time access code.** Why: ID alone allows impersonation, which breaks fairness. Pending Mayank's approval. 2026-10-07.
+**D10 Student login = ID + one-time access code.** Why: ID alone allows impersonation, which breaks fairness. Accepted by Mayank, 2026-10-07. The code is required; `require_access_code` stays as a config flag (default true) for local dev and tests.
 
 **D11 Two parallel Claude Code streams (CORE, VOICE).** Why: one worker cannot fit the plan in 10 days. Cost: double review load. Proposed. 2026-10-07.

@@ -20,7 +20,7 @@ Friend A: T6. Friend B and Mayank: evidence and blockers. Cost: you review two s
 | ID | Blocker | Owner | By | Until cleared |
 |---|---|---|---|---|
 | B1 | Revoke the Gemini key pasted in chat; new key only in terminal env vars | Mayank | today | no live calls |
-| B2 | Billing or credits decision (free tier = 20 requests/day/model) | Mayank | today | live work capped; mock/local only |
+| B2 | **Zero-spend policy (Mayank, 10-08): no paid usage.** Free tiers + local models only. Mayank collects free keys (Gemini, Groq), checks Azure for Students, reports Mac specs | Mayank | 10-09 | live work limited to free quotas; stub proof for scale |
 | B3 | Install Docker Desktop (Apple chip) | Mayank | today | SQLite dev; compose untested |
 | B4 | Friends' skills + GitHub collaborator access | Mayank | today | assignments below are provisional |
 | B5 | Send open questions to MSOT (`docs/MSOT_QUESTIONS.md`): credits/GPU, retention, Hinglish, cutoff time | Mayank | today | capacity plan and privacy note assume defaults |
@@ -30,8 +30,8 @@ Friend A: T6. Friend B and Mayank: evidence and blockers. Cost: you review two s
 
 ## Team (proposed; confirm with B4)
 - **Claude Code**: engine, API, voice, scorer integration, load harness, scripts, doc drafts.
-- **Friend A**: faculty dashboard + student pages, against `docs/openapi.json`.
-- **Friend B**: consent, volunteers, human marks, audio clips + reference transcripts, demo vivas, screenshots.
+- **Friend A** (frontend + Python): faculty dashboard + student pages, against `docs/openapi.json` and the mock server (`docs/API.md`).
+- **Friend B** (frontend + Python): consent, volunteers, human marks, audio clips + reference transcripts, demo vivas, screenshots; plus Python evidence scripts for T8 (`scripts/wer.py`, robustness table, marking-sheet -> compare adapter) in their own branches, reviewed by Claude Code.
 - **Mayank**: decisions, blockers, merge approvals, demo video.
 
 ## Timeline
@@ -80,11 +80,15 @@ Status: `todo | done`. A task is done when its report is on `main`. Mayank's pas
 
 ### Q0 Repo hygiene: done, CORE (rewrote CLAUDE.md; removed STATUS.md, invalid and stale bench results)
 
-### T1b Live baseline: todo, CORE, 0.25 d, deps B2 (new key, env var only) + Mayank's go
+### T1c Free-first providers: todo, CORE, 0.25 d, deps T1
+- One OpenAI-compatible chat adapter (Groq, Cerebras, OpenRouter free models, any compatible endpoint) behind the existing adapter interface, with telemetry, cap and fallback chain support; no new dependency (httpx). Provider config from env only.
+- **Accept:** same 18-check contract tests pass for it (HTTP faked); `--llm gemini,groq,ollama` works as a fallback chain.
+
+### T1b Live baseline: todo, CORE, 0.25 d, deps free keys (env var only) + Mayank's go, T1c
 - The repo holds zero live results after Q0, so scoring evidence must be re-earned. Run `scripts/bench_models.py` for the provisional model: 4 personas x 3 runs (about 12-15 live calls, inside the cap) from a clean tree, with a `provider=live` sidecar.
 - **Accept:** results CSV + sidecar committed; strong > weak > idk; injection <= weak + 5. If any fails, report it honestly with the raw rows.
 
-### T2a API contract: todo, CORE, 0.75 d, deps T0, **G0**
+### T2a API contract: done, CORE, 0.75 d, deps T0, **G0** (freeze policy: additive changes with a CHANGELOG line + message to Friend A; removals/renames/type changes need approval)
 - Priority order: (1) contract + stub mock server + `docs/openapi.json` + `docs/API.md` so Friend A is unblocked, (2) models, state machine, tests.
 - Stub handlers return each schema's example payload (header `X-Contract-Stub: 1`), so `uvicorn` doubles as the mock backend for Friend A.
 - Auth: faculty bearer tokens from env (`FACULTY_TOKENS=name:token,...`); reviewer identity comes from the token, never free text. Students: join returns a session token (stored hashed, rotates on rejoin). D10 (access code) is pending Mayank; implement behind `require_access_code` (default true).

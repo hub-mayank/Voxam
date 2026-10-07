@@ -1,0 +1,35 @@
+turn,words,audio_to_endpoint_s,endpoint_delay_ms,stt_final_s,wer,llm_calls,llm_critical_path_s,backend_overhead_ms,tts_first_chunk_s,e2e_s,e2e_speculative_stt_s,llm_leg,reply_first_sentence,e2e_parallel_llm_s
+t00,3,2.08,896,1.269,0.0,1,0.739,7.3,0.085,2.997,2.401,simulated,Can you explain how a hash table works?,2.997
+t01,4,2.27,887,1.287,0.0,2,1.473,7.1,0.048,3.702,3.115,simulated,You're partway there.,3.148
+t02,7,2.91,928,1.312,0.0,1,0.66,6.6,0.15,3.057,2.429,simulated,What happens between typing a URL in a browser and seeing the page?,3.057
+t03,6,3.36,963,1.317,0.0,2,1.342,6.9,0.043,3.672,3.009,simulated,You're partway there.,3.211
+t04,8,3.39,898,1.334,0.0,1,0.793,7.3,0.145,3.178,2.58,simulated,"What does Big-O notation tell us, and why do we care about it?",3.178
+t05,11,4.64,938,1.37,0.0,2,1.387,7.0,0.044,3.746,3.108,simulated,You're partway there.,3.191
+t06,11,4.86,933,1.364,0.0,1,0.693,6.9,0.104,3.101,2.468,simulated,What is the difference between a process and a thread?,3.101
+t07,8,4.22,924,1.344,0.0,2,1.122,6.9,0.053,3.45,2.826,simulated,You're partway there.,2.96
+t08,12,4.74,902,1.379,0.0,1,0.766,7.1,0.181,3.235,2.633,simulated,Pick any technical decision from a project of yours and explain why you made it.,3.235
+t09,9,4.96,913,1.351,0.0,2,1.297,7.1,0.045,3.613,3.0,simulated,You're partway there.,3.073
+t10,11,5.12,940,1.399,0.091,1,1.016,7.4,0.128,3.491,2.851,simulated,What is something you learned recently that changed how you write code?,3.491
+t11,13,5.28,956,1.387,0.0,2,1.231,7.3,0.044,3.625,2.969,simulated,You're partway there.,3.112
+t12,24,8.0,908,1.513,0.0,1,0.841,7.5,0.14,3.409,2.801,simulated,"Describe a bug that took you a long time to find, and how you found it.",3.409
+t13,24,9.06,931,1.557,0.0,2,1.574,7.1,0.042,4.112,3.481,simulated,You're partway there.,3.404
+t14,24,8.83,915,1.514,0.042,1,0.92,9.4,0.07,3.428,2.813,simulated,Is there anything you'd like to add?,3.428
+t15,22,8.16,874,1.498,0.182,0,0,4.8,0.081,2.458,1.884,simulated,Can you explain how a hash table works?,2.458
+t16,22,8.06,913,1.528,0.0,2,1.222,6.6,0.047,3.717,3.104,simulated,You're partway there.,3.116
+t17,23,10.27,939,1.585,0.0,1,0.664,6.8,0.134,3.329,2.69,simulated,"What does Big-O notation tell us, and why do we care about it?",3.329
+t18,22,9.02,911,1.515,0.0,2,1.296,7.0,0.043,3.772,3.161,simulated,You're partway there.,3.155
+t19,22,8.48,909,1.527,0.0,1,0.776,6.9,0.152,3.371,2.762,simulated,What happens between typing a URL in a browser and seeing the page?,3.371
+t20,26,8.9,901,1.562,0.0,2,0.908,7.1,0.021,3.399,2.798,simulated,Good.,3.093
+t21,23,10.21,889,1.541,0.043,1,0.658,6.7,0.149,3.244,2.655,simulated,What is an index in a database and what is the trade-off of adding one?,3.244
+t22,48,16.99,922,1.775,0.0,2,0.938,6.8,0.02,3.662,3.04,simulated,Good.,3.419
+t23,51,17.57,927,1.82,0.0,1,0.683,6.7,0.11,3.546,2.919,simulated,What is the difference between a process and a thread?,3.546
+t24,42,16.83,964,1.769,0.024,2,1.357,7.1,0.025,4.122,3.458,simulated,Good.,3.733
+t25,54,18.05,897,1.846,0.056,1,0.833,7.1,0.17,3.754,3.157,simulated,Pick any technical decision from a project of yours and explain why you made it.,3.754
+t26,42,16.64,906,1.745,0.024,2,1.034,7.2,0.02,3.713,3.107,simulated,Good.,3.4
+t27,16,6.08,895,1.445,0.0,1,0.661,7.1,0.137,3.145,2.55,simulated,What is something you learned recently that changed how you write code?,3.145
+t28,18,6.75,897,1.487,0.0,2,1.455,7.3,0.051,3.897,3.3,simulated,You're partway there.,3.179
+t29,11,5.25,914,1.387,0.0,1,0.865,7.2,0.15,3.324,2.71,simulated,"Describe a bug that took you a long time to find, and how you found it.",3.324
+t30,14,5.44,901,1.427,0.0,2,1.198,8.4,0.062,3.597,2.996,simulated,You're partway there.,3.097
+t31,17,7.84,939,1.455,0.0,1,0.962,7.8,0.071,3.435,2.796,simulated,Is there anything you'd like to add?,3.435
+t32,25,10.02,886,1.583,0.08,0,0,4.8,0.136,2.609,2.023,simulated,"What does Big-O notation tell us, and why do we care about it?",2.609
+t33,15,5.98,926,1.423,0.0,2,1.166,6.5,0.044,3.566,2.94,simulated,You're partway there.,3.142

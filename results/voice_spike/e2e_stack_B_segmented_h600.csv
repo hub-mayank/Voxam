@@ -1,0 +1,35 @@
+turn,words,audio_to_endpoint_s,endpoint_delay_ms,stt_final_s,wer,llm_calls,llm_critical_path_s,backend_overhead_ms,tts_first_chunk_s,e2e_s,e2e_speculative_stt_s,llm_leg,reply_first_sentence,e2e_parallel_llm_s
+t00,3,1.79,608,1.22,0.0,1,0.739,6.8,0.096,2.67,2.362,simulated,What is the difference between a process and a thread?,2.67
+t01,4,1.98,599,1.246,0.0,2,1.473,6.8,0.042,3.367,3.068,simulated,You're partway there.,2.814
+t02,7,2.62,640,1.283,0.0,1,0.66,6.7,0.145,2.735,2.395,simulated,What is an index in a database and what is the trade-off of adding one?,2.735
+t03,6,3.07,675,1.289,0.0,2,1.342,6.9,0.047,3.36,2.985,simulated,You're partway there.,2.899
+t04,8,3.1,610,1.303,0.0,1,0.793,6.7,0.153,2.866,2.556,simulated,What happens between typing a URL in a browser and seeing the page?,2.866
+t05,11,4.35,650,1.341,0.0,2,1.387,7.1,0.044,3.43,3.08,simulated,You're partway there.,2.875
+t06,11,4.58,645,1.341,0.0,1,0.693,6.9,0.132,2.818,2.473,simulated,"What does Big-O notation tell us, and why do we care about it?",2.818
+t07,8,3.94,636,1.344,0.0,2,1.122,6.9,0.047,3.156,2.82,simulated,You're partway there.,2.665
+t08,12,4.45,614,1.357,0.083,1,0.766,6.8,0.165,2.909,2.595,simulated,Pick any technical decision from a project of yours and explain why you made it.,2.909
+t09,9,4.67,625,1.323,0.0,2,1.297,7.0,0.044,3.296,2.971,simulated,You're partway there.,2.756
+t10,11,4.83,652,1.374,0.182,1,1.016,7.1,0.128,3.178,2.826,simulated,What is something you learned recently that changed how you write code?,3.178
+t11,13,4.99,668,1.37,0.0,2,1.231,7.0,0.042,3.317,2.949,simulated,You're partway there.,2.804
+t12,24,7.71,620,1.496,0.0,1,0.841,7.3,0.145,3.109,2.789,simulated,"Describe a bug that took you a long time to find, and how you found it.",3.109
+t13,24,8.77,643,1.349,0.0,2,1.574,7.5,0.043,3.617,3.274,simulated,You're partway there.,2.909
+t14,24,8.54,627,1.393,0.042,1,0.92,9.7,0.072,3.022,2.695,simulated,Is there anything you'd like to add?,3.022
+t15,22,7.87,586,1.472,0.182,0,0,4.9,0.108,2.171,1.885,simulated,What is the difference between a process and a thread?,2.171
+t16,22,7.78,625,1.514,0.0,2,1.222,6.6,0.043,3.412,3.087,simulated,You're partway there.,2.811
+t17,23,9.98,651,1.332,0.0,1,0.664,6.6,0.088,2.742,2.391,simulated,Can you explain how a hash table works?,2.742
+t18,22,8.74,623,1.49,0.0,2,1.296,6.8,0.044,3.459,3.136,simulated,You're partway there.,2.842
+t19,22,8.19,621,1.376,0.0,1,0.776,6.5,0.14,2.919,2.598,simulated,What is an index in a database and what is the trade-off of adding one?,2.919
+t20,26,8.61,613,1.344,0.038,2,0.908,6.9,0.025,2.897,2.584,simulated,Good.,2.59
+t21,23,9.92,601,1.333,0.043,1,0.658,7.3,0.134,2.733,2.432,simulated,"What does Big-O notation tell us, and why do we care about it?",2.733
+t22,48,16.7,634,1.487,0.0,2,0.938,7.0,0.022,3.088,2.754,simulated,Good.,2.845
+t23,51,5.6,-11041,1.392,0.725,1,0.683,7.1,0.154,-8.805,2.536,simulated,What happens between typing a URL in a browser and seeing the page?,-8.805
+t24,42,16.54,676,1.289,0.19,2,1.357,7.0,0.022,3.351,2.975,simulated,Good.,2.962
+t25,54,17.76,609,1.29,0.093,1,0.833,7.2,0.157,2.896,2.587,simulated,Pick any technical decision from a project of yours and explain why you made it.,2.896
+t26,42,16.35,618,1.397,0.024,2,1.034,6.8,0.023,3.079,2.761,simulated,Good.,2.766
+t27,16,5.79,607,1.429,0.0,1,0.661,7.1,0.128,2.831,2.524,simulated,What is something you learned recently that changed how you write code?,2.831
+t28,18,6.46,609,1.314,0.0,2,1.455,7.3,0.046,3.431,3.122,simulated,You're partway there.,2.712
+t29,11,4.96,626,1.377,0.0,1,0.865,7.0,0.142,3.018,2.692,simulated,"Describe a bug that took you a long time to find, and how you found it.",3.018
+t30,14,5.15,613,1.409,0.0,2,1.198,7.3,0.046,3.273,2.96,simulated,You're partway there.,2.773
+t31,17,7.55,651,1.462,0.0,1,0.962,7.7,0.083,3.166,2.815,simulated,Is there anything you'd like to add?,3.166
+t32,25,9.73,598,1.39,0.16,0,0,4.8,0.084,2.077,1.779,simulated,Can you explain how a hash table works?,2.077
+t33,15,5.7,638,1.408,0.0,2,1.166,6.4,0.046,3.264,2.926,simulated,You're partway there.,2.841

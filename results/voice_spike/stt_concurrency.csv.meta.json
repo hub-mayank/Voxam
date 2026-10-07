@@ -1,0 +1,14 @@
+{
+  "provider": "live",
+  "model": [
+    "faster-whisper-base-int8",
+    "faster-whisper-small-int8"
+  ],
+  "date": "2026-10-08",
+  "git_sha": "1ecf09c5b96113bfc6c44ce9835fdfaee7040c8a",
+  "n": 216,
+  "n_unit": "decodes of one 6 s synthetic clip",
+  "audio": "synthetic",
+  "compute": "CPU int8, Apple M2 (4P+4E cores), cpu_threads=1 per decode",
+  "note": "saturated workers (worst case); STT only: VAD, LLM, TTS and the API not included"
+}

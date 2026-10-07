@@ -1,0 +1,16 @@
+{
+  "provider": "live",
+  "model": [
+    "silero-vad",
+    "faster-whisper-base-int8",
+    "piper-en_US-lessac-medium"
+  ],
+  "date": "2026-10-08",
+  "git_sha": "1ecf09c5b96113bfc6c44ce9835fdfaee7040c8a",
+  "n": 12,
+  "n_unit": "turns over a real localhost WebSocket, audio paced in real time (synthetic speech)",
+  "audio": "synthetic",
+  "barge_in_interrupt_ms": 404,
+  "reply": "canned echo (no LLM)",
+  "transport": "FastAPI WebSocket + uvicorn + websockets"
+}

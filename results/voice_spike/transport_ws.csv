@@ -1,0 +1,13 @@
+turn,true_speech_end_s,endpoint_delay_ms_seen_by_client,server_stt_s,first_reply_audio_ms_after_speech_end,transcript
+t05,3.7,641,0.355,1174,A hash table maps keys to values using a hash function.
+t06,3.93,632,0.359,1151,big O describes how running time grows with the input size.
+t07,3.3,623,0.354,1121,"An index makes reads faster, but writes slower."
+t08,3.83,609,0.368,1118,The thread shares memory with the other threads in the same process.
+t09,4.05,616,0.352,1116,DNS translates the domain name into an IP address.
+t10,4.18,643,0.384,1188,I built a chat application using WebSakets in a post-grade database.
+t11,4.32,658,0.368,1174,The main problem was that queries became slow when the table grew large.
+t12,7.09,611,0.421,1192,"When two keys end up at the same index we get a collision, and we can handle it with chaining or with open addressing."
+t13,8.12,638,0.43,1228,"Binary search halves the search space at every step, so it takes logarithmic time, while a linear scan has to look at every element."
+t14,7.92,637,0.41,1211,"The database index is usually a B tree, and it lets the database jump to the matching rows instead of scanning the whole table."
+t15,7.29,577,0.41,1148,In my project I used a Q2D couple the web server from the image processing workers so that uploads never blocked.
+t16,7.15,612,0.422,1189,"I would first check the logs and metrics, then see whether the slowness is in the database, the application or the network."

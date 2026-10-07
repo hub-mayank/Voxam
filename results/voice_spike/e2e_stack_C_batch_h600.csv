@@ -1,0 +1,35 @@
+turn,words,audio_to_endpoint_s,endpoint_delay_ms,stt_final_s,wer,llm_calls,llm_critical_path_s,backend_overhead_ms,tts_first_chunk_s,e2e_s,e2e_speculative_stt_s,llm_leg,reply_first_sentence,e2e_parallel_llm_s
+t00,3,1.79,608,4.298,0.0,1,0.739,7.6,1.895,7.548,7.24,simulated,What is an index in a database and what is the trade-off of adding one?,7.548
+t01,4,1.98,599,4.302,0.0,2,1.473,7.2,1.087,7.468,7.169,simulated,You're partway there.,6.915
+t02,7,2.62,640,4.349,0.0,1,0.66,9.5,1.531,7.19,6.85,simulated,What is the difference between a process and a thread?,7.19
+t03,6,3.07,675,4.332,0.0,2,1.342,8.1,1.087,7.444,7.069,simulated,You're partway there.,6.982
+t04,8,3.1,610,4.327,0.0,1,0.793,7.4,1.372,7.11,6.8,simulated,Can you explain how a hash table works?,7.11
+t05,11,4.35,650,4.429,0.0,2,1.387,7.2,1.08,7.553,7.203,simulated,You're partway there.,6.998
+t06,11,4.58,645,4.359,0.0,1,0.693,7.3,1.729,7.433,7.088,simulated,"What does Big-O notation tell us, and why do we care about it?",7.433
+t07,8,3.94,636,4.288,0.0,2,1.122,7.2,1.076,7.129,6.793,simulated,You're partway there.,6.639
+t08,12,4.45,614,4.345,0.0,1,0.766,7.1,2.056,7.788,7.474,simulated,Pick any technical decision from a project of yours and explain why you made it.,7.788
+t09,9,4.67,625,4.287,0.0,2,1.297,7.6,1.075,7.291,6.966,simulated,You're partway there.,6.751
+t10,11,4.83,652,4.399,0.455,1,1.016,7.2,1.793,7.868,7.516,simulated,What is something you learned recently that changed how you write code?,7.868
+t11,13,4.99,668,4.347,0.0,2,1.231,7.2,1.072,7.326,6.958,simulated,You're partway there.,6.813
+t12,24,7.71,620,4.668,0.0,1,0.841,7.7,1.93,8.067,7.747,simulated,"Describe a bug that took you a long time to find, and how you found it.",8.067
+t13,24,8.77,643,4.71,0.0,2,1.574,7.1,1.078,8.012,7.669,simulated,You're partway there.,7.304
+t14,24,8.54,627,4.653,0.042,1,0.92,10.3,1.224,7.435,7.108,simulated,Is there anything you'd like to add?,7.435
+t15,22,7.87,586,4.663,0.0,0,0,6.1,1.845,7.1,6.814,simulated,What is an index in a database and what is the trade-off of adding one?,7.1
+t16,22,7.78,625,4.697,0.0,2,1.222,6.6,1.086,7.637,7.312,simulated,You're partway there.,7.036
+t17,23,9.98,651,4.778,0.0,1,0.664,7.4,1.502,7.603,7.252,simulated,What is the difference between a process and a thread?,7.603
+t18,22,8.74,623,4.611,0.0,2,1.296,7.8,1.112,7.65,7.327,simulated,You're partway there.,7.033
+t19,22,8.19,621,4.643,0.0,1,0.776,7.0,1.716,7.764,7.443,simulated,"What does Big-O notation tell us, and why do we care about it?",7.764
+t20,26,8.61,613,4.795,0.038,2,0.908,7.0,0.981,7.304,6.991,simulated,Good.,6.997
+t21,23,9.92,601,4.708,0.0,1,0.658,7.0,1.357,7.331,7.03,simulated,Can you explain how a hash table works?,7.331
+t22,48,16.7,634,5.381,0.0,2,0.938,7.7,0.993,7.954,7.62,simulated,Good.,7.711
+t23,51,5.6,-11041,4.369,0.725,1,0.683,7.2,1.904,-4.077,7.264,simulated,What happens between typing a URL in a browser and seeing the page?,-4.077
+t24,42,16.54,676,5.334,0.024,2,1.357,6.9,0.992,8.366,7.99,simulated,Good.,7.977
+t25,54,17.76,609,5.553,0.037,1,0.833,7.1,2.069,9.071,8.762,simulated,Pick any technical decision from a project of yours and explain why you made it.,9.071
+t26,42,16.35,618,5.296,0.024,2,1.034,7.2,0.986,7.941,7.623,simulated,Good.,7.628
+t27,16,5.79,607,4.45,0.0,1,0.661,7.3,1.805,7.529,7.222,simulated,What is something you learned recently that changed how you write code?,7.529
+t28,18,6.46,609,4.605,0.0,2,1.455,7.4,1.087,7.763,7.454,simulated,You're partway there.,7.044
+t29,11,4.96,626,4.277,0.0,0,0,7.3,1.866,6.776,6.45,simulated,"Describe a bug that took you a long time to find, and how you found it.",6.776
+t30,14,5.15,613,4.413,0.0,2,1.356,7.5,1.089,7.479,7.166,simulated,You're partway there.,6.988
+t31,17,7.55,651,4.438,0.0,1,0.707,8.0,1.237,7.042,6.691,simulated,Is there anything you'd like to add?,7.042
+t32,25,9.73,598,4.813,0.08,0,0,4.6,1.854,7.269,6.971,simulated,What is an index in a database and what is the trade-off of adding one?,7.269
+t33,15,5.7,638,4.396,0.0,2,1.497,6.7,1.087,7.624,7.286,simulated,You're partway there.,7.089

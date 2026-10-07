@@ -1,0 +1,37 @@
+{
+  "provider": "stub",
+  "model": [
+    "silero-vad",
+    "faster-whisper-small-int8",
+    "simulated-llm (profile local-3b-0.4s)",
+    "piper-en_US-lessac-medium"
+  ],
+  "date": "2026-10-08",
+  "git_sha": "1ecf09c5b96113bfc6c44ce9835fdfaee7040c8a",
+  "n": 34,
+  "n_unit": "turns per assumed LLM profile",
+  "llm_leg": "simulated",
+  "profiles": [
+    {
+      "name": "fast-0.2s",
+      "ttft_s": 0.2,
+      "tokens_per_s": 40
+    },
+    {
+      "name": "local-3b-0.4s",
+      "ttft_s": 0.4,
+      "tokens_per_s": 28
+    },
+    {
+      "name": "slow-0.8s",
+      "ttft_s": 0.8,
+      "tokens_per_s": 20
+    },
+    {
+      "name": "api-1.5s",
+      "ttft_s": 1.5,
+      "tokens_per_s": 40
+    }
+  ],
+  "note": "LLM latency profiles are assumptions"
+}

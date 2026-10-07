@@ -1,0 +1,35 @@
+turn,words,audio_to_endpoint_s,endpoint_delay_ms,stt_final_s,wer,llm_calls,llm_critical_path_s,backend_overhead_ms,tts_first_chunk_s,e2e_s,e2e_speculative_stt_s,llm_leg,reply_first_sentence,e2e_parallel_llm_s
+t00,3,1.79,608,1.273,0.0,1,0.739,7.2,0.142,2.769,2.461,simulated,"What does Big-O notation tell us, and why do we care about it?",2.769
+t01,4,1.98,599,1.298,0.0,2,1.473,6.8,0.049,3.426,3.127,simulated,You're partway there.,2.873
+t02,7,2.62,640,1.326,0.0,1,0.66,6.7,0.087,2.72,2.38,simulated,Can you explain how a hash table works?,2.72
+t03,6,3.07,675,1.343,0.0,2,1.342,7.0,0.043,3.41,3.035,simulated,You're partway there.,2.948
+t04,8,3.1,610,1.328,0.0,1,0.793,7.0,0.161,2.899,2.589,simulated,What happens between typing a URL in a browser and seeing the page?,2.899
+t05,11,4.35,650,1.377,0.0,2,1.387,7.2,0.046,3.468,3.118,simulated,You're partway there.,2.913
+t06,11,4.58,645,1.374,0.0,1,0.693,6.9,0.111,2.83,2.485,simulated,What is the difference between a process and a thread?,2.83
+t07,8,3.94,636,1.359,0.0,2,1.122,7.0,0.046,3.17,2.834,simulated,You're partway there.,2.68
+t08,12,4.45,614,1.384,0.0,1,0.766,7.2,0.173,2.945,2.631,simulated,Pick any technical decision from a project of yours and explain why you made it.,2.945
+t09,9,4.67,625,1.354,0.0,2,1.297,6.9,0.042,3.325,3.0,simulated,You're partway there.,2.785
+t10,11,4.83,652,1.417,0.273,1,1.016,7.3,0.132,3.225,2.873,simulated,What is something you learned recently that changed how you write code?,3.225
+t11,13,4.99,668,1.39,0.0,2,1.231,7.2,0.044,3.34,2.972,simulated,You're partway there.,2.827
+t12,24,7.71,620,1.528,0.0,1,0.841,7.2,0.148,3.144,2.824,simulated,"Describe a bug that took you a long time to find, and how you found it.",3.144
+t13,24,8.77,643,1.564,0.0,2,1.574,7.3,0.047,3.835,3.492,simulated,You're partway there.,3.128
+t14,24,8.54,627,1.522,0.042,1,0.92,9.5,0.069,3.148,2.821,simulated,Is there anything you'd like to add?,3.148
+t15,22,7.87,586,1.502,0.182,0,0,4.8,0.082,2.175,1.889,simulated,Can you explain how a hash table works?,2.175
+t16,22,7.78,625,1.553,0.0,2,1.222,6.5,0.046,3.452,3.127,simulated,You're partway there.,2.851
+t17,23,9.98,651,1.568,0.0,1,0.664,6.4,0.099,2.989,2.638,simulated,What is the difference between a process and a thread?,2.989
+t18,22,8.74,623,1.517,0.0,2,1.296,6.8,0.04,3.483,3.16,simulated,You're partway there.,2.866
+t19,22,8.19,621,1.526,0.0,1,0.776,6.8,0.156,3.086,2.765,simulated,What happens between typing a URL in a browser and seeing the page?,3.086
+t20,26,8.61,613,1.566,0.0,2,0.908,6.8,0.022,3.116,2.803,simulated,Good.,2.81
+t21,23,9.92,601,1.542,0.043,1,0.658,6.9,0.141,2.949,2.648,simulated,"What does Big-O notation tell us, and why do we care about it?",2.949
+t22,48,16.7,634,1.784,0.0,2,0.938,6.8,0.021,3.384,3.05,simulated,Good.,3.141
+t23,51,5.6,-11041,1.417,0.725,1,0.683,7.0,0.14,-8.794,2.547,simulated,What is an index in a database and what is the trade-off of adding one?,-8.794
+t24,42,16.54,676,1.774,0.024,2,1.357,6.9,0.021,3.835,3.459,simulated,Good.,3.447
+t25,54,17.76,609,1.847,0.056,1,0.833,6.9,0.17,3.467,3.158,simulated,Pick any technical decision from a project of yours and explain why you made it.,3.467
+t26,42,16.35,618,1.74,0.024,2,1.034,7.2,0.02,3.419,3.101,simulated,Good.,3.107
+t27,16,5.79,607,1.441,0.0,1,0.661,7.0,0.137,2.853,2.546,simulated,What is something you learned recently that changed how you write code?,2.853
+t28,18,6.46,609,1.476,0.0,2,1.455,7.2,0.044,3.59,3.281,simulated,You're partway there.,2.871
+t29,11,4.96,626,1.381,0.0,1,0.865,7.1,0.149,3.028,2.702,simulated,"Describe a bug that took you a long time to find, and how you found it.",3.028
+t30,14,5.15,613,1.417,0.0,2,1.198,7.2,0.044,3.28,2.967,simulated,You're partway there.,2.779
+t31,17,7.55,651,1.45,0.0,1,0.962,8.0,0.071,3.142,2.791,simulated,Is there anything you'd like to add?,3.142
+t32,25,9.73,598,1.575,0.08,0,0,4.7,0.153,2.331,2.033,simulated,What happens between typing a URL in a browser and seeing the page?,2.331
+t33,15,5.7,638,1.448,0.0,2,1.166,6.6,0.045,3.304,2.966,simulated,You're partway there.,2.88

@@ -1,0 +1,10 @@
+{
+  "provider": "live",
+  "model": "kokoro-v1.0-am_adam-stream",
+  "date": "2026-10-08",
+  "git_sha": "1ecf09c5b96113bfc6c44ce9835fdfaee7040c8a",
+  "n": 48,
+  "n_unit": "synthesis runs (16 AI sentences x 3 repeats)",
+  "compute": "CPU, Apple M2",
+  "model_load_s": 0.36
+}

@@ -1,0 +1,5 @@
+llm_profile_assumed,e2e_p50_s,e2e_p95_s,e2e_speculative_p50_s,e2e_speculative_p95_s
+fast-0.2s,2.773,3.131,2.442,2.809
+local-3b-0.4s,3.159,3.676,2.829,3.344
+slow-0.8s,3.939,4.813,3.595,4.481
+api-1.5s,4.684,6.143,4.354,5.81

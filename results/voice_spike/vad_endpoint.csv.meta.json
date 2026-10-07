@@ -1,0 +1,9 @@
+{
+  "provider": "live",
+  "model": "silero-vad (pysilero-vad ONNX)",
+  "date": "2026-10-08",
+  "git_sha": "86ca7e760c2cea3dcfbca576ff0022feb352ef74",
+  "n": 34,
+  "n_unit": "synthetic turns (macOS say), each tried at 4 hangovers",
+  "audio": "synthetic"
+}

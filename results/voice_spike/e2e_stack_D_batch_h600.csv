@@ -1,0 +1,35 @@
+turn,words,audio_to_endpoint_s,endpoint_delay_ms,stt_final_s,wer,llm_calls,llm_critical_path_s,backend_overhead_ms,tts_first_chunk_s,e2e_s,e2e_speculative_stt_s,llm_leg,reply_first_sentence
+t00,3,1.76,634,1.083,0.0,1,0.739,6.2,0.585,3.047,2.713,simulated,Can you explain how a hash table works?
+t01,4,1.98,604,1.097,0.0,2,1.473,7.8,0.576,3.758,3.454,simulated,You're partway there.
+t02,7,2.62,635,1.129,0.0,1,0.66,7.6,0.598,3.03,2.695,simulated,What is an index in a database and what is the trade-off of adding one?
+t03,6,3.07,663,1.129,0.0,2,1.342,7.9,0.577,3.719,3.356,simulated,You're partway there.
+t04,8,3.1,610,1.137,0.0,1,0.793,7.9,0.598,3.145,2.835,simulated,"What does Big-O notation tell us, and why do we care about it?"
+t05,11,4.35,647,1.181,0.0,2,1.387,8.1,0.578,3.801,3.454,simulated,You're partway there.
+t06,11,4.58,645,1.178,0.0,1,0.693,8.0,0.598,3.122,2.777,simulated,What happens between typing a URL in a browser and seeing the page?
+t07,8,3.94,636,1.165,0.0,2,1.122,8.2,0.576,3.508,3.172,simulated,You're partway there.
+t08,12,4.45,614,1.205,0.0,1,0.766,7.9,0.602,3.195,2.881,simulated,Pick any technical decision from a project of yours and explain why you made it.
+t09,9,4.67,625,1.18,0.0,2,1.297,8.1,0.584,3.695,3.37,simulated,You're partway there.
+t10,11,4.83,652,1.244,0.273,1,1.016,7.9,0.599,3.52,3.168,simulated,What is something you learned recently that changed how you write code?
+t11,13,4.99,668,1.218,0.0,2,1.231,8.2,0.576,3.701,3.333,simulated,You're partway there.
+t12,24,7.71,620,1.352,0.0,1,0.841,8.7,0.602,3.424,3.104,simulated,"Describe a bug that took you a long time to find, and how you found it."
+t13,24,8.77,643,1.415,0.0,2,1.574,8.6,0.587,4.229,3.886,simulated,You're partway there.
+t14,24,8.54,627,1.366,0.042,1,0.92,11.0,0.589,3.514,3.187,simulated,Is there anything you'd like to add?
+t15,22,7.87,586,1.365,0.182,0,0,4.5,0.607,2.562,2.276,simulated,What happens between typing a URL in a browser and seeing the page?
+t16,22,7.78,625,1.392,0.0,2,1.222,8.0,0.589,3.837,3.512,simulated,You're partway there.
+t17,23,9.98,651,1.424,0.0,1,0.664,8.2,0.612,3.359,3.008,simulated,What is an index in a database and what is the trade-off of adding one?
+t18,22,8.74,623,1.376,0.0,2,1.296,8.3,0.591,3.894,3.571,simulated,You're partway there.
+t19,22,8.19,621,1.382,0.0,1,0.776,8.2,0.609,3.396,3.075,simulated,"What does Big-O notation tell us, and why do we care about it?"
+t20,26,8.61,613,1.435,0.0,2,0.908,8.6,0.586,3.55,3.237,simulated,Good.
+t21,23,9.92,601,1.42,0.043,1,0.658,8.5,0.601,3.289,2.988,simulated,Can you explain how a hash table works?
+t22,48,16.7,634,1.654,0.0,2,0.938,8.3,0.587,3.822,3.488,simulated,Good.
+t23,51,5.6,-11041,1.302,0.725,1,0.683,8.2,0.611,-8.437,2.904,simulated,What is the difference between a process and a thread?
+t24,42,16.54,676,1.655,0.024,2,1.357,8.2,0.579,4.275,3.899,simulated,Good.
+t25,54,17.76,609,1.731,0.056,1,0.833,8.6,0.609,3.791,3.482,simulated,Pick any technical decision from a project of yours and explain why you made it.
+t26,42,16.35,618,1.631,0.024,2,1.034,8.9,0.6,3.891,3.573,simulated,Good.
+t27,16,5.79,607,1.362,0.0,1,0.661,8.8,0.608,3.246,2.939,simulated,What is something you learned recently that changed how you write code?
+t28,18,6.46,609,1.378,0.0,2,1.455,9.2,0.6,4.051,3.742,simulated,You're partway there.
+t29,11,4.96,636,1.286,0.0,1,0.865,9.2,0.614,3.411,3.075,simulated,"Describe a bug that took you a long time to find, and how you found it."
+t30,14,5.15,613,1.33,0.0,2,1.198,9.1,0.607,3.758,3.445,simulated,You're partway there.
+t31,17,7.55,651,1.352,0.0,1,0.962,10.0,0.598,3.574,3.223,simulated,Is there anything you'd like to add?
+t32,25,9.76,626,1.49,0.08,0,0,4.6,0.613,2.734,2.408,simulated,What is an index in a database and what is the trade-off of adding one?
+t33,15,5.7,638,1.33,0.0,2,1.166,8.3,1.108,4.25,3.912,simulated,You're partway there.

@@ -1,4 +1,5 @@
 model,source_url,size_bytes
+faster-whisper-base,https://huggingface.co/Systran/faster-whisper-base,147888062
 faster-whisper-small,https://huggingface.co/Systran/faster-whisper-small,486217500
 faster-whisper-medium,https://huggingface.co/Systran/faster-whisper-medium,1530576875
 en_US-lessac-medium.onnx,https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx,63201294

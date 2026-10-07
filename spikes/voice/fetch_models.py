@@ -23,7 +23,7 @@ def size_of(path: Path) -> int:
 def main():
     MODELS.mkdir(parents=True, exist_ok=True)
     rows = []
-    whisper = ["small"] + ([] if "--skip-medium" in sys.argv else ["medium"])
+    whisper = ["base", "small"] + ([] if "--skip-medium" in sys.argv else ["medium"])
     for name in whisper:
         path = Path(snapshot_download(f"Systran/faster-whisper-{name}", local_dir=MODELS / f"faster-whisper-{name}"))
         rows.append((f"faster-whisper-{name}", f"https://huggingface.co/Systran/faster-whisper-{name}", size_of(path)))

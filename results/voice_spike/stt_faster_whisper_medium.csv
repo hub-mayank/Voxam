@@ -1,0 +1,35 @@
+turn,voice,has_pauses,noisy,words,audio_s,batch_decode_s,batch_rtf,pieces,last_piece_decode_s,last_piece_audio_s,all_pieces_decode_s,wer_batch,wer_segmented,text_batch
+t00,Rishi,0,0,3,1.76,3.3151,1.8836,1,3.3677,0.832,3.3677,0.0,0.0,I don't know.
+t01,Aman,0,0,4,1.984,3.4217,1.7247,1,3.4048,1.056,3.4048,0.0,0.0,"Yes, that is correct."
+t02,Tara,1,0,7,2.624,3.4963,1.3324,1,3.5608,1.696,3.5608,0.0,0.0,I think it is the second option.
+t03,Rishi,0,1,6,3.072,3.5218,1.1464,1,3.5176,2.112,3.5176,0.0,0.0,"Sorry, could you repeat the question?"
+t04,Aman,0,0,8,3.104,3.5564,1.1458,1,3.5884,2.176,3.5884,0.0,0.0,No idea I have not used that before
+t05,Tara,1,0,11,4.352,3.6274,0.8335,1,3.6589,3.424,3.6589,0.0,0.0,A hash table maps keys to values using a hash function
+t06,Rishi,0,0,11,4.576,3.6665,0.8013,1,3.6767,3.648,3.6767,0.0,0.0,Big O describes how running time grows with the input size.
+t07,Aman,0,1,8,3.936,3.6787,0.9346,1,3.623,3.04,3.623,0.0,0.0,"An index makes reads faster, but writes slower."
+t08,Tara,1,0,12,4.448,3.7343,0.8395,1,3.7055,3.52,3.7055,0.0,0.0833,A thread shares memory with the other threads in the same process.
+t09,Rishi,0,0,9,4.672,3.6482,0.7809,1,3.6601,3.744,3.6601,0.0,0.0,DNS translates the domain name into an IP address.
+t10,Aman,0,0,11,4.832,3.8167,0.7899,1,3.9238,3.904,3.9238,0.4545,0.4545,I built a chat application using web sockets in a post-grade database.
+t11,Tara,1,1,13,4.992,3.8271,0.7667,1,3.7715,4.064,3.7715,0.0,0.0,The main problem was that queries became slow when the table grew large.
+t12,Rishi,0,0,24,7.712,4.1184,0.534,1,4.0886,6.784,4.0886,0.0,0.0,When two keys end up at the same index we get a collision and we can handle it with chaining or with open addressing.
+t13,Aman,0,0,24,8.768,4.1688,0.4755,2,3.7284,2.688,7.6598,0.0,0.0,Binary search halves the search space at every step so it takes logarithmic time while a linear scan has to look at every element.
+t14,Tara,1,0,24,8.544,4.1798,0.4892,2,3.928,4.832,7.6615,0.0417,0.0417,"The database index is usually a B tree, and it lets the database jump to the matching rows instead of scanning the whole table."
+t15,Rishi,0,1,22,7.872,4.1354,0.5253,1,4.1833,6.976,4.1833,0.0,0.0,In my project I used a queue to decouple the web server from the image processing workers so that uploads never blocked.
+t16,Aman,0,0,22,7.776,4.2554,0.5472,1,4.2762,6.848,4.2762,0.0,0.0,"I would first check the logs and metrics, then see whether the slowness is in the database, the application or the network."
+t17,Tara,1,0,23,9.984,4.351,0.4358,4,3.7868,2.976,14.9761,0.0,0.0,"The browser asks DNS for the address, opens a TCP connection, does the TLS handshake, sends the request and finally renders the response."
+t18,Rishi,0,0,22,8.736,4.1247,0.4722,1,4.1789,7.808,4.1789,0.0,0.0,Processes have separate memory so one crash does not affect the others but threads are cheaper to create and to switch between.
+t19,Aman,0,1,22,8.192,4.161,0.5079,2,3.9196,4.256,7.7298,0.0,0.0,"I chose chaining because it is simple to implement, and the load factor only affects how long the chains become on average."
+t20,Tara,1,0,26,8.608,4.2945,0.4989,2,3.8054,2.88,7.8073,0.0385,0.0,"To scale reads I would add a cache in front or the database and use read replicas, and for writes I would shard by user identifier."
+t21,Rishi,0,0,23,9.92,4.2439,0.4278,2,3.6606,2.332,7.6895,0.0,0.0,"The trade-off is memory against speed. An index uses extra storage and every insert must update it, but lookups become much faster."
+t22,Aman,0,0,48,16.704,4.8454,0.2901,3,4.1147,5.564,12.0325,0.0,0.0,For the URL shortener I would generate a short identifier by encoding an auto incrementing number in base 62 store the mapping in a key value store and put a cache in front so that the redirect path stays very fast even when the traffic is heavy.
+t23,Tara,1,1,51,5.6,3.988,0.7121,1,4.0095,4.704,4.0095,0.7255,0.7255,When the API became slow I first reproduced the problem with a load test.
+t24,Rishi,0,0,42,16.544,4.9193,0.2973,3,3.7769,0.976,12.4704,0.0238,0.2619,"A race condition happens when two threads read and write shared data without proper synchronization. So the final result depends on the order in which they run, and we fix it with locks, atomic operations, or by avoiding shared mutable state altogether."
+t25,Aman,0,0,54,17.76,5.1773,0.2915,3,3.8755,1.096,12.7429,0.037,0.0926,In the project I worked on we had a recommendation service that was calling database for every request so I introduced a catching layer with a time to live measured the hit rate and tuned the expiry so that the data stayed reasonably fresh while the database load dropped by more than half.
+t26,Tara,1,0,42,16.352,5.0168,0.3068,3,4.1846,4.448,12.542,0.0238,0.0238,"I understand that consistency and availability pull in different directions during a network partition. So for the payments service we chose consistency and accepted that some requests would fail, while for the product catalog we chose availability and allowed slightly stale data."
+t27,Rishi,0,1,16,5.792,4.2547,0.7346,1,4.2545,4.896,4.2545,0.0,0.0,It depends on the access pattern. If we mostly read then a cache helps a lot.
+t28,Aman,0,0,18,6.464,4.3666,0.6755,2,3.9719,1.728,8.1975,0.0,0.0,"I would use a hash map here, because the lookups are frequent, and the order does not matter."
+t29,Tara,1,0,11,4.96,4.0932,0.8252,1,4.1042,4.032,4.1042,0.0,0.0,The complexity is linear because we visit each node exactly once.
+t30,Rishi,0,0,14,5.152,4.227,0.8204,1,4.2057,4.224,4.2057,0.0,0.0,"Honestly I am not sure, but I think we could use a tree instead."
+t31,Aman,0,1,17,7.552,4.2558,0.5635,1,4.2671,6.624,4.2671,0.0,0.0,We deployed the service in containers and used health checks so that failing instances were replaced automatically.
+t32,Tara,1,0,25,9.76,4.6,0.4713,3,4.1568,3.584,12.1649,0.08,0.16,"The first version worked on my laptop, but under load the connection pool was exhausted, so I limited the concurrency and added retries with back off."
+t33,Rishi,0,0,15,5.696,4.1918,0.7359,1,4.1893,4.768,4.1893,0.0,0.0,Because the table is sorted we can use binary search and avoid the full scan.

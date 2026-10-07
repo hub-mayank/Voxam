@@ -1,0 +1,10 @@
+{
+  "provider": "live",
+  "model": "piper-en_US-lessac-medium",
+  "date": "2026-10-08",
+  "git_sha": "86ca7e760c2cea3dcfbca576ff0022feb352ef74+dirty",
+  "n": 48,
+  "n_unit": "synthesis runs (16 AI sentences x 3 repeats)",
+  "compute": "CPU, Apple M2",
+  "model_load_s": 0.58
+}

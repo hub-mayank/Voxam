@@ -1,5 +1,0 @@
-model,persona,total,spread,low_conf,error
-gemini-3.5-flash,strong,100.0,0.0,False,
-gemini-3.5-flash,weak,28.0,0.0,False,
-gemini-3.5-flash,idk,,,,"scorer failed after retries: [""Client error '429 Too Many Requests' for url 'https://generativelanguage.googleapis.com/v"
-gemini-3.5-flash,injection,,,,"scorer failed after retries: [""Client error '429 Too Many Requests' for url 'https://generativelanguage.googleapis.com/v"

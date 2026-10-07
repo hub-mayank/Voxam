@@ -14,16 +14,21 @@ Docs: `docs/SPEC.md` (requirements), `docs/PLAN.md` (tasks, streams, gates), `do
 ## Streams
 `CORE` and `VOICE` run as separate sessions, each on its own branch (VOICE in a git worktree). Take only your stream's tasks. A new worktree has no venv: use the main checkout's `/Users/deadpool/Desktop/Products/ai-viva/backend/.venv/bin/python`. Git hooks are shared.
 
+## Autonomy: `per-task-checkin`
+One task, one report, then stop and wait for Mayank. If Mayank says `until-gate`, chain consecutive tasks (each on its own branch with its own report) and stop only at a GATE, a failure you cannot fix, or an ask-first item.
+
 ## How you work on every task
 1. **Orient** (short): this file, newest `docs/reports/*`, the task in `docs/PLAN.md` (or the prompt Mayank pasted; a prompt overrides task text, never this file), the code it touches. Run `python -m pytest -q`. Red: report it first, fix nothing else.
 2. **Pre-flight** (≤10 lines in chat): the task in your words, assumptions, risks, anything that contradicts SPEC/PLAN/this file. Blocking: write the report with 👎 and stop. Not blocking: continue, do not wait.
-3. **Plan**: TaskCreate list; last item is "verify".
+3. **Plan**: a short task list (TaskCreate if available, else a checklist in chat); last item is "verify".
 4. **Build**: small steps, tests alongside, follow existing conventions, smallest diff that meets acceptance. No speculative features or abstractions.
 5. **Verify like a skeptic**: run it, read the output, check each acceptance line, then try to break it (empty, huge, concurrent, restart, wrong order). Full `python -m pytest -q` and `python scripts/check_secrets.py`.
 6. **Commit** on `task/<id>-<slug>` from up-to-date `main`. Never on `main`, never push.
 7. **Report** to `docs/reports/<id>.md`, then **stop**. Mayank says "next" or "merge".
 
-`next` = the first task in your stream whose dependencies have a report on `main`.
+`next` = the first task in your stream whose dependencies have a report on `main`, unless Mayank pasted a prompt.
+
+**Planner edits:** uncommitted changes to `CLAUDE.md`, `docs/PLAN.md` or `docs/SPEC.md` when a task starts are the Planner's. Commit them verbatim as the first commit (`Planner update`), then start the task.
 
 ## Efficiency
 - Run independent tool calls in parallel. Read, Grep, Glob over `cat`/`grep`. Read only the lines you need. Do not re-read a file you just edited.
@@ -39,7 +44,7 @@ Docs: `docs/SPEC.md` (requirements), `docs/PLAN.md` (tasks, streams, gates), `do
 - Anything spec-bound: phase timings, rubric dimensions/weights, scoring rules, destructive DB changes (timing tweaks need a `docs/DECISIONS.md` entry and approval).
 - New dependencies: state the license, add to `docs/CREDITS.md` (the spec requires crediting every tool and model).
 - Network beyond package registries, GitHub and configured providers.
-This file is advice, not enforcement; hard blocks live in `.claude/settings.json`.
+This file is advice. Only the `deny` rules in `.claude/settings.json` are enforced.
 
 ## Evidence rules (the submission is judged on evidence)
 1. Every number in a report, README or doc comes from a file in `results/` produced by a script in `scripts/`. Never hand-type a measurement.

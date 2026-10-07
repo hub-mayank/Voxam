@@ -1,4 +1,4 @@
-# PLAN: AI Viva (owner: Planner; last updated 2026-10-07)
+# PLAN: AI Viva (owner: Planner; last updated 2026-10-07 evening)
 
 Deadline **Sat 2026-10-17**. Target: submit **Fri 10-16 night**; Saturday is buffer (the cutoff time is unknown; see B5). Times IST.
 Autonomy, reporting and rules: `CLAUDE.md`.
@@ -62,9 +62,9 @@ Friend A: T6. Friend B and Mayank: evidence and blockers. Cost: you review two s
 1. all stretch goals · 2. live-provider load above 20 (keep the stub proof) · 3. student-page polish · 4. dashboard extras beyond list / transcript+audio / scores / override · 5. self-hosted cost-variant detail.
 
 ## Tasks
-Status: `todo | doing | done`. Take the first `todo` in your stream whose deps are `done`.
+Status: `todo | done`. A task is done when its report is on `main`. Mayank's pasted prompt names the task to run next; with no prompt, take the first `todo` in your stream whose deps are done.
 
-### T0 Guardrails & hygiene: todo, CORE, 0.5 d
+### T0 Guardrails & hygiene: done, CORE, 0.5 d
 - Clean-clone check: tests green. `.gitignore` additions: `.DS_Store`, `.llm_budget.json`, `CLAUDE.local.md`, `.claude/settings.local.json`.
 - Quarantine invalid results: move `results/bench_20261006_012904.csv` (invalid run, fixture bug) to `results/_invalid/` with a README saying why. Nothing invalid stays in `results/`.
 - `scripts/check_secrets.py` (regexes for API-key shapes; non-zero exit on a hit) + pre-commit hook installer.
@@ -72,13 +72,23 @@ Status: `todo | doing | done`. Take the first `todo` in your stream whose deps a
 - Seed `docs/CREDITS.md` (Gemini, httpx, pytest, ...).
 - **Accept:** a test proves the cap raises after N calls; the secrets script flags a fake key in a temp file; live tests are skipped by default.
 
-### T1 Telemetry & provider resilience: todo, CORE, 0.5 d, deps T0
+### T1 Telemetry & provider resilience: done, CORE, 0.5 d, deps T0
 - Every provider call logs JSONL: ts, provider, model, kind (classify/phrase/score/stt/tts), latency_ms, tokens or audio-seconds, status, retries.
 - Retry with backoff on 429/503/timeouts; ordered fallback chain; a fake provider that injects failures.
 - Ollama adapter (no key) for free local dev.
 - **Accept:** tests for 429 storm → retry → fallback; telemetry validates against a schema; Ollama adapter passes the same contract tests (skipped if not installed).
 
-### T2a API contract: todo, CORE, 0.5 d, deps T0, **G0**
+### Q0 Repo hygiene: done, CORE (rewrote CLAUDE.md; removed STATUS.md, invalid and stale bench results)
+
+### T1b Live baseline: todo, CORE, 0.25 d, deps B2 (new key, env var only) + Mayank's go
+- The repo holds zero live results after Q0, so scoring evidence must be re-earned. Run `scripts/bench_models.py` for the provisional model: 4 personas x 3 runs (about 12-15 live calls, inside the cap) from a clean tree, with a `provider=live` sidecar.
+- **Accept:** results CSV + sidecar committed; strong > weak > idk; injection <= weak + 5. If any fails, report it honestly with the raw rows.
+
+### T2a API contract: todo, CORE, 0.75 d, deps T0, **G0**
+- Priority order: (1) contract + stub mock server + `docs/openapi.json` + `docs/API.md` so Friend A is unblocked, (2) models, state machine, tests.
+- Stub handlers return each schema's example payload (header `X-Contract-Stub: 1`), so `uvicorn` doubles as the mock backend for Friend A.
+- Auth: faculty bearer tokens from env (`FACULTY_TOKENS=name:token,...`); reviewer identity comes from the token, never free text. Students: join returns a session token (stored hashed, rotates on rejoin). D10 (access code) is pending Mayank; implement behind `require_access_code` (default true).
+- Student answer endpoint is idempotent on `client_seq`. Uniform error body `{error:{code,message,details}}` with an enumerated code list.
 - SQLAlchemy models matching `db/schema.sql` (portable JSON types; SQLite dev, Postgres target). DB-backed job queue table for scoring (`FOR UPDATE SKIP LOCKED` on Postgres). Confirm or replace in DECISIONS D5.
 - FastAPI route stubs + Pydantic schemas with example payloads → `docs/openapi.json`.
   Faculty: create viva, upload bank (CSV/JSON) and roster, list vivas/sessions, session detail, override (reviewer name + reason).

@@ -23,7 +23,10 @@ Text mode runs fully offline with the mock LLM. It needs no Docker, database or 
 ## API (contract phase: a mock backend)
     cd backend
     FACULTY_TOKENS="demo:demo-token-0123456789" python -m uvicorn app.api.main:app --port 8000   # then open /docs
-    python scripts/export_openapi.py                 # regenerate docs/openapi.json after a contract change
+
+    # from the repo root, after a contract or model change:
+    python scripts/export_openapi.py                 # docs/openapi.json (the frozen contract)
+    python scripts/export_schema.py                  # db/schema.sql (PostgreSQL DDL, generated from the models)
 
 Frontend guide: `docs/API.md`. Config env vars: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `REQUIRE_ACCESS_CODE` (default true).
 
@@ -53,7 +56,8 @@ Results written under `results/` need a `.meta.json` sidecar (provider, model, d
     backend/app/       interviewer, clock, policy, scorer, config; llm/ adapters; telemetry.py; session_state.py; api/ (FastAPI)
     backend/tests/     offline tests and persona fixtures
     config/            viva config (phases, rubric) and a sample question bank
-    db/, docker-compose.yml   Postgres + Redis for the later stages; not used by text mode
+    backend/app/db/    SQLAlchemy models; db/schema.sql is generated from them
+    docker-compose.yml Postgres + Redis for the later stages; not used by text mode
     scripts/           benchmark, persona, secret-scan and comparison scripts
     docs/              SPEC, PLAN, DECISIONS, CREDITS, task reports in docs/reports/
     results/           raw evidence files

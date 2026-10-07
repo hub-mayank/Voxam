@@ -5,14 +5,39 @@
       "Bash(python -m pytest *)",
       "Bash(python3 -m pytest)",
       "Bash(python3 -m pytest *)",
+      "Bash(python scripts/check_secrets.py)",
       "Bash(git status)",
+      "Bash(git status *)",
       "Bash(git diff)",
       "Bash(git diff *)",
-      "Bash(git log *)"
+      "Bash(git log)",
+      "Bash(git log *)",
+      "Bash(git show)",
+      "Bash(git show *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git branch)",
+      "Bash(git branch *)",
+      "Bash(git switch -c *)",
+      "Bash(git checkout -b *)"
     ],
     "deny": [
       "Read(./.env)",
-      "Read(./.env.local)"
+      "Read(./.env.local)",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(git merge)",
+      "Bash(git merge *)",
+      "Bash(git reset --hard)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean)",
+      "Bash(git clean *)",
+      "Bash(git branch -D *)",
+      "Bash(git commit --no-verify)",
+      "Bash(git commit --no-verify *)",
+      "Bash(git commit -n)",
+      "Bash(git commit -n *)",
+      "Bash(rm -rf *)"
     ]
   }
 }

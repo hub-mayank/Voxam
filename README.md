@@ -12,3 +12,6 @@ Keys never go in the repo.
     python -m app.list_models            # pick GEMINI_MODEL from this list
     export GEMINI_MODEL=<name>; python -m app.score session.jsonl --llm gemini
     python scripts/compare.py marks.csv  # AI vs human: gap + correlation
+
+## Model benchmark
+    python scripts/bench_models.py gemini-2.5-flash gemini-3.5-flash --runs 3   # raw CSV -> results/

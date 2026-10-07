@@ -81,7 +81,7 @@ def score_once(llm, cfg, transcript, max_retries=2):
     system, user, errors = _system(cfg), _user(transcript), []
     for _ in range(max_retries + 1):
         try:
-            raw = llm.complete_json(system, user, max_tokens=2500)
+            raw = llm.complete_json(system, user, max_tokens=3000)
             validate(raw, cfg, transcript)
             return raw, errors
         except Exception as e:  # malformed JSON, bad citations, provider errors -> retry

@@ -1,0 +1,9 @@
+{
+  "provider": "stub",
+  "model": "n/a (arithmetic on measured files + stated assumptions)",
+  "date": "2026-10-08",
+  "git_sha": "754e4fa7b482ad230755d7f55ec313a446871c07",
+  "n": 18,
+  "n_unit": "derived quantities",
+  "note": "not measurements of a loaded system; inputs are in each row"
+}

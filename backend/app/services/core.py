@@ -133,3 +133,16 @@ def aggregate_scores(rows: list, rubric: list):
                       median_total=total_of(medians), total_spread=round(max(totals) - min(totals), 2), dimensions=dims,
                       feedback=[FeedbackLine(text=f["text"], evidence=list(f.get("evidence", []))) for f in (rep.feedback or [])])
     return scoring, any(r.low_confidence for r in rows), reasons
+
+
+def turns_to_events(turns: list, started_at: datetime) -> list:
+    """Stored turns -> the event dicts the scorer reads (t = seconds since the session started). Audit notes kept in
+    `meta` become system events again, because the scorer's confidence flags look for them."""
+    events = []
+    for t in turns:
+        events.append({"role": t.role, "text": t.text, "t": round((t.created_at - started_at).total_seconds(), 2), "phase": t.phase,
+                       "question_id": t.question_id, "action": t.action})
+        for note in ("classify_error", "bank_exhausted"):
+            if (t.meta or {}).get(note):
+                events.append({"role": "system", "action": note, "t": events[-1]["t"], "phase": t.phase})
+    return events

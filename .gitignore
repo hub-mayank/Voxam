@@ -7,3 +7,5 @@ session*.jsonl
 CLAUDE.local.md
 .claude/settings.local.json
 *.db
+*.db-wal
+*.db-shm

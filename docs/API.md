@@ -2,22 +2,33 @@
 
 Contract: `docs/openapi.json` (OpenAPI 3.1, generated, frozen at G0). Every operation has a description, every model an example. Generate a typed client from it, or browse `/docs` while the mock runs.
 
-## Run the mock backend
+## Two ways to run it
+**Mock backend** (static examples, no database, no secrets): every route returns its schema's example with header `X-Contract-Stub: 1`. Data does not change when you POST; path IDs are not looked up (any UUID works).
 ```
 cd backend && source .venv/bin/activate
-FACULTY_TOKENS="demo:demo-token-0123456789" CORS_ORIGINS="http://localhost:5173" \
+CONTRACT_STUB=1 FACULTY_TOKENS="demo:demo-token-0123456789" CORS_ORIGINS="http://localhost:5173" \
   python -m uvicorn app.api.main:app --port 8000
 ```
-Every route returns its schema's example, with header `X-Contract-Stub: 1`. IDs in paths are not looked up (any UUID works). Data is static: it does not change when you POST.
 - Faculty: `Authorization: Bearer demo-token-0123456789`. Student: any token starting `st_` (join returns one).
-- Make a stub fail: send `X-Mock-Error: <code>` (any code in the table below), e.g. `deadline_passed` on `/answer`.
-- `REQUIRE_ACCESS_CODE=false` lets join work without a code (local dev only; the code is required, D10).
-- Not built yet: the voice WebSocket (task T4). Build the text flow; voice will reuse the same session, token, timer and `turn.idx`.
+- Make any stub fail: send `X-Mock-Error: <code>` (any code in the table below), e.g. `deadline_passed` on `/answer`.
+
+**Real backend with seeded DEMO data** (SQLite file, real logic: sessions, timer, scoring view, overrides):
+```
+cd backend && source .venv/bin/activate
+export FACULTY_TOKENS="demo:demo-token-0123456789" CORS_ORIGINS="http://localhost:5173" \
+       ACCESS_CODE_PEPPER="dev-only-pepper-change-me" AUDIO_SIGNING_SECRET="dev-only-audio-secret"
+python ../scripts/seed_demo.py                        # once: prints the DEMO students' access codes
+python -m uvicorn app.api.main:app --port 8000
+```
+Everything seeded is fake and labelled DEMO (viva `demo-dsa`, students `DEMO001`..`DEMO006`, scores from a mock model). It shows every dashboard state: scored, low-confidence (needs review), overridden, in progress, joined-not-started. To start over delete `backend/viva_dev.db*` and reseed. The real backend refuses to start without `AUDIO_SIGNING_SECRET` (and `ACCESS_CODE_PEPPER` unless `REQUIRE_ACCESS_CODE=false`).
+
+Environment: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `CONTRACT_STUB`, `DATABASE_URL` (default local SQLite), `ACCESS_CODE_PEPPER`, `AUDIO_SIGNING_SECRET`, `LLM_CHAIN` (default `mock`; the interviewer's providers), `REQUIRE_ACCESS_CODE` (default true; the code is required, D10), `CODE_MAX_ATTEMPTS` (5) and `CODE_LOCKOUT_SECONDS` (900), `ANSWER_LEASE_SECONDS` (60).
+Not built yet: the voice WebSocket (task T4). Build the text flow; voice will reuse the same session, token, timer and `turn.idx`.
 
 ## Conventions
 - JSON everywhere except uploads (`multipart/form-data`, field `file`), the audio and the CSV export.
 - Timestamps: ISO-8601 UTC ending in `Z`. Durations: integer milliseconds, field names end in `_ms`.
-- Auth: `Authorization: Bearer <token>`. Missing, unknown or rotated token: **401**. Valid token, wrong role (student token on a faculty route or the reverse) or someone else's session: **403**. On 401 from a student route, rejoin.
+- Auth: `Authorization: Bearer <token>`. Missing, unknown or rotated token: **401**. (Real backend: a student token only works on its own session; another session's token is 403.) Valid token, wrong role (student token on a faculty route or the reverse) or someone else's session: **403**. On 401 from a student route, rejoin.
 - The reviewer name on an override comes from the faculty token. Never send it.
 - Lists: `{"items": [...]}`. Sessions are paginated: `?limit=&cursor=`, response has `next_cursor` (null = last page).
 - Statuses: `created, consented, in_progress, ended, scoring, scored, abandoned, failed`.
@@ -44,7 +55,7 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 | `range_not_satisfiable` | 416 | bad `Range` on audio |
 | `audio_not_available` | 404 | the session has no recording (text mode) |
 | `results_not_released` | 403 | student result requested before faculty released results |
-| `rate_limited` | 429 | `details.retry_after_ms` |
+| `rate_limited` | 429 | `details.retry_after_ms` (too many wrong access codes: the student is locked out for a while) |
 | `provider_unavailable` | 503 | LLM down; retry the same request |
 | `internal_error` | 500 | |
 

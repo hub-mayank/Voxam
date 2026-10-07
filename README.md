@@ -4,9 +4,9 @@ A fair, auditable 15-minute technical viva run by an AI interviewer (MSOT challe
 The code owns the clock and follow-up policy; the LLM only classifies answers and phrases replies.
 Scoring runs afterwards on the full transcript against a rubric, and every score cites transcript turns.
 
-Status: text-mode interviewer, scorer, provider adapters (Gemini, Ollama, mock) with retry/fallback,
-telemetry and a call cap are built. The HTTP API contract is frozen (`docs/openapi.json`) with stub handlers; the
-real handlers, voice and the dashboard are not built yet.
+Status: text-mode interviewer, scorer, provider adapters (Gemini, Ollama, mock) with retry/fallback, telemetry and a call
+cap are built. The HTTP API contract is frozen (`docs/openapi.json`) and implemented: a database-backed, restart-safe text
+viva with faculty review. Not built yet: the scoring worker, voice and the dashboard.
 
 ## Quick start
 Text mode runs fully offline with the mock LLM. It needs no Docker, database or API key.
@@ -20,15 +20,21 @@ Text mode runs fully offline with the mock LLM. It needs no Docker, database or 
     python -m app.cli --llm mock                     # text viva, writes session.jsonl
     python -m app.score session.jsonl --llm mock     # score it, writes score.json
 
-## API (contract phase: a mock backend)
+## API
     cd backend
-    FACULTY_TOKENS="demo:demo-token-0123456789" python -m uvicorn app.api.main:app --port 8000   # then open /docs
+    # mock backend for the frontend (static examples, no database):
+    CONTRACT_STUB=1 FACULTY_TOKENS="demo:demo-token-0123456789" python -m uvicorn app.api.main:app --port 8000   # then open /docs
+
+    # real backend with labelled DEMO data (SQLite file):
+    export FACULTY_TOKENS="demo:demo-token-0123456789" ACCESS_CODE_PEPPER="dev-only-pepper-change-me" AUDIO_SIGNING_SECRET="dev-only-audio-secret"
+    python ../scripts/seed_demo.py                  # prints the DEMO access codes
+    python -m uvicorn app.api.main:app --port 8000
 
     # from the repo root, after a contract or model change:
     python scripts/export_openapi.py                 # docs/openapi.json (the frozen contract)
     python scripts/export_schema.py                  # db/schema.sql (PostgreSQL DDL, generated from the models)
 
-Frontend guide: `docs/API.md`. Config env vars: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `REQUIRE_ACCESS_CODE` (default true).
+Frontend guide: `docs/API.md`. Contract changes after G0 are listed in `docs/CHANGELOG-api.md`.
 
 ## Real models
 Keys come from environment variables only, never from files in the repo (see `.env.example`).
@@ -53,7 +59,8 @@ Keys come from environment variables only, never from files in the repo (see `.e
 Results written under `results/` need a `.meta.json` sidecar (provider, model, date, git_sha, n); see `results/README.txt`.
 
 ## Layout
-    backend/app/       interviewer, clock, policy, scorer, config; llm/ adapters; telemetry.py; session_state.py; api/ (FastAPI)
+    backend/app/       interviewer, clock, policy, scorer, config; llm/ adapters; telemetry.py; session_state.py
+                       api/ (FastAPI routes and schemas), services/ (student and faculty logic), db/ (models)
     backend/tests/     offline tests and persona fixtures
     config/            viva config (phases, rubric) and a sample question bank
     backend/app/db/    SQLAlchemy models; db/schema.sql is generated from them

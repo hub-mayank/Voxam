@@ -518,3 +518,46 @@ def test_replaying_the_stored_transcript_reproduces_every_ai_turn(env):
             assert (event["text"], event["action"], event["question_id"], event["phase"]) == (ai.text, ai.action, ai.question_id, ai.phase), ai.idx
             checked += 1
         assert checked >= 15
+
+
+# ---------- trying to break it ----------
+
+def test_answer_input_limits_and_unicode(env):
+    app, client, clock, codes, _ = env
+    sid, h = begin(client, codes["S1"])
+    clock.advance(30)
+    assert answer(client, sid, h, 1, text="").status_code == 422
+    assert answer(client, sid, h, 1, text="x" * 4001).status_code == 422
+    assert client.post(f"/student/sessions/{sid}/answer", headers=h, json={"text": "hi", "client_seq": 1, "t_start_ms": -5}).status_code == 422
+    assert client.post(f"/student/sessions/{sid}/answer", headers=h, content=b"not json").status_code == 422
+    hinglish = "Hash table ek data structure hai jo key ko index se map karta hai 🙂 — collision handle karne ke liye chaining use hoti hai"
+    r = answer(client, sid, h, 1, text=hinglish)
+    assert r.status_code == 200
+    assert client.get(f"/faculty/sessions/{sid}", headers=RAO).json()["turns"][1]["text"] == hinglish
+    assert answer(client, sid, h, 2, text="x" * 4000).status_code == 200, "exactly at the limit is fine"
+
+
+def test_twenty_students_at_once_on_sqlite(tmp_path):
+    from fastapi.testclient import TestClient
+    app, client, clock = build(tmp_path, llm=lambda spec: SlowMock(0.01))
+    ids = tuple(f"S{i:02d}" for i in range(20))
+    codes = make_viva(client, students=ids)
+    results, errors = {}, []
+
+    def one(student):
+        try:
+            c = TestClient(app)
+            sid, h = begin(c, codes[student], student)
+            codes_seen = [answer(c, sid, h, seq).status_code for seq in range(1, 6)]
+            results[student] = (sid, codes_seen)
+        except Exception as e:
+            errors.append((student, repr(e)))
+
+    ts = [threading.Thread(target=one, args=(s,)) for s in ids]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert not errors, errors
+    assert all(c == [200] * 5 for _, c in results.values()), {s: c for s, (_, c) in results.items() if c != [200] * 5}
+    for student, (sid, _) in results.items():
+        rows = turns(app, sid)
+        assert [r[0] for r in rows] == list(range(len(rows))) and len(rows) == 11, student

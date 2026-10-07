@@ -1,0 +1,51 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Voice transport probe</title>
+<style>body{font:14px system-ui;margin:2rem;max-width:46rem}pre{background:#f4f4f4;padding:1rem;overflow:auto}button{font-size:1rem;padding:.4rem .8rem;margin-right:.5rem}</style>
+<h3>Browser PCM streaming probe (spike, not product UI)</h3>
+<p>Captures audio with an AudioWorklet, downsamples to 16 kHz PCM16, streams it over a WebSocket, plays back what the server sends.
+<b>Synthetic source</b> plays /sample.wav into the worklet (no microphone needed). <b>Microphone</b> uses getUserMedia.</p>
+<button id="synth">Synthetic source</button><button id="mic">Microphone</button>
+<pre id="log">idle</pre>
+<script>
+const log = (...a) => { document.getElementById('log').textContent += '\n' + a.join(' '); };
+const R = window.__result = { frames: 0, bytes: 0, events: [], audioBytes: 0, firstAudioMs: null, worklet: false, sampleRate: null, mic: null, error: null };
+const workletSrc = `
+class Down extends AudioWorkletProcessor {
+  constructor(){ super(); this.ratio = sampleRate / 16000; this.pos = 0; this.out = []; }
+  process(inputs){
+    const ch = inputs[0][0]; if (!ch) return true;
+    for (let i = 0; i < ch.length; i++) {            // naive decimation after a 1-pole low-pass: fine for a transport probe
+      this.last = (this.last ?? ch[i]) * 0.5 + ch[i] * 0.5;
+      this.pos += 1;
+      if (this.pos >= this.ratio) { this.pos -= this.ratio; this.out.push(Math.max(-1, Math.min(1, this.last)) * 32767 | 0); }
+    }
+    while (this.out.length >= 320) { this.port.postMessage(new Int16Array(this.out.splice(0, 320))); }   // 20 ms frames
+    return true;
+  }
+}
+registerProcessor('down', Down);`;
+async function run(useMic) {
+  try {
+    const ctx = new AudioContext(); R.sampleRate = ctx.sampleRate;
+    await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([workletSrc], { type: 'text/javascript' }))); R.worklet = true;
+    const node = new AudioWorkletNode(ctx, 'down');
+    const ws = new WebSocket(`ws://${location.host}/voice`); ws.binaryType = 'arraybuffer';
+    await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error('websocket failed')); });
+    let tEnd = null, queue = [];
+    ws.onmessage = (m) => {
+      if (typeof m.data === 'string') { const ev = JSON.parse(m.data); R.events.push(ev.type); if (ev.type === 'endpoint') tEnd = performance.now(); return; }
+      R.audioBytes += m.data.byteLength; if (R.firstAudioMs === null && tEnd) R.firstAudioMs = Math.round(performance.now() - tEnd);
+    };
+    node.port.onmessage = (e) => { if (ws.readyState === 1) { ws.send(e.data.buffer); R.frames++; R.bytes += e.data.byteLength; } };
+    let src;
+    if (useMic) { try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); R.mic = 'granted'; src = ctx.createMediaStreamSource(s); } catch (e) { R.mic = 'denied: ' + e.name; throw e; } }
+    else { const buf = await ctx.decodeAudioData(await (await fetch('/sample.wav')).arrayBuffer()); src = ctx.createBufferSource(); src.buffer = buf; src.start(); }
+    src.connect(node);
+    log('streaming...', 'sampleRate', ctx.sampleRate);
+    setTimeout(() => { log('done', JSON.stringify(R)); R.done = true; }, 9000);
+  } catch (e) { R.error = String(e); log('error', e); R.done = true; }
+}
+document.getElementById('synth').onclick = () => run(false);
+document.getElementById('mic').onclick = () => run(true);
+</script>

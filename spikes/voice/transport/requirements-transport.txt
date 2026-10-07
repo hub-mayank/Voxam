@@ -1,0 +1,6 @@
+# Isolated venvs for the transport proofs (separate from the spike venv: they pull their own onnxruntime/openai/protobuf versions).
+# Pipecat:  python3 -m venv spikes/voice/transport/.venv         && spikes/voice/transport/.venv/bin/pip install "pipecat-ai[websocket]"
+# LiveKit:  python3 -m venv spikes/voice/transport/livekit/.venv && spikes/voice/transport/livekit/.venv/bin/pip install livekit livekit-agents
+pipecat-ai[websocket]
+livekit
+livekit-agents

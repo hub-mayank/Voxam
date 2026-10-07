@@ -21,3 +21,10 @@ class FasterWhisper:
                                                condition_on_previous_text=False, vad_filter=False, without_timestamps=True)
         text = " ".join(s.text.strip() for s in segments).strip()
         return text, now() - t
+
+    def transcribe_auto(self, audio: np.ndarray):
+        """Let the model detect the language (it may pick Hindi for Hinglish and answer in Devanagari)."""
+        t = now()
+        segments, info = self.model.transcribe(audio, language=None, beam_size=self.beam, temperature=0.0, condition_on_previous_text=False,
+                                               vad_filter=False, without_timestamps=True)
+        return " ".join(s.text.strip() for s in segments).strip(), now() - t

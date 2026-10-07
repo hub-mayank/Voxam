@@ -456,6 +456,8 @@
           "bad_client_seq",
           "rules_version_mismatch",
           "range_not_satisfiable",
+          "audio_not_available",
+          "results_not_released",
           "rate_limited",
           "provider_unavailable",
           "internal_error"
@@ -1038,6 +1040,38 @@
         "title": "QuestionType",
         "type": "string"
       },
+      "RescoreResult": {
+        "description": "A scoring job was queued for the session (the worker picks it up).",
+        "examples": [
+          {
+            "job_status": "queued",
+            "session_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+            "status": "ended"
+          }
+        ],
+        "properties": {
+          "job_status": {
+            "description": "queued.",
+            "title": "Job Status",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "job_status"
+        ],
+        "title": "RescoreResult",
+        "type": "object"
+      },
       "ResetCodeResult": {
         "description": "A fresh access code. The previous code stops working immediately. Shown once.",
         "examples": [
@@ -1072,6 +1106,100 @@
           "issued_at"
         ],
         "title": "ResetCodeResult",
+        "type": "object"
+      },
+      "ReviewEntry": {
+        "description": "One logged review. The reviewer comes from the token.",
+        "examples": [
+          {
+            "at": "2026-10-13T08:10:00Z",
+            "id": 1,
+            "note": "Listened to the audio; the AI mark is fair.",
+            "reviewer": "dr-iyer"
+          }
+        ],
+        "properties": {
+          "at": {
+            "description": "ISO-8601 UTC, always ending in Z.",
+            "examples": [
+              "2026-10-12T05:30:12Z"
+            ],
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "reviewer": {
+            "title": "Reviewer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reviewer",
+          "note",
+          "at"
+        ],
+        "title": "ReviewEntry",
+        "type": "object"
+      },
+      "ReviewRequest": {
+        "additionalProperties": false,
+        "description": "Mark a low-confidence (or any) result as reviewed, without changing the mark.",
+        "examples": [
+          {
+            "note": "Listened to the audio; the AI mark is fair."
+          }
+        ],
+        "properties": {
+          "note": {
+            "description": "What was checked.",
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "ReviewRequest",
+        "type": "object"
+      },
+      "ReviewResult": {
+        "description": "The logged review and the session's resulting review flag.",
+        "examples": [
+          {
+            "needs_review": false,
+            "review": {
+              "at": "2026-10-13T08:10:00Z",
+              "id": 1,
+              "note": "Listened to the audio; the AI mark is fair.",
+              "reviewer": "dr-iyer"
+            }
+          }
+        ],
+        "properties": {
+          "needs_review": {
+            "title": "Needs Review",
+            "type": "boolean"
+          },
+          "review": {
+            "$ref": "#/components/schemas/ReviewEntry"
+          }
+        },
+        "required": [
+          "review",
+          "needs_review"
+        ],
+        "title": "ReviewResult",
         "type": "object"
       },
       "RosterEntry": {
@@ -1497,6 +1625,14 @@
                 "reviewer": "dr-rao"
               }
             ],
+            "reviews": [
+              {
+                "at": "2026-10-13T08:10:00Z",
+                "id": 1,
+                "note": "Listened to the audio; the AI mark is fair.",
+                "reviewer": "dr-iyer"
+              }
+            ],
             "rules_version": "rules-v1",
             "scoring": {
               "dimensions": [
@@ -1629,6 +1765,7 @@
                 "action": "open",
                 "idx": 0,
                 "phase": "warmup",
+                "prompt_version": "interviewer-v1",
                 "question_id": "opener",
                 "role": "ai",
                 "t_end_ms": 6200,
@@ -1649,6 +1786,7 @@
                 "action": "new_question",
                 "idx": 2,
                 "phase": "fundamentals",
+                "prompt_version": "interviewer-v1",
                 "question_id": "q001",
                 "role": "ai",
                 "t_end_ms": 19800,
@@ -1668,7 +1806,9 @@
               {
                 "action": "hint",
                 "idx": 4,
+                "model": "gemini-3.5-flash",
                 "phase": "fundamentals",
+                "prompt_version": "interviewer-v1",
                 "question_id": "q001",
                 "role": "ai",
                 "t_end_ms": 56000,
@@ -1689,6 +1829,7 @@
                 "action": "new_question",
                 "idx": 6,
                 "phase": "applied",
+                "prompt_version": "interviewer-v1",
                 "question_id": "q101",
                 "role": "ai",
                 "t_end_ms": 646000,
@@ -1804,6 +1945,7 @@
             "type": "array"
           },
           "needs_review": {
+            "description": "low_confidence and neither a review nor an override has been logged.",
             "title": "Needs Review",
             "type": "boolean"
           },
@@ -1813,6 +1955,14 @@
               "$ref": "#/components/schemas/OverrideEntry"
             },
             "title": "Overrides",
+            "type": "array"
+          },
+          "reviews": {
+            "description": "Oldest first.",
+            "items": {
+              "$ref": "#/components/schemas/ReviewEntry"
+            },
+            "title": "Reviews",
             "type": "array"
           },
           "rules_version": {
@@ -1899,6 +2049,7 @@
           "needs_review",
           "audio",
           "overrides",
+          "reviews",
           "integrity_events"
         ],
         "title": "SessionDetail",
@@ -2041,7 +2192,7 @@
             "type": "boolean"
           },
           "needs_review": {
-            "description": "low_confidence and no override yet. Clear it by posting an override (new_total may equal the AI total).",
+            "description": "low_confidence and neither a review (POST .../review) nor an override has been logged.",
             "title": "Needs Review",
             "type": "boolean"
           },
@@ -2279,6 +2430,129 @@
         "title": "StatusResponse",
         "type": "object"
       },
+      "StudentDimension": {
+        "description": "One rubric dimension in the student's result.",
+        "examples": [
+          {
+            "key": "conceptual",
+            "score": 4,
+            "weight": 30
+          }
+        ],
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "score": {
+            "description": "0-5.",
+            "title": "Score",
+            "type": "number"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "weight",
+          "score"
+        ],
+        "title": "StudentDimension",
+        "type": "object"
+      },
+      "StudentResult": {
+        "description": "The student's own result. Only available when faculty released results for the viva.",
+        "examples": [
+          {
+            "dimensions": [
+              {
+                "key": "conceptual",
+                "score": 4,
+                "weight": 30
+              },
+              {
+                "key": "depth",
+                "score": 3,
+                "weight": 25
+              },
+              {
+                "key": "problem",
+                "score": 3,
+                "weight": 20
+              },
+              {
+                "key": "practical",
+                "score": 4,
+                "weight": 15
+              },
+              {
+                "key": "communication",
+                "score": 4,
+                "weight": 10
+              }
+            ],
+            "feedback": [
+              {
+                "evidence": [
+                  3
+                ],
+                "text": "Good grasp of collision handling; add load-factor and resizing next time."
+              },
+              {
+                "evidence": [
+                  5
+                ],
+                "text": "Say why you chose a design, not just what it is."
+              },
+              {
+                "evidence": [
+                  7
+                ],
+                "text": "Isolate the database before blaming the network when debugging slow APIs."
+              }
+            ],
+            "overridden": true,
+            "total": 78.0
+          }
+        ],
+        "properties": {
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/StudentDimension"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "feedback": {
+            "description": "3-5 lines.",
+            "items": {
+              "$ref": "#/components/schemas/FeedbackLine"
+            },
+            "title": "Feedback",
+            "type": "array"
+          },
+          "overridden": {
+            "description": "True when faculty changed the mark; dimension scores are then the AI's.",
+            "title": "Overridden",
+            "type": "boolean"
+          },
+          "total": {
+            "description": "Final mark out of 100: the faculty override if there is one, else the AI mark.",
+            "title": "Total",
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "overridden",
+          "dimensions",
+          "feedback"
+        ],
+        "title": "StudentResult",
+        "type": "object"
+      },
       "Turn": {
         "description": "One spoken turn. `idx` counts spoken turns from 0 and is the number scoring evidence refers to.",
         "examples": [
@@ -2310,9 +2584,33 @@
             "title": "Idx",
             "type": "integer"
           },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "AI turns: the model that served the call(s) behind this turn (visible fallbacks). Null for canned turns (opener, closing, bank questions) and student turns.",
+            "title": "Model"
+          },
           "phase": {
             "title": "Phase",
             "type": "string"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "AI turns: interviewer prompt version in force. Null for student turns.",
+            "title": "Prompt Version"
           },
           "quality": {
             "anyOf": [
@@ -2420,6 +2718,7 @@
             "difficulty": "medium",
             "id": "dsa-midterm-2026",
             "question_count": 10,
+            "results_visible_to_students": false,
             "roster_count": 3,
             "rules_version": "rules-v1",
             "session_counts": {
@@ -2465,6 +2764,10 @@
             "title": "Question Count",
             "type": "integer"
           },
+          "results_visible_to_students": {
+            "title": "Results Visible To Students",
+            "type": "boolean"
+          },
           "roster_count": {
             "title": "Roster Count",
             "type": "integer"
@@ -2507,6 +2810,7 @@
           "created_by",
           "created_at",
           "rules_version",
+          "results_visible_to_students",
           "config",
           "question_count",
           "roster_count",
@@ -2602,6 +2906,7 @@
         "examples": [
           {
             "difficulty": "medium",
+            "results_visible_to_students": false,
             "subject": "Data Structures and Algorithms",
             "title": "DSA mid-term viva",
             "topics": [
@@ -2615,6 +2920,12 @@
         "properties": {
           "difficulty": {
             "$ref": "#/components/schemas/Difficulty"
+          },
+          "results_visible_to_students": {
+            "default": false,
+            "description": "Whether students may fetch their result (GET /student/sessions/{sid}/result). Change later with PATCH.",
+            "title": "Results Visible To Students",
+            "type": "boolean"
           },
           "subject": {
             "maxLength": 120,
@@ -2704,6 +3015,7 @@
                 "difficulty": "medium",
                 "id": "dsa-midterm-2026",
                 "question_count": 10,
+                "results_visible_to_students": false,
                 "roster_count": 3,
                 "rules_version": "rules-v1",
                 "session_counts": {
@@ -2735,6 +3047,31 @@
           "items"
         ],
         "title": "VivaList",
+        "type": "object"
+      },
+      "VivaUpdate": {
+        "additionalProperties": false,
+        "description": "Change a viva after creation. Only the fields you send change.",
+        "examples": [
+          {
+            "results_visible_to_students": true
+          }
+        ],
+        "properties": {
+          "results_visible_to_students": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Release (true) or hide (false) student results.",
+            "title": "Results Visible To Students"
+          }
+        },
+        "title": "VivaUpdate",
         "type": "object"
       }
     },
@@ -3028,6 +3365,15 @@
             "content": {
               "application/json": {
                 "examples": {
+                  "audio_not_available": {
+                    "value": {
+                      "error": {
+                        "code": "audio_not_available",
+                        "details": {},
+                        "message": "This session has no recording (text mode, or not uploaded yet)."
+                      }
+                    }
+                  },
                   "not_found": {
                     "value": {
                       "error": {
@@ -3045,7 +3391,7 @@
                 }
               }
             },
-            "description": "`not_found`: No such viva, session, student or audio."
+            "description": "`not_found`: No such viva, session, student or audio. `audio_not_available`: This session has no recording (text mode, or not uploaded yet)."
           },
           "416": {
             "content": {
@@ -3284,6 +3630,348 @@
           }
         ],
         "summary": "Override a mark",
+        "tags": [
+          "faculty"
+        ]
+      }
+    },
+    "/faculty/sessions/{sid}/rescore": {
+      "post": {
+        "description": "Only from `failed` or `scored` (409 `invalid_state` otherwise). The session goes back to `ended` and a scoring\njob is queued; the worker produces new runs. Earlier overrides and reviews stay in the history.",
+        "operationId": "rescore_session",
+        "parameters": [
+          {
+            "description": "Session ID (UUID).",
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "description": "Session ID (UUID).",
+              "examples": [
+                "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+              ],
+              "format": "uuid",
+              "title": "Sid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RescoreResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "details": {
+                          "reason": "missing_token"
+                        },
+                        "message": "Missing, malformed, unknown or replaced token."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`unauthorized`: Missing, malformed, unknown or replaced token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "error": {
+                        "code": "forbidden",
+                        "details": {},
+                        "message": "The token is valid but not allowed here (wrong role or someone else's session)."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`forbidden`: The token is valid but not allowed here (wrong role or someone else's session)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "details": {
+                          "resource": "viva"
+                        },
+                        "message": "No such viva, session, student or audio."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`not_found`: No such viva, session, student or audio."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalid_state": {
+                    "value": {
+                      "error": {
+                        "code": "invalid_state",
+                        "details": {
+                          "required_status": "consented",
+                          "status": "created"
+                        },
+                        "message": "The action is not allowed in the current state."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`invalid_state`: The action is not allowed in the current state."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "validation_error": {
+                    "value": {
+                      "error": {
+                        "code": "validation_error",
+                        "details": {
+                          "fields": [
+                            {
+                              "loc": [
+                                "body",
+                                "text"
+                              ],
+                              "message": "Field required"
+                            }
+                          ]
+                        },
+                        "message": "The request body, query or path failed validation."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`validation_error`: The request body, query or path failed validation."
+          }
+        },
+        "security": [
+          {
+            "FacultyToken": []
+          }
+        ],
+        "summary": "Queue the session for scoring again",
+        "tags": [
+          "faculty"
+        ]
+      }
+    },
+    "/faculty/sessions/{sid}/review": {
+      "post": {
+        "description": "Clears the mandatory-review flag (`needs_review`) without changing the mark. Logged with the reviewer (from the\ntoken), a note and a timestamp; shown in `reviews`. Only for `scored` or `failed` sessions (409 `invalid_state`).",
+        "operationId": "review_session",
+        "parameters": [
+          {
+            "description": "Session ID (UUID).",
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "description": "Session ID (UUID).",
+              "examples": [
+                "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+              ],
+              "format": "uuid",
+              "title": "Sid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "details": {
+                          "reason": "missing_token"
+                        },
+                        "message": "Missing, malformed, unknown or replaced token."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`unauthorized`: Missing, malformed, unknown or replaced token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "error": {
+                        "code": "forbidden",
+                        "details": {},
+                        "message": "The token is valid but not allowed here (wrong role or someone else's session)."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`forbidden`: The token is valid but not allowed here (wrong role or someone else's session)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "details": {
+                          "resource": "viva"
+                        },
+                        "message": "No such viva, session, student or audio."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`not_found`: No such viva, session, student or audio."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalid_state": {
+                    "value": {
+                      "error": {
+                        "code": "invalid_state",
+                        "details": {
+                          "required_status": "consented",
+                          "status": "created"
+                        },
+                        "message": "The action is not allowed in the current state."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`invalid_state`: The action is not allowed in the current state."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "validation_error": {
+                    "value": {
+                      "error": {
+                        "code": "validation_error",
+                        "details": {
+                          "fields": [
+                            {
+                              "loc": [
+                                "body",
+                                "text"
+                              ],
+                              "message": "Field required"
+                            }
+                          ]
+                        },
+                        "message": "The request body, query or path failed validation."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`validation_error`: The request body, query or path failed validation."
+          }
+        },
+        "security": [
+          {
+            "FacultyToken": []
+          }
+        ],
+        "summary": "Mark a result as reviewed",
         "tags": [
           "faculty"
         ]
@@ -3629,6 +4317,155 @@
           }
         ],
         "summary": "Get one viva",
+        "tags": [
+          "faculty"
+        ]
+      },
+      "patch": {
+        "description": "Only `results_visible_to_students` can change after creation (release or hide student results).",
+        "operationId": "update_viva",
+        "parameters": [
+          {
+            "description": "Viva ID (slug).",
+            "in": "path",
+            "name": "viva_id",
+            "required": true,
+            "schema": {
+              "description": "Viva ID (slug).",
+              "examples": [
+                "dsa-midterm-2026"
+              ],
+              "title": "Viva Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VivaUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Viva"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "details": {
+                          "reason": "missing_token"
+                        },
+                        "message": "Missing, malformed, unknown or replaced token."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`unauthorized`: Missing, malformed, unknown or replaced token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "error": {
+                        "code": "forbidden",
+                        "details": {},
+                        "message": "The token is valid but not allowed here (wrong role or someone else's session)."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`forbidden`: The token is valid but not allowed here (wrong role or someone else's session)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "details": {
+                          "resource": "viva"
+                        },
+                        "message": "No such viva, session, student or audio."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`not_found`: No such viva, session, student or audio."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "validation_error": {
+                    "value": {
+                      "error": {
+                        "code": "validation_error",
+                        "details": {
+                          "fields": [
+                            {
+                              "loc": [
+                                "body",
+                                "text"
+                              ],
+                              "message": "Field required"
+                            }
+                          ]
+                        },
+                        "message": "The request body, query or path failed validation."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`validation_error`: The request body, query or path failed validation."
+          }
+        },
+        "security": [
+          {
+            "FacultyToken": []
+          }
+        ],
+        "summary": "Update a viva",
         "tags": [
           "faculty"
         ]
@@ -5348,6 +6185,181 @@
           }
         ],
         "summary": "Accept the rules and recording",
+        "tags": [
+          "student"
+        ]
+      }
+    },
+    "/student/sessions/{sid}/result": {
+      "get": {
+        "description": "Total, dimension scores and 3-5 feedback lines. 403 `results_not_released` until faculty release results for the\nviva (`results_visible_to_students`); 409 `invalid_state` if the session is not scored yet.",
+        "operationId": "student_result",
+        "parameters": [
+          {
+            "description": "Session ID (UUID) from join.",
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "description": "Session ID (UUID) from join.",
+              "examples": [
+                "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+              ],
+              "format": "uuid",
+              "title": "Sid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "details": {
+                          "reason": "missing_token"
+                        },
+                        "message": "Missing, malformed, unknown or replaced token."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`unauthorized`: Missing, malformed, unknown or replaced token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "error": {
+                        "code": "forbidden",
+                        "details": {},
+                        "message": "The token is valid but not allowed here (wrong role or someone else's session)."
+                      }
+                    }
+                  },
+                  "results_not_released": {
+                    "value": {
+                      "error": {
+                        "code": "results_not_released",
+                        "details": {},
+                        "message": "Faculty have not released results for this viva yet."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`forbidden`: The token is valid but not allowed here (wrong role or someone else's session). `results_not_released`: Faculty have not released results for this viva yet."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "details": {
+                          "resource": "viva"
+                        },
+                        "message": "No such viva, session, student or audio."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`not_found`: No such viva, session, student or audio."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalid_state": {
+                    "value": {
+                      "error": {
+                        "code": "invalid_state",
+                        "details": {
+                          "required_status": "consented",
+                          "status": "created"
+                        },
+                        "message": "The action is not allowed in the current state."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`invalid_state`: The action is not allowed in the current state."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "validation_error": {
+                    "value": {
+                      "error": {
+                        "code": "validation_error",
+                        "details": {
+                          "fields": [
+                            {
+                              "loc": [
+                                "body",
+                                "text"
+                              ],
+                              "message": "Field required"
+                            }
+                          ]
+                        },
+                        "message": "The request body, query or path failed validation."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`validation_error`: The request body, query or path failed validation."
+          }
+        },
+        "security": [
+          {
+            "StudentToken": []
+          }
+        ],
+        "summary": "The student's own result",
         "tags": [
           "student"
         ]

@@ -7,8 +7,9 @@ from ..session_state import SessionStatus
 from .auth import faculty_scheme, require_faculty
 from .errors import ApiError, ErrorCode, error_responses
 from .schemas.common import example_of
-from .schemas.faculty import (OverrideRequest, OverrideResult, QuestionList, ResetCodeResult, RosterList,
-                              RosterUploadResult, SessionDetail, SessionList, Viva, VivaCreate, VivaList)
+from .schemas.faculty import (OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest,
+                              ReviewResult, RosterList, RosterUploadResult, SessionDetail, SessionList, Viva, VivaCreate,
+                              VivaList, VivaUpdate)
 from .stub import byte_range, silent_wav, stub_marker
 
 AUTH = (ErrorCode.unauthorized, ErrorCode.forbidden)
@@ -38,6 +39,13 @@ def list_vivas():
 @router.get("/vivas/{viva_id}", response_model=Viva, summary="Get one viva",
             responses=error_responses(*AUTH, ErrorCode.not_found))
 def get_viva(viva_id: str = VIVA):
+    return example_of(Viva)
+
+
+@router.patch("/vivas/{viva_id}", response_model=Viva, summary="Update a viva",
+              responses=error_responses(*AUTH, ErrorCode.not_found, ErrorCode.validation_error))
+def update_viva(body: VivaUpdate, viva_id: str = VIVA):
+    """Only `results_visible_to_students` can change after creation (release or hide student results)."""
     return example_of(Viva)
 
 
@@ -119,6 +127,24 @@ def override_session(body: OverrideRequest, sid: UUID = SID, faculty=Depends(req
     return result
 
 
+@router.post("/sessions/{sid}/review", response_model=ReviewResult, status_code=201, summary="Mark a result as reviewed",
+             responses=error_responses(*AUTH, ErrorCode.not_found, ErrorCode.validation_error, ErrorCode.invalid_state))
+def review_session(body: ReviewRequest, sid: UUID = SID, faculty=Depends(require_faculty)):
+    """Clears the mandatory-review flag (`needs_review`) without changing the mark. Logged with the reviewer (from the
+    token), a note and a timestamp; shown in `reviews`. Only for `scored` or `failed` sessions (409 `invalid_state`)."""
+    result = example_of(ReviewResult)
+    result.review.reviewer = faculty.reviewer
+    return result
+
+
+@router.post("/sessions/{sid}/rescore", response_model=RescoreResult, status_code=202, summary="Queue the session for scoring again",
+             responses=error_responses(*AUTH, ErrorCode.not_found, ErrorCode.invalid_state))
+def rescore_session(sid: UUID = SID):
+    """Only from `failed` or `scored` (409 `invalid_state` otherwise). The session goes back to `ended` and a scoring
+    job is queued; the worker produces new runs. Earlier overrides and reviews stay in the history."""
+    return example_of(RescoreResult)
+
+
 @router.get("/vivas/{viva_id}/export.csv", summary="Export marks as CSV (optional feature)",
             responses={200: {"description": "One row per session. Columns: student_id, name, status, ai_total, "
                              "effective_total, overridden, low_confidence, needs_review, one column per rubric "
@@ -144,7 +170,7 @@ def audio_access(request: Request, exp: Optional[int] = Query(None, description=
                   response_class=Response, dependencies=[Depends(audio_access)],
                   responses={200: {"description": "The whole recording.", "content": {"audio/wav": {"schema": {"type": "string", "format": "binary"}}}},
                              206: {"description": "Partial content for a `Range: bytes=a-b` request.", "content": {"audio/wav": {"schema": {"type": "string", "format": "binary"}}}},
-                             **error_responses(*AUTH, ErrorCode.not_found, ErrorCode.range_not_satisfiable)})
+                             **error_responses(*AUTH, ErrorCode.not_found, ErrorCode.audio_not_available, ErrorCode.range_not_satisfiable)})
 def get_session_audio(request: Request, sid: UUID = SID):
     """The recording. **Supports HTTP `Range`** (single `bytes=start-end` range -> 206 with `Content-Range`;
     `Accept-Ranges: bytes` always), which is what makes click-to-seek work in an `<audio>` element.

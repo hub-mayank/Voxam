@@ -34,6 +34,7 @@ class Viva(Base):
     topics: Mapped[list] = mapped_column(JsonType)
     difficulty: Mapped[str] = mapped_column(String)
     rules_version: Mapped[str] = mapped_column(String)
+    results_visible_to_students: Mapped[bool] = mapped_column(Boolean, default=False)
     config: Mapped[dict] = mapped_column(JsonType)  # phases, rubric, versions the engine runs
     created_by: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)

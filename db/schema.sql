@@ -7,6 +7,7 @@ CREATE TABLE vivas (
 	topics JSONB NOT NULL, 
 	difficulty VARCHAR NOT NULL, 
 	rules_version VARCHAR NOT NULL, 
+	results_visible_to_students BOOLEAN NOT NULL, 
 	config JSONB NOT NULL, 
 	created_by VARCHAR NOT NULL, 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 

@@ -6,7 +6,7 @@ from .auth import require_student
 from .errors import ApiError, ErrorCode, error_responses
 from .schemas.common import example_of
 from .schemas.student import (AnswerRequest, AnswerResponse, ConsentRequest, ConsentResponse, JoinRequest,
-                              JoinResponse, StartResponse, StatusResponse)
+                              JoinResponse, StartResponse, StatusResponse, StudentResult)
 from .stub import stub_marker
 
 AUTH = (ErrorCode.unauthorized, ErrorCode.forbidden)
@@ -67,6 +67,14 @@ def student_status(sid: UUID = SID):
     """Poll for the timer: `remaining_ms` is computed from the server clock; show `server_now` skew-corrected.
     After a reload or rejoin use `current_turn` and `last_client_seq` to resume."""
     return example_of(StatusResponse)
+
+
+@router.get("/sessions/{sid}/result", response_model=StudentResult, summary="The student's own result",
+            responses=error_responses(*AUTH, ErrorCode.not_found, ErrorCode.results_not_released, ErrorCode.invalid_state))
+def student_result(sid: UUID = SID):
+    """Total, dimension scores and 3-5 feedback lines. 403 `results_not_released` until faculty release results for the
+    viva (`results_visible_to_students`); 409 `invalid_state` if the session is not scored yet."""
+    return example_of(StudentResult)
 
 
 # Voice (WebSocket) is reserved and NOT part of this contract yet: see the API description (task T4).

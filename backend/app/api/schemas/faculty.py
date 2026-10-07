@@ -31,9 +31,18 @@ class VivaCreate(ApiRequest):
     subject: str = Field(min_length=1, max_length=120)
     topics: list[str] = Field(min_length=1, description="Topics the bank covers.")
     difficulty: Difficulty
+    results_visible_to_students: bool = Field(False, description="Whether students may fetch their result "
+                                                                 "(GET /student/sessions/{sid}/result). Change later with PATCH.")
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "viva_id": "dsa-midterm-2026", "title": "DSA mid-term viva", "subject": "Data Structures and Algorithms",
-        "topics": ["hash-tables", "complexity", "databases"], "difficulty": "medium"}]})
+        "topics": ["hash-tables", "complexity", "databases"], "difficulty": "medium",
+        "results_visible_to_students": False}]})
+
+
+class VivaUpdate(ApiRequest):
+    """Change a viva after creation. Only the fields you send change."""
+    results_visible_to_students: Optional[bool] = Field(None, description="Release (true) or hide (false) student results.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{"results_visible_to_students": True}]})
 
 
 class PhaseInfo(ApiResponse):
@@ -81,6 +90,7 @@ class Viva(ApiResponse):
     created_by: str = Field(description="Reviewer name of the faculty token that created it.")
     created_at: UtcDatetime
     rules_version: str = Field(description="Version of the rules text students must accept.")
+    results_visible_to_students: bool
     config: VivaConfigView
     question_count: int
     roster_count: int
@@ -88,7 +98,7 @@ class Viva(ApiResponse):
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "id": "dsa-midterm-2026", "title": "DSA mid-term viva", "subject": "Data Structures and Algorithms",
         "topics": ["hash-tables", "complexity", "databases"], "difficulty": "medium", "created_by": "dr-rao",
-        "created_at": "2026-10-09T09:00:00Z", "rules_version": "rules-v1",
+        "created_at": "2026-10-09T09:00:00Z", "rules_version": "rules-v1", "results_visible_to_students": False,
         "config": VivaConfigView.model_config["json_schema_extra"]["examples"][0],
         "question_count": 10, "roster_count": 3, "session_counts": {"scored": 1, "in_progress": 1, "created": 1}}]})
 
@@ -208,8 +218,7 @@ class SessionSummary(ApiResponse):
     effective_total: Optional[float] = Field(None, description="The latest override's new_total, else ai_total.")
     overridden: bool
     low_confidence: bool
-    needs_review: bool = Field(description="low_confidence and no override yet. Clear it by posting an override "
-                                           "(new_total may equal the AI total).")
+    needs_review: bool = Field(description="low_confidence and neither a review (POST .../review) nor an override has been logged.")
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "session_id": SESSION_ID, "student_id": "S2024001", "student_name": "Asha Verma", "status": "scored",
         "started_at": "2026-10-12T05:30:12Z", "ended_at": "2026-10-12T05:44:58Z", "ai_total": 71.0,
@@ -239,10 +248,13 @@ class Turn(ApiResponse):
     question_id: Optional[str] = None
     action: Optional[str] = Field(None, description="Why the AI said this (ask, followup, hint, move_on, redirect, close...). AI turns only.")
     quality: Optional[str] = Field(None, description="Interviewer's live classification of a student answer: strong, partial, none, offtopic.")
+    model: Optional[str] = Field(None, description="AI turns: the model that served the call(s) behind this turn (visible fallbacks). "
+                                                   "Null for canned turns (opener, closing, bank questions) and student turns.")
+    prompt_version: Optional[str] = Field(None, description="AI turns: interviewer prompt version in force. Null for student turns.")
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "idx": 3, "role": "student", "text": "A hash function maps the key to an index, and collisions use chaining.",
         "t_start_ms": 41200, "t_end_ms": 52800, "phase": "fundamentals", "question_id": "q001",
-        "action": None, "quality": "partial"}]})
+        "action": None, "quality": "partial", "model": None, "prompt_version": None}]})
 
 
 class RunScore(ApiResponse):
@@ -346,6 +358,38 @@ class IntegrityEvent(ApiResponse):
         {"id": 1, "kind": "long_silence", "t_ms": 312000, "detail": {"silence_ms": 21000}}]})
 
 
+class ReviewRequest(ApiRequest):
+    """Mark a low-confidence (or any) result as reviewed, without changing the mark."""
+    note: str = Field(min_length=3, max_length=2000, description="What was checked.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{"note": "Listened to the audio; the AI mark is fair."}]})
+
+
+class ReviewEntry(ApiResponse):
+    """One logged review. The reviewer comes from the token."""
+    id: int
+    reviewer: str
+    note: str
+    at: UtcDatetime
+    model_config = ConfigDict(json_schema_extra={"examples": [{
+        "id": 1, "reviewer": "dr-iyer", "note": "Listened to the audio; the AI mark is fair.", "at": "2026-10-13T08:10:00Z"}]})
+
+
+class ReviewResult(ApiResponse):
+    """The logged review and the session's resulting review flag."""
+    review: ReviewEntry
+    needs_review: bool
+    model_config = ConfigDict(json_schema_extra={"examples": [{
+        "review": ReviewEntry.model_config["json_schema_extra"]["examples"][0], "needs_review": False}]})
+
+
+class RescoreResult(ApiResponse):
+    """A scoring job was queued for the session (the worker picks it up)."""
+    session_id: UUID
+    status: SessionStatus
+    job_status: str = Field(description="queued.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{"session_id": SESSION_ID, "status": "ended", "job_status": "queued"}]})
+
+
 class SessionDetail(ApiResponse):
     """Everything needed to audit one viva: transcript, audio, scores with evidence, overrides, integrity."""
     session_id: UUID
@@ -362,11 +406,12 @@ class SessionDetail(ApiResponse):
     scoring: Optional[Scoring] = Field(None, description="Null until scored.")
     low_confidence: bool
     low_confidence_reasons: list[str]
-    needs_review: bool
+    needs_review: bool = Field(description="low_confidence and neither a review nor an override has been logged.")
     effective_total: Optional[float] = Field(None, description="Latest override's new_total, else scoring.median_total, else null.")
     effective_source: Optional[str] = Field(None, description="override, ai or null.")
     audio: AudioRef
     overrides: list[OverrideEntry] = Field(description="Oldest first. The last one wins.")
+    reviews: list[ReviewEntry] = Field(description="Oldest first.")
     integrity_events: list[IntegrityEvent]
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "session_id": SESSION_ID, "viva_id": "dsa-midterm-2026", "student_id": "S2024001", "student_name": "Asha Verma",
@@ -374,26 +419,27 @@ class SessionDetail(ApiResponse):
         "started_at": "2026-10-12T05:30:12Z", "ended_at": "2026-10-12T05:44:58Z", "deadline_at": "2026-10-12T05:45:12Z",
         "turns": [
             {"idx": 0, "role": "ai", "text": "Hi, welcome. To start: tell me about a project you built.",
-             "t_start_ms": 500, "t_end_ms": 6200, "phase": "warmup", "question_id": "opener", "action": "open", "quality": None},
+             "t_start_ms": 500, "t_end_ms": 6200, "phase": "warmup", "question_id": "opener", "action": "open", "quality": None, "model": None, "prompt_version": "interviewer-v1"},
             {"idx": 1, "role": "student", "text": "I built a chat app with websockets and a Postgres backend.",
-             "t_start_ms": 7400, "t_end_ms": 15100, "phase": "warmup", "question_id": "opener", "action": None, "quality": "strong"},
+             "t_start_ms": 7400, "t_end_ms": 15100, "phase": "warmup", "question_id": "opener", "action": None, "quality": "strong", "model": None, "prompt_version": None},
             {"idx": 2, "role": "ai", "text": "Can you explain how a hash table works?",
-             "t_start_ms": 16000, "t_end_ms": 19800, "phase": "fundamentals", "question_id": "q001", "action": "new_question", "quality": None},
+             "t_start_ms": 16000, "t_end_ms": 19800, "phase": "fundamentals", "question_id": "q001", "action": "new_question", "quality": None, "model": None, "prompt_version": "interviewer-v1"},
             {"idx": 3, "role": "student", "text": "A hash function maps the key to an index, and collisions use chaining.",
-             "t_start_ms": 41200, "t_end_ms": 52800, "phase": "fundamentals", "question_id": "q001", "action": None, "quality": "partial"},
+             "t_start_ms": 41200, "t_end_ms": 52800, "phase": "fundamentals", "question_id": "q001", "action": None, "quality": "partial", "model": None, "prompt_version": None},
             {"idx": 4, "role": "ai", "text": "What happens as the table fills up?",
-             "t_start_ms": 53600, "t_end_ms": 56000, "phase": "fundamentals", "question_id": "q001", "action": "hint", "quality": None},
+             "t_start_ms": 53600, "t_end_ms": 56000, "phase": "fundamentals", "question_id": "q001", "action": "hint", "quality": None, "model": "gemini-3.5-flash", "prompt_version": "interviewer-v1"},
             {"idx": 5, "role": "student", "text": "It resizes, so lookups stay constant on average. I would pick chaining for simplicity.",
-             "t_start_ms": 60100, "t_end_ms": 71000, "phase": "fundamentals", "question_id": "q001", "action": None, "quality": "strong"},
+             "t_start_ms": 60100, "t_end_ms": 71000, "phase": "fundamentals", "question_id": "q001", "action": None, "quality": "strong", "model": None, "prompt_version": None},
             {"idx": 6, "role": "ai", "text": "Your API was fast yesterday and slow today. How do you find the cause?",
-             "t_start_ms": 640000, "t_end_ms": 646000, "phase": "applied", "question_id": "q101", "action": "new_question", "quality": None},
+             "t_start_ms": 640000, "t_end_ms": 646000, "phase": "applied", "question_id": "q101", "action": "new_question", "quality": None, "model": None, "prompt_version": "interviewer-v1"},
             {"idx": 7, "role": "student", "text": "I would check recent deploys, then logs and metrics, then reproduce the slow request.",
-             "t_start_ms": 650000, "t_end_ms": 690000, "phase": "applied", "question_id": "q101", "action": None, "quality": "partial"}],
+             "t_start_ms": 650000, "t_end_ms": 690000, "phase": "applied", "question_id": "q101", "action": None, "quality": "partial", "model": None, "prompt_version": None}],
         "scoring": Scoring.model_config["json_schema_extra"]["examples"][0],
         "low_confidence": False, "low_confidence_reasons": [], "needs_review": False,
         "effective_total": 78.0, "effective_source": "override",
         "audio": AudioRef.model_config["json_schema_extra"]["examples"][0],
         "overrides": [OverrideEntry.model_config["json_schema_extra"]["examples"][0]],
+        "reviews": [ReviewEntry.model_config["json_schema_extra"]["examples"][0]],
         "integrity_events": []}]})
 
 

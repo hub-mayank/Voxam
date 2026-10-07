@@ -42,6 +42,8 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 | `bad_client_seq` | 409 | `details.expected` |
 | `rules_version_mismatch` | 409 | re-show rules (`details.current_rules_version`) |
 | `range_not_satisfiable` | 416 | bad `Range` on audio |
+| `audio_not_available` | 404 | the session has no recording (text mode) |
+| `results_not_released` | 403 | student result requested before faculty released results |
 | `rate_limited` | 429 | `details.retry_after_ms` |
 | `provider_unavailable` | 503 | LLM down; retry the same request |
 | `internal_error` | 500 | |
@@ -51,11 +53,12 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 2. `POST /faculty/vivas` {title, subject, topics, difficulty} -> `Viva`.
 3. `POST /faculty/vivas/{id}/questions` (file: `.json` array or `.csv` `id,topic,type,difficulty,text,key_points` with `|` between key points). All-or-nothing: show `details.rows` on 422. Response has `warnings` (small bank). Locked once a student has joined.
 4. `POST /faculty/vivas/{id}/roster` (file: `.csv` `student_id,name`). The response is the **only** time the plaintext `access_code`s are shown: show/print/download them now. Lost one: `POST .../roster/{student_id}/reset-code`.
-5. `GET /faculty/vivas/{id}/sessions?status=&low_confidence=&search=&limit=&cursor=` for the list; `needs_review` marks low-confidence sessions that nobody has reviewed.
+5. `GET /faculty/vivas/{id}/sessions?status=&low_confidence=&search=&limit=&cursor=` for the list; `needs_review` marks low-confidence sessions that nobody has reviewed or overridden.
 6. `GET /faculty/sessions/{sid}`: transcript, `scoring` (3 runs, median, per-dimension reason + `evidence` turn numbers), `feedback`, `overrides`, `integrity_events`, `audio`.
    - Play `audio.url` in an `<audio>` tag (signed, no header needed, ~15 min lifetime; refetch the session for a new one). It supports `Range`, so seeking works. Click-to-seek: set `currentTime = turn.t_start_ms / 1000`. `t_start_ms` is null in text mode.
    - Show `effective_total` (latest override else AI) and, if different, the AI total.
-7. `POST /faculty/sessions/{sid}/override` {new_total 0-100, reason}. Only for `scored`/`failed`. Posting the same total as the AI's confirms a low-confidence review.
+7. `POST /faculty/sessions/{sid}/override` {new_total 0-100, reason}. Only for `scored`/`failed`. To clear a low-confidence flag without changing the mark use `POST /faculty/sessions/{sid}/review` {note}. `POST /faculty/sessions/{sid}/rescore` queues scoring again (only from `failed` or `scored`).
+   - To let students see their marks: `PATCH /faculty/vivas/{id}` {"results_visible_to_students": true} (default false).
 8. Optional: `GET /faculty/vivas/{id}/export.csv` (download link; send the header via fetch + blob).
 
 ## Student flow
@@ -65,10 +68,10 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 4. Loop: `POST .../answer` {text, client_seq (1, 2, 3...), t_start_ms?, t_end_ms?} -> next AI turn. On network timeout resend the **same** `client_seq` and text: you get the same reply, nothing is recorded twice. Stop when `turn.ended` is true or on `deadline_passed`.
 5. Timer: poll `GET .../status` (every few seconds) and count down from `remaining_ms`, correcting with `server_now`. The server decides when time is up, not the browser.
 6. After reload or rejoin: `GET .../status` gives `current_turn` and `last_client_seq` to continue (next answer is `last_client_seq + 1`).
-7. The student sees no marks in this contract (see "Not in the contract").
+7. After scoring: `GET /student/sessions/{sid}/result` gives total, dimension scores and feedback, but only if faculty released results (else 403 `results_not_released`; 409 `invalid_state` if not scored yet).
 
 ## Change policy after G0
-`docs/openapi.json` is frozen: a test fails if the code and the file differ. Allowed without approval: nothing. Additive changes (new optional field, new endpoint, new error code) and any removal/rename/type change need Mayank's approval and a message to you first; breaking changes are avoided. Regenerate with `python scripts/export_openapi.py`.
+`docs/openapi.json` is frozen: a test fails if the code and the file differ. **Additive changes** (a new optional field, a new endpoint, a new error code) are allowed without asking, but each needs one line in `docs/CHANGELOG-api.md` and a message to you before it lands. **Removals, renames and type changes need Mayank's approval.** Regenerate with `python scripts/export_openapi.py`.
 
 ## Not in the contract (yet)
-Voice WebSocket (T4) · a student-facing result page · closing or scheduling a viva · AI-generated question banks · faculty accounts/login (tokens are issued by env) · deleting vivas, students or sessions.
+Voice WebSocket (T4) · closing or scheduling a viva · AI-generated question banks · faculty accounts/login (tokens are issued by env) · deleting vivas, students or sessions.

@@ -23,6 +23,8 @@ class ErrorCode(str, Enum):
     bad_client_seq = "bad_client_seq"
     rules_version_mismatch = "rules_version_mismatch"
     range_not_satisfiable = "range_not_satisfiable"
+    audio_not_available = "audio_not_available"
+    results_not_released = "results_not_released"
     rate_limited = "rate_limited"
     provider_unavailable = "provider_unavailable"
     internal_error = "internal_error"
@@ -43,6 +45,8 @@ HTTP_STATUS = {
     ErrorCode.bad_client_seq: 409,
     ErrorCode.rules_version_mismatch: 409,
     ErrorCode.range_not_satisfiable: 416,
+    ErrorCode.audio_not_available: 404,
+    ErrorCode.results_not_released: 403,
     ErrorCode.rate_limited: 429,
     ErrorCode.provider_unavailable: 503,
     ErrorCode.internal_error: 500,
@@ -72,6 +76,8 @@ ERROR_EXAMPLES = {
     ErrorCode.rules_version_mismatch: ("The student consented to an older rules text. Show the current rules again.",
                                        {"current_rules_version": "rules-v1"}),
     ErrorCode.range_not_satisfiable: ("The Range header is outside the audio file.", {"size_bytes": 1048576}),
+    ErrorCode.audio_not_available: ("This session has no recording (text mode, or not uploaded yet).", {}),
+    ErrorCode.results_not_released: ("Faculty have not released results for this viva yet.", {}),
     ErrorCode.rate_limited: ("Too many attempts. Retry after the delay.", {"retry_after_ms": 30000}),
     ErrorCode.provider_unavailable: ("The language model is down after retries and fallback. Retry the same request "
                                      "(same client_seq); nothing was lost.", {"retry_after_ms": 3000}),

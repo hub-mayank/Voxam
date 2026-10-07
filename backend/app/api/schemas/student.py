@@ -5,6 +5,7 @@ from pydantic import ConfigDict, Field
 
 from ...session_state import SessionStatus
 from .common import ApiRequest, ApiResponse, UtcDatetime
+from .faculty import FeedbackLine
 
 SESSION_ID = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
 TOKEN = "st_Zk3vQ0m1pWw8s2dYb7nX4cL9tRfJ6aHeUoGiVyMq5NA"
@@ -117,3 +118,27 @@ class StatusResponse(ApiResponse):
         "started_at": "2026-10-12T05:30:12Z", "deadline_at": "2026-10-12T05:45:12Z", "remaining_ms": 847000,
         "last_client_seq": 2,
         "current_turn": {"idx": 4, "text": "What happens as the table fills up?", "phase": "fundamentals", "ended": False}}]})
+
+
+class StudentDimension(ApiResponse):
+    """One rubric dimension in the student's result."""
+    key: str
+    weight: int
+    score: float = Field(description="0-5.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{"key": "conceptual", "weight": 30, "score": 4}]})
+
+
+class StudentResult(ApiResponse):
+    """The student's own result. Only available when faculty released results for the viva."""
+    total: float = Field(description="Final mark out of 100: the faculty override if there is one, else the AI mark.")
+    overridden: bool = Field(description="True when faculty changed the mark; dimension scores are then the AI's.")
+    dimensions: list[StudentDimension]
+    feedback: list[FeedbackLine] = Field(description="3-5 lines.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{
+        "total": 78.0, "overridden": True,
+        "dimensions": [{"key": "conceptual", "weight": 30, "score": 4}, {"key": "depth", "weight": 25, "score": 3},
+                       {"key": "problem", "weight": 20, "score": 3}, {"key": "practical", "weight": 15, "score": 4},
+                       {"key": "communication", "weight": 10, "score": 4}],
+        "feedback": [{"text": "Good grasp of collision handling; add load-factor and resizing next time.", "evidence": [3]},
+                     {"text": "Say why you chose a design, not just what it is.", "evidence": [5]},
+                     {"text": "Isolate the database before blaming the network when debugging slow APIs.", "evidence": [7]}]}]})

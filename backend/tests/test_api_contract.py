@@ -197,7 +197,7 @@ def test_auth_matrix_over_every_route():
         else:
             checked["public"] += 1
             assert path in ("/health", "/student/join"), f"{path} has no auth"
-    assert checked == {"faculty": 13, "student": 4, "public": 2}
+    assert checked == {"faculty": 16, "student": 5, "public": 2}
 
 
 def test_no_faculty_tokens_configured_means_everything_is_401():
@@ -249,7 +249,7 @@ def test_every_stub_response_validates_against_its_own_schema():
     models = {m.__name__: m for m in all_models()}
     checked = 0
     for path, method, op in operations(app):
-        ok = next((c for c in ("200", "201") if c in op["responses"]), None)
+        ok = next((c for c in ("200", "201", "202") if c in op["responses"]), None)
         ref = op["responses"][ok].get("content", {}).get("application/json", {}).get("schema", {}).get("$ref")
         if not ref:
             continue
@@ -257,6 +257,8 @@ def test_every_stub_response_validates_against_its_own_schema():
         headers = RAO if "FacultyToken" in str(op.get("security")) else STUDENT
         body = {"json": {"new_total": 50, "reason": "ok ok"}} if path.endswith("/override") else {}
         body = {"json": {"viva_id": "dsa-midterm-2026", "student_id": "S1", "access_code": "K7M2-9QXP"}} if path == "/student/join" else body
+        body = {"json": {"note": "checked it"}} if path.endswith("/review") else body
+        body = {"json": {"results_visible_to_students": True}} if method == "patch" else body
         body = {"json": {"accepted": True, "rules_version": "rules-v1"}} if path.endswith("/consent") else body
         body = {"json": {"text": "hello", "client_seq": 1}} if path.endswith("/answer") else body
         body = {"json": {"title": "t", "subject": "s", "topics": ["a"], "difficulty": "easy"}} if path == "/faculty/vivas" and method == "post" else body
@@ -326,7 +328,7 @@ def test_openapi_is_independent_of_the_environment():
 def test_openapi_basics():
     spec = make_app().openapi()
     ids = [op["operationId"] for _, _, op in operations(make_app())]
-    assert len(ids) == len(set(ids)) == 19
+    assert len(ids) == len(set(ids)) == 23
     assert all(op.get("summary") for _, _, op in operations(make_app()))
     assert set(spec["components"]["securitySchemes"]) == {"FacultyToken", "StudentToken"}
     assert "Voice" in spec["info"]["description"] and "TBD" in spec["info"]["description"]

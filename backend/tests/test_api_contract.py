@@ -28,7 +28,7 @@ SAMPLE = {"viva_id": "dsa-midterm-2026", "viva": "dsa-midterm-2026", "sid": SID,
 
 
 def make_app(**kw):
-    return create_app(Settings(dict(FACULTY), **kw))
+    return create_app(Settings(dict(FACULTY), **{"contract_stub": True, **kw}))
 
 
 @pytest.fixture()
@@ -201,7 +201,7 @@ def test_auth_matrix_over_every_route():
 
 
 def test_no_faculty_tokens_configured_means_everything_is_401():
-    client = TestClient(create_app(Settings({})), raise_server_exceptions=False)
+    client = TestClient(create_app(Settings({}, contract_stub=True)), raise_server_exceptions=False)
     assert client.get("/faculty/vivas", headers=RAO).status_code == 401
 
 
@@ -317,7 +317,7 @@ def test_csv_export_is_text_csv(client):
 
 def test_committed_openapi_json_matches_the_code():
     committed = (ROOT / "docs" / "openapi.json").read_text()
-    assert committed == openapi_json(create_app(Settings({}))), \
+    assert committed == openapi_json(create_app(Settings({}, contract_stub=True))), \
         "API contract changed: run `python scripts/export_openapi.py`. After G0 this needs supervisor approval."
 
 
@@ -344,7 +344,7 @@ def free_port():
 
 def test_mock_server_boots_with_uvicorn(tmp_path):
     port = free_port()
-    env = {"PATH": "/usr/bin:/bin", "FACULTY_TOKENS": "demo:demo-token-0123456789", "HOME": str(tmp_path)}
+    env = {"PATH": "/usr/bin:/bin", "FACULTY_TOKENS": "demo:demo-token-0123456789", "HOME": str(tmp_path), "CONTRACT_STUB": "1"}
     proc = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(port), "--log-level", "warning"],
                             cwd=ROOT / "backend", env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     base = f"http://127.0.0.1:{port}"

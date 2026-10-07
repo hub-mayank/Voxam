@@ -59,6 +59,8 @@ class RosterEntry(Base):
     viva_id: Mapped[str] = mapped_column(ForeignKey("vivas.id"), primary_key=True)
     student_id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[Optional[str]] = mapped_column(String)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)  # wrong access codes since the last success
+    locked_until: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
 
 
@@ -91,10 +93,12 @@ class Session(Base):
     deadline_at: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)  # started_at + hard limit, fixed at start
     ended_at: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)
     audio_uri: Mapped[Optional[str]] = mapped_column(String)
+    lease_until: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)  # one answer is processed at a time per session
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
     __table_args__ = (
         ForeignKeyConstraint(["viva_id", "student_id"], ["roster.viva_id", "roster.student_id"]),
         UniqueConstraint("viva_id", "student_id", name="uq_sessions_student"),
+        Index("uq_sessions_token_hash", "token_hash", unique=True),
         one_of("status", [s.value for s in SessionStatus]),
         Index("ix_sessions_viva_status", "viva_id", "status"),
     )
@@ -117,6 +121,7 @@ class Turn(Base):
     prompt_version: Mapped[Optional[str]] = mapped_column(String)
     client_seq: Mapped[Optional[int]] = mapped_column(Integer)  # student turns: the answer's client_seq (idempotency)
     meta: Mapped[Optional[dict]] = mapped_column(JsonType)  # engine audit events for this turn (classify_error, bank_exhausted)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
     __table_args__ = (one_of("role", ["ai", "student"]), UniqueConstraint("session_id", "client_seq", name="uq_turns_client_seq"))
 
 
@@ -145,6 +150,16 @@ class Override(Base):
     old_total: Mapped[Optional[float]] = mapped_column(Total)
     new_total: Mapped[float] = mapped_column(Total)
     reason: Mapped[str] = mapped_column(Text)
+    at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
+
+
+class Review(Base):
+    """A faculty review that clears the mandatory-review flag without changing the mark."""
+    __tablename__ = "reviews"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
+    reviewer: Mapped[str] = mapped_column(String)
+    note: Mapped[str] = mapped_column(Text)
     at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
 
 

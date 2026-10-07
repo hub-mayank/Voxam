@@ -21,6 +21,7 @@ class Event(str, Enum):
     scored = "scored"
     fail = "fail"
     abandon = "abandon"
+    rescore = "rescore"
 
 
 S, E = SessionStatus, Event
@@ -32,7 +33,9 @@ TRANSITIONS = {
     (S.ended, E.begin_scoring): S.scoring,
     (S.scoring, E.scored): S.scored,
     (S.scoring, E.fail): S.failed,
-    (S.failed, E.begin_scoring): S.scoring,  # faculty or worker retries a failed job
+    (S.failed, E.begin_scoring): S.scoring,  # a worker retries a failed job
+    (S.scored, E.rescore): S.ended,  # faculty ask for scoring again: back to ended, a job is queued
+    (S.failed, E.rescore): S.ended,
     (S.created, E.abandon): S.abandoned,
     (S.consented, E.abandon): S.abandoned,
     (S.in_progress, E.abandon): S.abandoned,
@@ -40,7 +43,7 @@ TRANSITIONS = {
 
 # the student may rejoin (new token, old one dies) only in these states; after that the access code is dead
 REJOIN_OK = frozenset({S.created, S.consented, S.in_progress})
-TERMINAL = frozenset({S.scored, S.abandoned})
+TERMINAL = frozenset({S.abandoned})
 
 
 class InvalidTransition(ValueError):

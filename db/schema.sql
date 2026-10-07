@@ -34,6 +34,8 @@ CREATE TABLE roster (
 	viva_id VARCHAR NOT NULL, 
 	student_id VARCHAR NOT NULL, 
 	name VARCHAR, 
+	failed_attempts INTEGER NOT NULL, 
+	locked_until TIMESTAMP WITH TIME ZONE, 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (viva_id, student_id), 
 	FOREIGN KEY(viva_id) REFERENCES vivas (id)
@@ -64,6 +66,7 @@ CREATE TABLE sessions (
 	deadline_at TIMESTAMP WITH TIME ZONE, 
 	ended_at TIMESTAMP WITH TIME ZONE, 
 	audio_uri VARCHAR, 
+	lease_until TIMESTAMP WITH TIME ZONE, 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
 	FOREIGN KEY(viva_id, student_id) REFERENCES roster (viva_id, student_id), 
@@ -73,6 +76,8 @@ CREATE TABLE sessions (
 );
 
 CREATE INDEX ix_sessions_viva_status ON sessions (viva_id, status);
+
+CREATE UNIQUE INDEX uq_sessions_token_hash ON sessions (token_hash);
 
 CREATE TABLE integrity_events (
 	id SERIAL NOT NULL, 
@@ -120,6 +125,18 @@ CREATE TABLE overrides (
 
 CREATE INDEX ix_overrides_session_id ON overrides (session_id);
 
+CREATE TABLE reviews (
+	id SERIAL NOT NULL, 
+	session_id UUID NOT NULL, 
+	reviewer VARCHAR NOT NULL, 
+	note TEXT NOT NULL, 
+	at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(session_id) REFERENCES sessions (id)
+);
+
+CREATE INDEX ix_reviews_session_id ON reviews (session_id);
+
 CREATE TABLE scores (
 	session_id UUID NOT NULL, 
 	run INTEGER NOT NULL, 
@@ -152,6 +169,7 @@ CREATE TABLE turns (
 	prompt_version VARCHAR, 
 	client_seq INTEGER, 
 	meta JSONB, 
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (session_id, idx), 
 	CONSTRAINT ck_role CHECK (role IN ('ai', 'student')), 
 	CONSTRAINT uq_turns_client_seq UNIQUE (session_id, client_seq), 

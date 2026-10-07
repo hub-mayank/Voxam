@@ -1,8 +1,12 @@
 import json
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import sessionmaker
 
+from ..db.engine import init_db, make_engine
+from ..llm.factory import make_llm
 from . import routes_faculty, routes_student
 from .errors import install_error_handlers, uniform_validation_errors
 from .schemas.common import Health, example_of
@@ -31,11 +35,23 @@ TAGS = [
 ]
 
 
-def create_app(settings: Settings = None) -> FastAPI:
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def create_app(settings: Settings = None, llm_factory=None, now=None, engine=None) -> FastAPI:
+    """llm_factory(spec) -> an LLM for one request; now() -> aware UTC time. Both are injectable for tests and the demo seed."""
     settings = settings or Settings.from_env()
+    settings.check()
     app = FastAPI(title="AI Viva API", version="1.0.0", description=DESCRIPTION, openapi_tags=TAGS,
                   generate_unique_id_function=lambda route: route.name)
     app.state.settings = settings
+    app.state.now = now or utc_now
+    app.state.llm_factory = llm_factory or make_llm
+    if not settings.contract_stub:
+        app.state.engine = engine or make_engine(settings.database_url or None)
+        init_db(app.state.engine)
+        app.state.sessionmaker = sessionmaker(app.state.engine)
     if settings.cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins), allow_methods=["*"],
                            allow_headers=["*"], expose_headers=["X-Contract-Stub", "Content-Range", "Accept-Ranges"])
@@ -61,7 +77,16 @@ def create_app(settings: Settings = None) -> FastAPI:
     return app
 
 
-app = create_app()
+_app = None
+
+
+def __getattr__(name):
+    """`uvicorn app.api.main:app` builds the app on first use, so importing this module needs no environment."""
+    global _app
+    if name == "app":
+        _app = _app or create_app()
+        return _app
+    raise AttributeError(name)
 
 
 def openapi_json(api: FastAPI) -> str:

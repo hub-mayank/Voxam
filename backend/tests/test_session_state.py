@@ -52,9 +52,17 @@ def test_cannot_skip_consent_or_restart():
         transition("scored", "begin_scoring")
 
 
-def test_terminal_states_have_no_exit():
-    for status in (SessionStatus.scored, SessionStatus.abandoned):
-        assert not [k for k in TRANSITIONS if k[0] == status]
+def test_abandoned_has_no_exit_and_scored_only_leaves_by_rescore():
+    assert not [k for k in TRANSITIONS if k[0] == SessionStatus.abandoned]
+    assert [k[1] for k in TRANSITIONS if k[0] == SessionStatus.scored] == [Event.rescore]
+
+
+def test_rescore_returns_scored_and_failed_sessions_to_ended():
+    assert transition("scored", "rescore") == SessionStatus.ended
+    assert transition("failed", "rescore") == SessionStatus.ended
+    for status in ("created", "consented", "in_progress", "ended", "scoring", "abandoned"):
+        with pytest.raises(InvalidTransition):
+            transition(status, "rescore")
 
 
 def test_unknown_status_or_event_is_a_value_error():

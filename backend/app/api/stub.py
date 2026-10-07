@@ -12,6 +12,8 @@ STUB_HEADER = "X-Contract-Stub"
 def stub_marker(request: Request, response: Response):
     """Router dependency for stub routes. Remove it from a router when its real handlers land.
     Send `X-Mock-Error: <code>` to make any stub route fail with that error code and its example details."""
+    if not request.app.state.settings.contract_stub:
+        return
     wanted = request.headers.get("x-mock-error")
     if wanted:
         try:

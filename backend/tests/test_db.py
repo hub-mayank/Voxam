@@ -16,7 +16,7 @@ from app.session_state import SessionStatus
 
 ROOT = __import__("pathlib").Path(__file__).resolve().parents[2]
 TABLES = {"vivas", "questions", "roster", "access_codes", "sessions", "turns", "scores", "overrides",
-          "integrity_events", "jobs"}
+          "reviews", "integrity_events", "jobs"}
 NOW = datetime(2026, 10, 12, 5, 30, 12, tzinfo=timezone.utc)
 
 

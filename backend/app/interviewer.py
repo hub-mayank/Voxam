@@ -23,12 +23,19 @@ FALLBACKS = [
     {"id": "fb3", "text": "Describe a bug that took you a long time to find, and how you found it."},
 ]
 CLOSER = "Is there anything you'd like to add? ... Thank you, that's the end of the viva."
+# used when every provider has failed: the viva goes on, the student is never shown an error
+FALLBACK_REPLIES = {
+    "deeper": "Good. What edge cases or trade-offs would you worry about here?",
+    "nudge": "You're partway there. Think about what happens as the input grows.",
+    "redirect": "Let's bring it back to the question. Could you answer that directly?",
+}
+DEFAULT_REPLY = "Okay, let's move on."
 
 
 class Interviewer:
     def __init__(self, llm, bank, clock: VivaClock, cfg: VivaConfig, seed=0):
         self.llm, self.bank, self.clock, self.cfg = llm, bank, clock, cfg
-        self.rng = random.Random(seed)
+        self.seed = seed
         self.asked, self.topic_points = [], {}
         self.q = OPENER
         self.followups = self.redirects = 0
@@ -42,7 +49,8 @@ class Interviewer:
         self.log.append(kw)
 
     def start(self) -> str:
-        self.clock.start()
+        if not self.clock.started:
+            self.clock.start()
         self.phase_name = self.clock.phase().name
         self._event(role="ai", action="open", text=OPENER["text"])
         return OPENER["text"]
@@ -54,7 +62,8 @@ class Interviewer:
             best = max(self.topic_points, key=self.topic_points.get)
             strong = [q for q in pool if q["topic"] == best]
             pool = strong or pool
-        return self.rng.choice(pool) if pool else None
+        # a pure function of (seed, how many were asked), so a rebuilt interviewer picks what the live one would have
+        return random.Random(f"{self.seed}:{len(self.asked)}").choice(pool) if pool else None
 
     def _new_question(self, phase_name):
         q = self._pick(phase_name)
@@ -131,6 +140,34 @@ class Interviewer:
             self._event(role="system", action="classify_error", error=str(e)[:200])
             return "partial"
         return q if q in policy.QUALITY_POINTS else "partial"
+
+    def restore(self, turns):
+        """Rebuild state from stored spoken turns (dicts with role, phase, question_id, action, quality), oldest first.
+        No LLM, no clock: the same state the live interviewer had after the last of these turns."""
+        known = {q["id"]: q for q in self.bank}
+        known.update({OPENER["id"]: OPENER, **{f["id"]: f for f in FALLBACKS}})
+        previous = None
+        for t in turns:
+            if t["role"] == "student":
+                if t.get("question_id") == OPENER["id"]:
+                    self.opener_answered = True
+                previous = t
+                continue
+            self.phase_name = t["phase"]
+            action = t.get("action")
+            if action == "open":
+                self.q = OPENER
+            elif action == "new_question":
+                if previous and previous.get("quality"):  # reached by move_on; a phase change skips classification
+                    topic = self.q.get("topic")
+                    self.topic_points[topic] = self.topic_points.get(topic, 0) + policy.QUALITY_POINTS[previous["quality"]]
+                self.q, self.followups, self.redirects = known[t["question_id"]], 0, 0
+                self.asked.append(t["question_id"])
+            elif action == "redirect":
+                self.redirects += 1
+            elif action in ("deeper", "nudge"):
+                self.followups += 1
+        return self
 
     def dump(self, path):
         with open(path, "w") as f:

@@ -32,10 +32,36 @@ class Settings:
     faculty_tokens: dict
     require_access_code: bool = True
     cors_origins: tuple = ()
+    contract_stub: bool = False       # CONTRACT_STUB=1: every route returns its example (Friend A's mock backend)
+    access_code_pepper: str = ""      # ACCESS_CODE_PEPPER: server-side secret for HMAC-hashing access codes
+    audio_signing_secret: str = ""    # AUDIO_SIGNING_SECRET: signs the expiring audio URLs
+    database_url: str = ""            # DATABASE_URL; empty means the default local SQLite file
+    llm_chain: str = ""               # LLM_CHAIN for the live interviewer; empty means mock
+    max_code_attempts: int = 5        # CODE_MAX_ATTEMPTS: wrong codes before a student is locked out
+    lockout_seconds: int = 900        # CODE_LOCKOUT_SECONDS
+    answer_lease_seconds: int = 60    # ANSWER_LEASE_SECONDS: longest one answer may be processed before another worker takes over
 
     @classmethod
     def from_env(cls, env=None):
         env = os.environ if env is None else env
         origins = tuple(o.strip() for o in env.get("CORS_ORIGINS", "").split(",") if o.strip())
-        return cls(parse_faculty_tokens(env.get("FACULTY_TOKENS", "")),
-                   _flag(env.get("REQUIRE_ACCESS_CODE"), True), origins)
+        return cls(
+            parse_faculty_tokens(env.get("FACULTY_TOKENS", "")),
+            _flag(env.get("REQUIRE_ACCESS_CODE"), True), origins,
+            contract_stub=_flag(env.get("CONTRACT_STUB"), False),
+            access_code_pepper=env.get("ACCESS_CODE_PEPPER", ""),
+            audio_signing_secret=env.get("AUDIO_SIGNING_SECRET", ""),
+            database_url=env.get("DATABASE_URL", ""),
+            llm_chain=env.get("LLM_CHAIN", ""),
+            max_code_attempts=int(env.get("CODE_MAX_ATTEMPTS", 5)),
+            lockout_seconds=int(env.get("CODE_LOCKOUT_SECONDS", 900)),
+            answer_lease_seconds=int(env.get("ANSWER_LEASE_SECONDS", 60)))
+
+    def check(self):
+        """Real mode refuses to start without its secrets. Stub mode needs none."""
+        if self.contract_stub:
+            return
+        if len(self.audio_signing_secret) < 16:
+            raise ValueError("AUDIO_SIGNING_SECRET (at least 16 characters) is required unless CONTRACT_STUB=1")
+        if self.require_access_code and len(self.access_code_pepper) < 16:
+            raise ValueError("ACCESS_CODE_PEPPER (at least 16 characters) is required unless REQUIRE_ACCESS_CODE=false or CONTRACT_STUB=1")

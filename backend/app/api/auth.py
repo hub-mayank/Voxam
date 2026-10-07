@@ -1,9 +1,13 @@
 import hmac
 from dataclasses import dataclass
+from uuid import UUID
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPBearer
+from sqlalchemy import select
 
+from ..db import models as m
+from ..services.secrets_util import hash_token
 from .errors import ApiError, ErrorCode
 
 STUDENT_PREFIX = "st_"
@@ -45,13 +49,29 @@ def require_faculty(request: Request, creds=Depends(faculty_scheme)) -> Faculty:
     raise ApiError(ErrorCode.unauthorized, details={"reason": "invalid_token"})
 
 
+def _owner_of(request: Request, token: str):
+    with request.app.state.sessionmaker() as db:
+        return db.scalar(select(m.Session.id).where(m.Session.token_hash == hash_token(token)))
+
+
 def require_student(request: Request, creds=Depends(student_scheme)) -> Student:
-    """Contract phase: any `st_` token passes. T2b swaps this for a hashed lookup and a check that the
-    token belongs to the {sid} in the path (403 `forbidden` otherwise)."""
+    """Real mode: the token is looked up by its hash and must belong to the {sid} in the path. An unknown or replaced
+    token is 401; a valid token on someone else's session is 403. Stub mode: any `st_` token passes."""
     if creds is None:
         raise ApiError(ErrorCode.unauthorized, details={"reason": "missing_token"})
     token = creds.credentials
     if token.startswith(STUDENT_PREFIX):
+        if request.app.state.settings.contract_stub:
+            return Student(token)
+        owner = _owner_of(request, token)
+        if owner is None:
+            raise ApiError(ErrorCode.unauthorized, details={"reason": "invalid_or_replaced_token"})
+        try:
+            wanted = UUID(request.path_params.get("sid", ""))
+        except ValueError:
+            wanted = owner  # not a session path, or a bad id that the route's own validation rejects with 422
+        if owner != wanted:
+            raise ApiError(ErrorCode.forbidden, "This token belongs to another session.")
         return Student(token)
     if _faculty_name(request, token) is not None:
         raise ApiError(ErrorCode.forbidden, "A faculty token cannot use student routes.")

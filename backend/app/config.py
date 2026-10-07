@@ -22,7 +22,10 @@ class VivaConfig:
 
 
 def load_config(path) -> VivaConfig:
-    raw = json.loads(Path(path).read_text())
+    return config_from_raw(json.loads(Path(path).read_text()))
+
+
+def config_from_raw(raw: dict) -> VivaConfig:
     phases = tuple(Phase(**p) for p in raw["phases"])
     if phases[0].start != 0:
         raise ValueError("first phase must start at 0")

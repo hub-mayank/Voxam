@@ -13,8 +13,11 @@ def make_engine(url: str = None) -> Engine:
     engine = create_engine(url or os.environ.get("DATABASE_URL") or DEFAULT_URL)
     if engine.dialect.name == "sqlite":
         @event.listens_for(engine, "connect")
-        def foreign_keys_on(dbapi_connection, record):  # SQLite ignores foreign keys unless asked
-            dbapi_connection.execute("PRAGMA foreign_keys=ON")
+        def sqlite_settings(dbapi_connection, record):
+            dbapi_connection.execute("PRAGMA foreign_keys=ON")  # SQLite ignores foreign keys unless asked
+            dbapi_connection.execute("PRAGMA busy_timeout=10000")  # wait for a competing writer instead of failing
+            if engine.url.database not in (None, "", ":memory:"):
+                dbapi_connection.execute("PRAGMA journal_mode=WAL")  # readers do not block the writer
     return engine
 
 

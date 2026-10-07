@@ -1,5 +1,4 @@
 """Post-session scorer. Runs on the full transcript, never live. Code validates; LLM only proposes."""
-import json
 import statistics
 from .config import VivaConfig
 from .llm.budget import CallCapExceeded

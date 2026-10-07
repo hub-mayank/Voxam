@@ -4,6 +4,5 @@ session*.jsonl
 .venv/
 .pytest_cache/
 .DS_Store
-.llm_budget.json
 CLAUDE.local.md
 .claude/settings.local.json

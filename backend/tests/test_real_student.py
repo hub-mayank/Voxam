@@ -561,3 +561,39 @@ def test_twenty_students_at_once_on_sqlite(tmp_path):
     for student, (sid, _) in results.items():
         rows = turns(app, sid)
         assert [r[0] for r in rows] == list(range(len(rows))) and len(rows) == 11, student
+
+
+# ---------- through the real provider chain (retry, fallback, telemetry) ----------
+
+def test_fallback_chain_records_the_backup_that_served_and_a_dead_chain_degrades(tmp_path, monkeypatch):
+    from app.llm.fake import FakeProvider
+    from app.llm.resilient import ResilientLLM
+    monkeypatch.setenv("TELEMETRY_FILE", str(tmp_path / "telemetry.jsonl"))
+    primary = FakeProvider(script=(503,), model="primary", data={"quality": "strong"}, text="Primary says hi.")
+    backup = FakeProvider(script=("ok",), model="backup", data={"quality": "strong"}, text="Backup here, go deeper.")
+    chain = lambda spec: ResilientLLM([primary, backup], retries=1, backoff=0, jitter=0, sleep=lambda s: None)  # noqa: E731
+    app, client, clock = build(tmp_path, llm=chain)
+    codes = make_viva(client)
+    sid, h = begin(client, codes["S1"])
+    clock.advance(30)
+    assert answer(client, sid, h, 1).status_code == 200
+    clock.advance(30)
+    r = answer(client, sid, h, 2)
+    assert r.status_code == 200 and r.json()["turn"]["text"] == "Backup here, go deeper."
+    detail = client.get(f"/faculty/sessions/{sid}", headers=RAO).json()
+    ai = [t for t in detail["turns"] if t["role"] == "ai"]
+    assert ai[-1]["model"] == "fake:backup", "the fallback that really served the turn is visible to faculty"
+    assert primary.calls >= 2 and backup.calls >= 1
+    # now the whole chain dies: the student still gets a reply and the viva continues
+    dead = FakeProvider(script=(503,), model="dead")
+    (tmp_path / "second").mkdir()
+    app2, client2, clock2 = build(tmp_path / "second", llm=lambda spec: ResilientLLM([dead], retries=1, backoff=0, jitter=0, sleep=lambda s: None))
+    codes2 = make_viva(client2)
+    sid2, h2 = begin(client2, codes2["S1"])
+    for seq in (1, 2):  # the first answer only changes phase (no model call); the second needs one
+        clock2.advance(30)
+        r2 = answer(client2, sid2, h2, seq)
+        assert r2.status_code == 200 and r2.json()["turn"]["text"]
+    with db_of(app2) as db:
+        flagged = [t for t in core.turns_of(db, uuid.UUID(sid2)) if (t.meta or {}).get("llm_errors")]
+        assert flagged and all(t.model is None for t in flagged) and flagged[0].meta["llm_degraded"] is True

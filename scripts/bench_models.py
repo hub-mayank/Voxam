@@ -15,29 +15,29 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 from app.config import load_config  # noqa: E402
 from app.scorer import score_session, ScoreError  # noqa: E402
+from app.llm.factory import make_llm  # noqa: E402
+from app.results_meta import write_meta  # noqa: E402
 
 PERSONAS = ["strong", "weak", "idk", "injection"]
 
 
 class Timed:
-    """Wraps an LLM: records per-call latency, backs off on 429/503."""
+    """Wraps an LLM: records per-call latency, and backs off longer than the llm layer on 429/503 (free-tier quotas)."""
     def __init__(self, inner, delay=0.0):
         self.inner, self.name, self.lat, self.throttled, self.delay = inner, inner.name, [], 0, delay
         self.last_body = ""
 
-    def complete_json(self, system, user, max_tokens=200):
+    def complete_json(self, system, user, max_tokens=200, **kw):
         for attempt, delay in enumerate([0, 20, 45, 70]):
             time.sleep(delay + self.delay)
             t = time.perf_counter()
             try:
-                out = self.inner.complete_json(system, user, max_tokens)
+                out = self.inner.complete_json(system, user, max_tokens, **kw)
                 self.lat.append(time.perf_counter() - t)
                 return out
             except Exception as e:
-                code = getattr(getattr(e, "response", None), "status_code", None)
-                self.last_body = getattr(getattr(e, "response", None), "text", "")[:500]
-                retryable = code in (429, 503) or type(e).__name__.endswith("Timeout") or "timed out" in str(e)
-                if retryable and attempt < 3:
+                self.last_body = getattr(e, "body", "")[:500]
+                if getattr(e, "retryable", False) and attempt < 3:
                     self.throttled += 1
                     continue
                 raise
@@ -64,8 +64,7 @@ def main():
             from app.llm.mock import MockLLM
             llm = Timed(MockLLM())
         else:
-            from app.llm.gemini import GeminiLLM
-            g = GeminiLLM(model=m)
+            g = make_llm("gemini", model=m, retries=0)  # retries live in Timed below (longer waits)
             pre_err = None
             for wait in (0, 20, 45):  # preflight, retried on transient errors only (404 = not callable: no retry)
                 time.sleep(wait)
@@ -75,11 +74,10 @@ def main():
                     break
                 except Exception as e:
                     pre_err = e
-                    code = getattr(getattr(e, "response", None), "status_code", None)
-                    if code not in (429, 503) and "timed out" not in str(e):
+                    if not getattr(e, "retryable", False):
                         break
             if pre_err is not None:
-                body = getattr(getattr(pre_err, "response", None), "text", "")[:400].replace("\n", " ")
+                body = getattr(pre_err, "body", "")[:400].replace("\n", " ")
                 print(f"SKIP {m}: preflight failed: {str(pre_err)[:120]} {body}\n")
                 continue
             llm = Timed(g, delay=a.delay)
@@ -112,6 +110,8 @@ def main():
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
+    models = sorted({r["model"] for r in rows})
+    write_meta(f, "mock" if a.llm == "mock" else "live", models, a.runs, n_unit="scorer runs per persona row")
     print("saved", f)
 
 

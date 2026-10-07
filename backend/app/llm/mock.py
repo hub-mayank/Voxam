@@ -5,7 +5,7 @@ class MockLLM:
     """Deterministic offline provider for tests and dev. Proves plumbing, NOT quality."""
     name = "mock"
 
-    def complete_json(self, system, user, max_tokens=200):
+    def complete_json(self, system, user, max_tokens=200, kind="classify"):
         if system.startswith("SCORE"):
             return self._score(user)
         m = re.search(r"ANSWER:\s*(.*)", user, re.S)
@@ -35,7 +35,7 @@ class MockLLM:
              [{"text": f"mock feedback {n}", "evidence": []} for n in range(3)]
         return {"dimensions": dims, "feedback": fb}
 
-    def complete_text(self, system, user, max_tokens=120):
+    def complete_text(self, system, user, max_tokens=120, kind="phrase"):
         action = re.search(r"ACTION:\s*(\w+)", user).group(1)
         return {
             "deeper": "Good. What edge cases or trade-offs would you worry about here?",

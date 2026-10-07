@@ -50,9 +50,9 @@ def test_short_session_is_low_confidence():
 def test_hallucinated_citation_rejected_then_retried():
     class Flaky(MockLLM):
         n = 0
-        def complete_json(self, system, user, max_tokens=200):
+        def complete_json(self, system, user, max_tokens=200, **kw):
             Flaky.n += 1
-            out = super().complete_json(system, user, max_tokens)
+            out = super().complete_json(system, user, max_tokens, **kw)
             if Flaky.n == 1:
                 out["dimensions"]["conceptual"]["evidence"] = [999]
             return out
@@ -80,8 +80,8 @@ def test_score_gt0_requires_evidence():
 def test_run_disagreement_flags_low_confidence():
     class Wobbly(MockLLM):
         n = 0
-        def complete_json(self, system, user, max_tokens=200):
-            out = super().complete_json(system, user, max_tokens)
+        def complete_json(self, system, user, max_tokens=200, **kw):
+            out = super().complete_json(system, user, max_tokens, **kw)
             Wobbly.n += 1
             if Wobbly.n % 2 == 0:
                 for d in out["dimensions"].values(): d["score"] = 1

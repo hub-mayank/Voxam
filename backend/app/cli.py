@@ -1,7 +1,8 @@
-"""Text-mode viva. Usage: python -m app.cli [--llm mock|gemini]"""
+"""Text-mode viva. Usage: python -m app.cli [--llm mock|gemini|ollama]"""
 import argparse
 from pathlib import Path
 from .clock import VivaClock
+from .llm.factory import make_llm
 from .config import load_config, load_bank
 from .interviewer import Interviewer
 
@@ -10,17 +11,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--llm", default="mock", choices=["mock", "gemini"])
+    ap.add_argument("--llm", default="mock", help="mock, gemini, ollama, or a fallback list like gemini,ollama")
     ap.add_argument("--out", default="session.jsonl")
     a = ap.parse_args()
     cfg = load_config(ROOT / "config/viva.config.json")
     bank = load_bank(ROOT / "config/question_bank.sample.json")
-    if a.llm == "gemini":
-        from .llm.gemini import GeminiLLM
-        llm = GeminiLLM()
-    else:
-        from .llm.mock import MockLLM
-        llm = MockLLM()
+    llm = make_llm(a.llm)
     clock = VivaClock(cfg)
     iv = Interviewer(llm, bank, clock, cfg)
     print("AI:", iv.start())

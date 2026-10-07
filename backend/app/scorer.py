@@ -2,6 +2,8 @@
 import json
 import statistics
 from .config import VivaConfig
+from .llm.budget import CallCapExceeded
+from .llm.errors import ProviderError
 
 SCORER_PROMPT_VERSION = "scorer-v1"
 
@@ -81,9 +83,11 @@ def score_once(llm, cfg, transcript, max_retries=2):
     system, user, errors = _system(cfg), _user(transcript), []
     for _ in range(max_retries + 1):
         try:
-            raw = llm.complete_json(system, user, max_tokens=3000)
+            raw = llm.complete_json(system, user, max_tokens=3000, kind="score")
             validate(raw, cfg, transcript)
             return raw, errors
+        except (ProviderError, CallCapExceeded) as e:  # the llm layer already retried and fell back
+            raise ScoreError(f"provider failed: {e}"[:200]) from e
         except Exception as e:  # malformed JSON, bad citations, provider errors -> retry
             errors.append(str(e)[:200])
     raise ScoreError(f"scorer failed after retries: {errors}")

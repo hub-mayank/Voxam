@@ -8,3 +8,4 @@ Every tool, library and model used. Add a line before adding a dependency.
 | httpx | HTTP client for the Gemini adapter | BSD-3-Clause | https://www.python-httpx.org |
 | pytest | test runner | MIT | https://pytest.org |
 | Python | language runtime | PSF License | https://www.python.org |
+| Ollama (optional, local dev only; no model chosen yet) | local LLM server behind the Ollama adapter | MIT (server); each model has its own license | https://ollama.com |

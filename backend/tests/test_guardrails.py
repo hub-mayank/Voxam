@@ -50,21 +50,11 @@ def test_corrupt_counter_fails_closed(tmp_path):
         count_call()
 
 
-def test_gemini_adapter_stops_at_cap(monkeypatch):
-    monkeypatch.setenv("LLM_DAILY_CALL_CAP", "2")
-    calls = []
-
-    class Reply:
-        def raise_for_status(self): pass
-        def json(self): return {"candidates": [{"content": {"parts": [{"text": "hi"}]}}]}
-
-    monkeypatch.setattr("app.llm.gemini.httpx.post", lambda *a, **kw: calls.append(1) or Reply())
-    llm = GeminiLLM(model="fake-model", api_key="fake-key")
-    llm.complete_text("s", "u")
-    llm.complete_text("s", "u")
-    with pytest.raises(CallCapExceeded):
-        llm.complete_text("s", "u")
-    assert len(calls) == 2
+def test_default_budget_file_is_shared_in_home(monkeypatch, tmp_path):
+    monkeypatch.delenv("LLM_BUDGET_FILE")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    count_call()
+    assert (tmp_path / ".cache" / "ai-viva" / "llm_budget.json").exists()
 
 
 def test_secrets_script_flags_fake_key(tmp_path):

@@ -4,6 +4,7 @@ so we add headroom (GEMINI_TOKEN_HEADROOM, default 1500) and fail loudly on empt
 import json
 import os
 import httpx
+from .budget import count_call
 
 
 class GeminiLLM:
@@ -24,6 +25,7 @@ class GeminiLLM:
         body = {"systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
                 "generationConfig": gen}
+        count_call()
         r = httpx.post(url, json=body, headers={"x-goog-api-key": self.key}, timeout=self.timeout)
         r.raise_for_status()
         cand = r.json()["candidates"][0]

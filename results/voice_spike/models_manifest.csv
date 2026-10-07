@@ -1,0 +1,11 @@
+model,source_url,size_bytes
+faster-whisper-small,https://huggingface.co/Systran/faster-whisper-small,486217500
+faster-whisper-medium,https://huggingface.co/Systran/faster-whisper-medium,1530576875
+en_US-lessac-medium.onnx,https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx,63201294
+en_US-lessac-medium.onnx.json,https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json,4885
+en_GB-alba-medium.onnx,https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/alba/medium/en_GB-alba-medium.onnx,63201294
+en_GB-alba-medium.onnx.json,https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json,4888
+hi_IN-rohan-medium.onnx,https://huggingface.co/rhasspy/piper-voices/blob/main/hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx,62950044
+hi_IN-rohan-medium.onnx.json,https://huggingface.co/rhasspy/piper-voices/blob/main/hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx.json,5041
+kokoro-v1.0.onnx,https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx,325532387
+voices-v1.0.bin,https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin,28214398

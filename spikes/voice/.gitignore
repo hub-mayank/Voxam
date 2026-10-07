@@ -1,0 +1,6 @@
+# audio and model weights never go in git (consent rule; weights are downloaded)
+data/
+*.wav
+*.aiff
+*.m4a
+.venv/

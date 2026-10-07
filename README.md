@@ -5,7 +5,8 @@ The code owns the clock and follow-up policy; the LLM only classifies answers an
 Scoring runs afterwards on the full transcript against a rubric, and every score cites transcript turns.
 
 Status: text-mode interviewer, scorer, provider adapters (Gemini, Ollama, mock) with retry/fallback,
-telemetry and a call cap are built. The API contract and data layer are in progress; voice is not built yet.
+telemetry and a call cap are built. The HTTP API contract is frozen (`docs/openapi.json`) with stub handlers; the
+real handlers, voice and the dashboard are not built yet.
 
 ## Quick start
 Text mode runs fully offline with the mock LLM. It needs no Docker, database or API key.
@@ -18,6 +19,13 @@ Text mode runs fully offline with the mock LLM. It needs no Docker, database or 
     cd backend
     python -m app.cli --llm mock                     # text viva, writes session.jsonl
     python -m app.score session.jsonl --llm mock     # score it, writes score.json
+
+## API (contract phase: a mock backend)
+    cd backend
+    FACULTY_TOKENS="demo:demo-token-0123456789" python -m uvicorn app.api.main:app --port 8000   # then open /docs
+    python scripts/export_openapi.py                 # regenerate docs/openapi.json after a contract change
+
+Frontend guide: `docs/API.md`. Config env vars: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `REQUIRE_ACCESS_CODE` (default true).
 
 ## Real models
 Keys come from environment variables only, never from files in the repo (see `.env.example`).
@@ -42,7 +50,7 @@ Keys come from environment variables only, never from files in the repo (see `.e
 Results written under `results/` need a `.meta.json` sidecar (provider, model, date, git_sha, n); see `results/README.txt`.
 
 ## Layout
-    backend/app/       interviewer, clock, policy, scorer, config; llm/ adapters; telemetry.py
+    backend/app/       interviewer, clock, policy, scorer, config; llm/ adapters; telemetry.py; session_state.py; api/ (FastAPI)
     backend/tests/     offline tests and persona fixtures
     config/            viva config (phases, rubric) and a sample question bank
     db/, docker-compose.yml   Postgres + Redis for the later stages; not used by text mode

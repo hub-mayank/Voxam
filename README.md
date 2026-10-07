@@ -57,7 +57,7 @@ Results written under `results/` need a `.meta.json` sidecar (provider, model, d
     backend/tests/     offline tests and persona fixtures
     config/            viva config (phases, rubric) and a sample question bank
     backend/app/db/    SQLAlchemy models; db/schema.sql is generated from them
-    docker-compose.yml Postgres + Redis for the later stages; not used by text mode
+    docker-compose.yml PostgreSQL for the later stages; not needed for local dev (SQLite)
     scripts/           benchmark, persona, secret-scan and comparison scripts
     docs/              SPEC, PLAN, DECISIONS, CREDITS, task reports in docs/reports/
     results/           raw evidence files

@@ -135,7 +135,7 @@ def test_four_processes_racing_never_exceed_the_ceiling(tmp_path, monkeypatch):
 def test_the_committed_limits_file_has_the_values_from_the_consoles():
     lim = load_limits()
     g = lambda m: lim[("gemini", m)]  # noqa: E731
-    for m in ("gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash"):
+    for m in ("gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash-preview"):
         assert (g(m).rpm, g(m).rpd, g(m).tpm) == (5, 20, 250_000), m
     for m in ("gemini-3.5-flash-lite", "gemini-3.1-flash-lite"):
         assert (g(m).rpm, g(m).rpd, g(m).tpm) == (15, 500, 250_000), m
@@ -168,3 +168,11 @@ def test_every_counted_adapter_passes_its_provider_and_model():
     for name in ("gemini.py", "openai_compat.py"):
         assert "count_call(self.provider, self.model)" in (ROOT / "backend" / "app" / "llm" / name).read_text()
     assert "count_call" not in (ROOT / "backend" / "app" / "llm" / "ollama.py").read_text(), "local models are never counted"
+
+
+def test_every_gemini_id_in_the_registry_was_seen_in_the_models_list():
+    """IDs confirmed with the one list_models call (2026-10-08). A typo here would silently give a model the unlisted default."""
+    confirmed = {"gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash-preview", "gemini-3.5-flash-lite",
+                 "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts",
+                 "gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts", "gemini-3.5-transcribe"}
+    assert {m for (p, m) in load_limits() if p == "gemini"} == confirmed

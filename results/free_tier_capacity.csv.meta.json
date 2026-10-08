@@ -1,0 +1,17 @@
+{
+  "provider": "stub",
+  "model": "n/a (arithmetic on config/free_tier_limits.json)",
+  "date": "2026-10-08",
+  "git_sha": "40b5510a19ced43c01cb0c13e7824e7963f2f72a",
+  "n": 13,
+  "n_unit": "models",
+  "assumptions": {
+    "answers_per_viva": 11.3,
+    "llm_calls_per_answer": 1.41,
+    "scoring_runs": 3,
+    "students": 350,
+    "viva_seconds": 900,
+    "margin": 0.9
+  },
+  "note": "not a measurement; the limits were copied from the providers' consoles on 2026-10-08 and must be re-verified"
+}

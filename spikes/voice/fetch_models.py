@@ -13,6 +13,8 @@ from common import MODELS, RESULTS, write_meta
 
 KOKORO_BASE = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/"
 PIPER_REPO = "rhasspy/piper-voices"
+WHISPER_CPP_REPO = "ggerganov/whisper.cpp"
+WHISPER_CPP_MODELS = ["ggml-base-q5_1.bin", "ggml-small-q5_1.bin"]  # quantised: keeps the total download under the 3 GB ceiling
 PIPER_VOICES = ["en/en_US/lessac/medium/en_US-lessac-medium", "en/en_GB/alba/medium/en_GB-alba-medium", "hi/hi_IN/rohan/medium/hi_IN-rohan-medium"]
 
 
@@ -31,6 +33,9 @@ def main():
         for ext in (".onnx", ".onnx.json"):
             p = Path(hf_hub_download(PIPER_REPO, voice + ext, local_dir=MODELS / "piper"))
             rows.append((p.name, f"https://huggingface.co/{PIPER_REPO}/blob/main/{voice}{ext}", size_of(p)))
+    for fname in WHISPER_CPP_MODELS:
+        p = Path(hf_hub_download(WHISPER_CPP_REPO, fname, local_dir=MODELS / "whisper.cpp"))
+        rows.append((fname, f"https://huggingface.co/{WHISPER_CPP_REPO}/blob/main/{fname}", size_of(p)))
     for fname in ("kokoro-v1.0.onnx", "voices-v1.0.bin"):
         dest = MODELS / "kokoro" / fname
         dest.parent.mkdir(exist_ok=True)

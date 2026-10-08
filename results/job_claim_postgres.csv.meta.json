@@ -2,12 +2,12 @@
   "provider": "live",
   "model": "PostgreSQL 16.15 (Homebrew) on aarch64-apple-darwin25.6.0",
   "date": "2026-10-08",
-  "git_sha": "1350d702e6fe15cd918de782b5025b8193e21448",
+  "git_sha": "8911bfc85d04566aeec8d3bc981a2e2944733302+dirty",
   "n": 600,
   "n_unit": "jobs claimed by competing OS processes",
   "workers": 8,
   "work_ms": 5,
-  "wall_s": 1.32,
+  "wall_s": 1.36,
   "dialect": "postgresql",
   "note": "a local database, not a provider; every job must be claimed exactly once"
 }

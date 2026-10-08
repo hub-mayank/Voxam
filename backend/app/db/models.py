@@ -59,8 +59,8 @@ class RosterEntry(Base):
     viva_id: Mapped[str] = mapped_column(ForeignKey("vivas.id"), primary_key=True)
     student_id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[Optional[str]] = mapped_column(String)
-    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)  # wrong access codes since the last success
-    locked_until: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)  # consecutive wrong access codes since the last success
+    locked_until: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)  # next code attempt allowed at (growing delay)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
 
 

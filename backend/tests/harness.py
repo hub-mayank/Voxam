@@ -57,7 +57,7 @@ class DownLLM:
 def settings_for(tmp_path, **kw):
     base = dict(faculty_tokens={"tok-rao-0123456789": "dr-rao", "tok-iyer-0123456789": "dr-iyer"},
                 access_code_pepper="pepper-pepper-0123456789", audio_signing_secret="audio-secret-0123456789",
-                database_url=f"sqlite:///{tmp_path / 'viva.db'}", max_code_attempts=3, lockout_seconds=900)
+                database_url=f"sqlite:///{tmp_path / 'viva.db'}")
     return Settings(**{**base, **kw})
 
 

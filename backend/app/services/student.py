@@ -17,6 +17,7 @@ from ..session_state import Event, InvalidTransition, SessionStatus, can_rejoin,
 from . import core, views
 from .rules import RULES
 from .secrets_util import code_matches, hash_code, hash_token, new_session_token
+from .throttle import SlidingWindow
 
 audit = logging.getLogger("aiviva.audit")
 POLL_SECONDS = 0.05
@@ -42,8 +43,9 @@ def harvest(events):
 
 
 class StudentService:
-    def __init__(self, db, settings, now, llm_factory, sleep=time.sleep):
+    def __init__(self, db, settings, now, llm_factory, sleep=time.sleep, ip_throttle: SlidingWindow = None):
         self.db, self.settings, self.now, self.llm_factory, self.sleep = db, settings, now, llm_factory, sleep
+        self.ip_throttle = ip_throttle or SlidingWindow(settings.ip_failures_per_minute)
 
     # ---------- small helpers ----------
 
@@ -74,7 +76,7 @@ class StudentService:
 
     # ---------- join ----------
 
-    def join(self, body: JoinRequest) -> JoinResponse:
+    def join(self, body: JoinRequest, client_ip: str = "unknown") -> JoinResponse:
         db, now, st = self.db, self.now(), self.settings
         if st.require_access_code and not body.access_code:
             raise ApiError(ErrorCode.validation_error, "access_code is required.",
@@ -82,7 +84,7 @@ class StudentService:
         viva = db.get(m.Viva, body.viva_id)
         roster = db.get(m.RosterEntry, (body.viva_id, body.student_id)) if viva else None
         if st.require_access_code:
-            self._check_code(roster, body, now)
+            self._check_code(roster, body, now, client_ip)
         elif roster is None:
             raise ApiError(ErrorCode.invalid_credentials)
         for attempt in range(2):
@@ -109,10 +111,17 @@ class StudentService:
         return JoinResponse(session_id=s.id, session_token=token, status=s.status, resumed=resumed, viva_title=viva.title,
                             duration_ms=cfg.hard_limit * 1000, rules_text=RULES[viva.rules_version], rules_version=viva.rules_version)
 
-    def _check_code(self, roster, body, now):
-        """Constant-time code check with lockout. Unknown student, wrong code and no code on file all look the same."""
+    def _check_code(self, roster, body, now, client_ip):
+        """Constant-time code check with a growing delay. After n wrong codes for a student the next try must wait
+        min(cap, 2^(n-1)) seconds; attempts made during the wait are refused WITHOUT being checked and do not extend it, so a
+        spammer can never keep the real student out for longer than the cap. A second limit counts wrong codes per client IP.
+        Unknown student, wrong code and no code on file all look the same."""
         db, st = self.db, self.settings
-        if roster is not None and roster.locked_until and roster.locked_until > now:
+        stamp = now.timestamp()
+        wait = self.ip_throttle.retry_after_s(client_ip, stamp)
+        if wait > 0:
+            raise ApiError(ErrorCode.rate_limited, "Too many wrong codes from this address.", {"retry_after_ms": int(wait * 1000) + 1})
+        if roster is not None and roster.locked_until and roster.locked_until > now:  # locked_until = next attempt allowed at
             raise ApiError(ErrorCode.rate_limited, details={"retry_after_ms": core.ms_between(roster.locked_until, now)})
         row = None
         if roster is not None:
@@ -124,17 +133,18 @@ class StudentService:
             hash_code(st.access_code_pepper, body.viva_id, body.student_id, body.access_code)  # same work either way
             ok = False
         if ok:
-            if roster.failed_attempts:
-                roster.failed_attempts = 0
+            if roster.failed_attempts or roster.locked_until:
+                roster.failed_attempts, roster.locked_until = 0, None
                 db.commit()
             return
+        self.ip_throttle.record(client_ip, stamp)
         if roster is not None:
             db.execute(update(m.RosterEntry).where(m.RosterEntry.viva_id == roster.viva_id, m.RosterEntry.student_id == roster.student_id)
                        .values(failed_attempts=m.RosterEntry.failed_attempts + 1))
             db.flush()
             db.refresh(roster)
-            if roster.failed_attempts >= st.max_code_attempts:
-                roster.failed_attempts, roster.locked_until = 0, now + timedelta(seconds=st.lockout_seconds)
+            delay = min(st.code_delay_cap_seconds, 2 ** (min(roster.failed_attempts, 30) - 1))
+            roster.locked_until = now + timedelta(seconds=delay)
             db.commit()
         raise ApiError(ErrorCode.invalid_credentials)
 

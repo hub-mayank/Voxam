@@ -161,7 +161,7 @@ class FacultyService:
         code = new_code()
         db.add(m.AccessCode(viva_id=viva_id, student_id=student_id, code_hash=hash_code(st.access_code_pepper, viva_id, student_id, code),
                             created_at=now))
-        roster.failed_attempts, roster.locked_until = 0, None  # a reset also unlocks a locked-out student
+        roster.failed_attempts, roster.locked_until = 0, None  # a reset also clears the delay
         db.commit()
         return ResetCodeResult(student_id=student_id, access_code=code, issued_at=now)
 

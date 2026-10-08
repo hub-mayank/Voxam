@@ -27,4 +27,4 @@ def student_ops(request: Request, db=Depends(get_db)):
     state = request.app.state
     if state.settings.contract_stub:
         return StubStudent(state.settings)
-    return StudentService(db, state.settings, state.now, state.llm_factory)
+    return StudentService(db, state.settings, state.now, state.llm_factory, ip_throttle=state.ip_throttle)

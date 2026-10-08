@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, Request
 
 from .auth import require_student
 from .deps import student_ops
@@ -12,6 +12,15 @@ from .stub import stub_marker
 AUTH = (ErrorCode.unauthorized, ErrorCode.forbidden)
 SID = Path(description="Session ID (UUID) from join.", examples=["7c9e6679-7425-40de-944b-e07fc1f90ae7"])
 
+def client_ip(request: Request) -> str:
+    """The caller's address for the wrong-code limiter. Behind a reverse proxy set TRUST_FORWARDED_FOR=1 to use X-Forwarded-For."""
+    if request.app.state.settings.trust_forwarded_for:
+        forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        if forwarded:
+            return forwarded
+    return request.client.host if request.client else "unknown"
+
+
 join_router = APIRouter(prefix="/student", tags=["student"], dependencies=[Depends(stub_marker)])
 router = APIRouter(prefix="/student", tags=["student"], dependencies=[Depends(require_student), Depends(stub_marker)])
 
@@ -19,13 +28,13 @@ router = APIRouter(prefix="/student", tags=["student"], dependencies=[Depends(re
 @join_router.post("/join", response_model=JoinResponse, summary="Log in with student ID and access code",
                   responses=error_responses(ErrorCode.validation_error, ErrorCode.invalid_credentials,
                                             ErrorCode.session_ended, ErrorCode.rate_limited))
-def student_join(body: JoinRequest, ops=Depends(student_ops)):
+def student_join(body: JoinRequest, request: Request, ops=Depends(student_ops)):
     """No Authorization header. Creates the student's one session for this viva, or **rejoins** it: rejoining with
     the same code is allowed while the session is `created`, `consented` or `in_progress`, returns `resumed: true`
     and a **new token (the old one stops working, 401)**. Once the session has ended the code is dead
     (409 `session_ended`). Wrong ID and wrong code both give the same 403 `invalid_credentials`; repeated failures
     give 429 `rate_limited`. The access code is required (D10)."""
-    return ops.join(body)
+    return ops.join(body, client_ip(request))
 
 
 @router.post("/sessions/{sid}/consent", response_model=ConsentResponse, summary="Accept the rules and recording",

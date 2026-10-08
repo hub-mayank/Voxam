@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from ..db.engine import init_db, make_engine
 from ..llm.factory import make_llm
+from ..services.throttle import SlidingWindow
 from . import routes_faculty, routes_student
 from .errors import install_error_handlers, uniform_validation_errors
 from .schemas.common import Health, example_of
@@ -52,6 +53,7 @@ def create_app(settings: Settings = None, llm_factory=None, now=None, engine=Non
         app.state.engine = engine or make_engine(settings.database_url or None)
         init_db(app.state.engine)
         app.state.sessionmaker = sessionmaker(app.state.engine)
+        app.state.ip_throttle = SlidingWindow(settings.ip_failures_per_minute)
     if settings.cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins), allow_methods=["*"],
                            allow_headers=["*"], expose_headers=["X-Contract-Stub", "Content-Range", "Accept-Ranges"])

@@ -1,0 +1,15 @@
+{
+  "provider": "live",
+  "model": [
+    "azure-speech:en-IN-NeerjaNeural",
+    "piper-en_GB-alba-medium"
+  ],
+  "date": "2026-10-08",
+  "git_sha": "8acb217c59915dd133a14d276a702b5d510b39df",
+  "n": 48,
+  "n_unit": "synthesis requests per engine (24 sentences x repeats)",
+  "azure_requests": 49,
+  "free_tier": "Azure Speech F0",
+  "region": "centralindia",
+  "note": "Azure time includes the network round trip from this Mac; Piper is local"
+}

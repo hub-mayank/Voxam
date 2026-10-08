@@ -1,0 +1,14 @@
+provider,model,kind,status,calls,authorised_limit
+azure-speech,en-IN-NeerjaNeural,tts,error,1,
+azure-speech,en-IN-NeerjaNeural,tts,ok,49,
+gemini,gemini-3.5-flash-lite,classify,ok,14,
+gemini,gemini-3.5-flash-lite,phrase,ok,4,
+groq,openai/gpt-oss-20b,classify,ok,29,
+groq,openai/gpt-oss-20b,phrase,ok,10,
+groq,whisper-large-v3-turbo,stt,ok,12,
+ollama,llama3.2:3b,classify,ok,135,
+ollama,llama3.2:3b,phrase,ok,32,
+azure-speech,,TOTAL,,50,200
+gemini,,TOTAL,,18,30
+groq,,TOTAL,,51,60
+ollama,,TOTAL,,167,not metered (local)

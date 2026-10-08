@@ -1,0 +1,15 @@
+{
+  "provider": "live",
+  "model": "n/a (call accounting)",
+  "date": "2026-10-08",
+  "git_sha": "6988b7571e347536438187ae3e860139a0d6a13e",
+  "n": 286,
+  "n_unit": "logged provider attempts",
+  "budget_registry_24h": {
+    "groq|whisper-large-v3-turbo": 12,
+    "groq|openai/gpt-oss-20b": 39,
+    "gemini|gemini-3.5-flash-lite": 18,
+    "azure-speech|en-IN-NeerjaNeural": 50
+  },
+  "note": "from the telemetry log; the budget registry counts the same attempts per (provider, model) in a rolling 24 h"
+}

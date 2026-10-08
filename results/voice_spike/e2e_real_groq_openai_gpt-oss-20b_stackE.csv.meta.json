@@ -1,0 +1,11 @@
+{
+  "provider": "live",
+  "model": "groq:openai/gpt-oss-20b",
+  "date": "2026-10-08",
+  "git_sha": "8acb217c59915dd133a14d276a702b5d510b39df",
+  "n": 19,
+  "n_unit": "turns (non-LLM legs from the Ollama run of this stack, LLM leg from the cloud replay)",
+  "stack": "E",
+  "llm_calls": 39,
+  "note": "composed from measured legs; cloud LLM latency measured from this Mac on the free tier"
+}

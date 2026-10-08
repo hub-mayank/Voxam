@@ -1,0 +1,12 @@
+{
+  "provider": "live",
+  "model": [
+    "groq-whisper-large-v3-turbo"
+  ],
+  "date": "2026-10-08",
+  "git_sha": "f819899293d3d08245f920ad9e8ededd7fc29acd",
+  "n": 7,
+  "n_unit": "real clips (Mayank, read aloud)",
+  "audio": "real, read aloud, one speaker",
+  "note": "one speaker, 5 English + 2 Hinglish: indicative only, not a sample of MSOT students"
+}

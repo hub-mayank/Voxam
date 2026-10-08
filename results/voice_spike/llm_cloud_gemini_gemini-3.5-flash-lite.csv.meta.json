@@ -1,0 +1,13 @@
+{
+  "provider": "live",
+  "model": "gemini:gemini-3.5-flash-lite",
+  "date": "2026-10-08",
+  "git_sha": "f819899293d3d08245f920ad9e8ededd7fc29acd",
+  "n": 12,
+  "n_unit": "turns replayed with their real prompts",
+  "llm_calls": 18,
+  "free_tier": "yes (budget registry)",
+  "parallel_turns": 2,
+  "reasoning_effort": null,
+  "note": "latency replay of prompts captured from the Ollama run; the cloud model's classification is not fed back into the phrase prompt"
+}

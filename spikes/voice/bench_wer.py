@@ -1,7 +1,8 @@
 """WER on the 7 real clips (Mayank's voice) for each faster-whisper size, plus the Hinglish language-setting question.
 English clips: language forced to en. Hinglish clips: tried with language=en (Roman output expected), language=hi (Devanagari output expected) and auto.
 Reports `strict` WER and, for Hinglish, `skeleton` WER (see wer.py for what each means). Skips quietly if the clips are not there yet.
-Usage: python spikes/voice/bench_wer.py [--models base,small,medium]"""
+Engines: faster-whisper int8 on CPU (base, small, medium) and whisper.cpp q5_1 with Metal (base, small), plus Groq whisper-large-v3-turbo with --groq.
+Usage: python spikes/voice/bench_wer.py [--models base,small,medium] [--cpp base,small] [--groq]"""
 import argparse
 import statistics
 import subprocess
@@ -10,6 +11,7 @@ import soundfile as sf
 
 from clip_refs import HINGLISH, REFS
 from common import CLIPS, RESULTS, write_csv, write_meta
+from stt_cpp import WhisperCpp
 from stt_fw import FasterWhisper
 from wer import DEVANAGARI, counts, wer
 
@@ -28,6 +30,8 @@ def wav_for(clip_id):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="base,small,medium")
+    ap.add_argument("--cpp", default="base,small", help="whisper.cpp sizes (q5_1, Metal); empty to skip")
+    ap.add_argument("--groq", action="store_true", help="also call Groq whisper-large-v3-turbo (free tier: counts against the budget)")
     args = ap.parse_args()
     clips = {c: wav_for(c) for c in REFS}
     present = {c: a for c, a in clips.items() if a is not None}
@@ -35,20 +39,29 @@ def main():
         raise SystemExit(f"no clips in {CLIPS}; see spikes/voice/RECORDING.md")
     print(f"{len(present)}/7 clips found: {sorted(present)}")
     rows = []
-    for size in args.models.split(","):
-        stt = FasterWhisper(size)
-        stt.transcribe(next(iter(present.values()))[:16000 * 3])
+    engines = [("fw", FasterWhisper(size)) for size in args.models.split(",") if size]
+    engines += [("cpp", WhisperCpp(size)) for size in args.cpp.split(",") if size]
+    if args.groq:
+        from stt_groq import GroqWhisper
+        engines.append(("groq", GroqWhisper()))
+    for kind, stt in engines:
+        stt.transcribe(next(iter(present.values()))[:16000 * 3])  # warm-up, not recorded
         for cid, audio in sorted(present.items()):
             langs = ["en", "hi", None] if cid in HINGLISH else ["en"]
             for lang in langs:
-                text, secs = stt.transcribe(audio, language=lang) if lang else stt.transcribe_auto(audio)
+                if lang:
+                    text, secs = stt.transcribe(audio, language=lang)
+                elif kind == "fw":
+                    text, secs = stt.transcribe_auto(audio)
+                else:
+                    text, secs = stt.transcribe(audio, language="auto")
                 s, d, i, n = counts(REFS[cid], text)
                 rows.append([stt.name, cid, "hinglish" if cid in HINGLISH else "english", lang or "auto", round(len(audio) / 16000, 1), round(secs, 2),
                              round(wer(REFS[cid], text), 4), round(wer(REFS[cid], text, "skeleton"), 4), s, d, i, n, int(bool(DEVANAGARI.search(text))), text])
     out = RESULTS / "wer_real_clips.csv"
     write_csv(out, ["model", "clip", "kind", "language_setting", "audio_s", "decode_s", "wer_strict", "wer_skeleton", "substitutions", "deletions",
                     "insertions", "ref_words", "output_has_devanagari", "text"], rows)
-    write_meta(out, provider="live", model=[f"faster-whisper-{m}-int8" for m in args.models.split(",")], n=len(present), n_unit="real clips (Mayank, read aloud)",
+    write_meta(out, provider="live", model=sorted({r[0] for r in rows}), n=len(present), n_unit="real clips (Mayank, read aloud)",
                audio="real, read aloud, one speaker", note="one speaker, 5 English + 2 Hinglish: indicative only, not a sample of MSOT students")
     for model in sorted({r[0] for r in rows}):
         eng = [r[6] for r in rows if r[0] == model and r[2] == "english"]

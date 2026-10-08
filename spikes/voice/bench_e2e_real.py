@@ -125,12 +125,12 @@ def main():
                audio="synthetic", stack=desc, hangover_ms=a.hangover, llm_leg="real (Ollama, local)", sessions=brain.sessions,
                note="e2e_s: adapters as shipped (no streaming, classify then phrase, full phrase); *_streamed_s: first sentence of the phrase; *_parallel_s: classify and phrase started together")
     col = lambda i: [r[i] for r in rows if r[i] != ""]  # noqa: E731
+    pct = lambda i, q: percentile(col(i), q) if col(i) else float("nan")  # noqa: E731
     print(f"stack {a.stack} [{desc}] n={len(rows)} sessions={brain.sessions}")
     for name, i in (("E2E as shipped", 10), ("E2E first-sentence streamed", 18), ("E2E parallel classify+phrase", 19), ("E2E parallel + speculative STT", 20)):
-        v = col(i)
-        print(f"   {name:34} p50 {percentile(v, 50):.2f}s p95 {percentile(v, 95):.2f}s")
-    print(f"   classify real p50 {percentile(col(6), 50):.2f}s | phrase real p50 {percentile(col(7), 50):.2f}s (turns with a phrase: {len(col(7))}) | "
-          f"ttft classify {percentile(col(11), 50):.2f}s phrase {percentile(col(13), 50):.2f}s | stt p50 {percentile(col(3), 50):.2f}s")
+        print(f"   {name:34} p50 {pct(i, 50):.2f}s p95 {pct(i, 95):.2f}s")
+    print(f"   classify real p50 {pct(6, 50):.2f}s | phrase real p50 {pct(7, 50):.2f}s (turns with a phrase: {len(col(13))}) | "
+          f"ttft classify {pct(11, 50):.2f}s phrase {pct(13, 50):.2f}s | stt p50 {pct(3, 50):.2f}s")
 
 
 if __name__ == "__main__":

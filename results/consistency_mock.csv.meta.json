@@ -1,0 +1,18 @@
+{
+  "provider": "mock",
+  "model": "mock",
+  "date": "2026-10-08",
+  "git_sha": "c16be3c6cc9ad26d008ba43fea7eb125d7996798",
+  "n": 25,
+  "n_unit": "scorer runs",
+  "runs_per_transcript": 5,
+  "transcripts": [
+    "idk",
+    "injection",
+    "strong",
+    "strong_hinglish",
+    "weak"
+  ],
+  "scorer_prompt_version": "scorer-v1",
+  "note": "mock scorer is deterministic: variance 0 by construction; proves plumbing, not scorer consistency"
+}

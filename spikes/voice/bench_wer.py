@@ -9,11 +9,25 @@ import subprocess
 
 import soundfile as sf
 
-from clip_refs import HINGLISH, REFS
+from clip_refs import HINGLISH, REFS, TERMS
 from common import CLIPS, RESULTS, write_csv, write_meta
 from stt_cpp import WhisperCpp
 from stt_fw import FasterWhisper
-from wer import DEVANAGARI, counts, wer
+from wer import DEVANAGARI, counts, normalize, skeleton, wer
+
+
+def term_recall(cid, text):
+    """Share of the clip's technical terms found in the transcript (spelling-tolerant: compared by consonant skeleton, after Devanagari -> Roman)."""
+    have = {skeleton(w) for w in normalize(text).split()}
+    found = [t for t in TERMS[cid] if all(skeleton(w) in have for w in normalize(t).split())]
+    return len(found) / len(TERMS[cid])
+
+
+def max_repeat(text, n=3):
+    """Most times any word n-gram repeats: a decoding loop shows up as a large number."""
+    words = normalize(text).split()
+    grams = [tuple(words[i:i + n]) for i in range(len(words) - n + 1)]
+    return max((grams.count(g) for g in set(grams)), default=0)
 
 
 def wav_for(clip_id):
@@ -57,19 +71,20 @@ def main():
                     text, secs = stt.transcribe(audio, language="auto")
                 s, d, i, n = counts(REFS[cid], text)
                 rows.append([stt.name, cid, "hinglish" if cid in HINGLISH else "english", lang or "auto", round(len(audio) / 16000, 1), round(secs, 2),
-                             round(wer(REFS[cid], text), 4), round(wer(REFS[cid], text, "skeleton"), 4), s, d, i, n, int(bool(DEVANAGARI.search(text))), text])
+                             round(wer(REFS[cid], text), 4), round(wer(REFS[cid], text, "skeleton"), 4), s, d, i, n, int(bool(DEVANAGARI.search(text))), round(term_recall(cid, text), 3), max_repeat(text), text])
     out = RESULTS / "wer_real_clips.csv"
     write_csv(out, ["model", "clip", "kind", "language_setting", "audio_s", "decode_s", "wer_strict", "wer_skeleton", "substitutions", "deletions",
-                    "insertions", "ref_words", "output_has_devanagari", "text"], rows)
+                    "insertions", "ref_words", "output_has_devanagari", "term_recall", "max_trigram_repeat", "text"], rows)
     write_meta(out, provider="live", model=sorted({r[0] for r in rows}), n=len(present), n_unit="real clips (Mayank, read aloud)",
                audio="real, read aloud, one speaker", note="one speaker, 5 English + 2 Hinglish: indicative only, not a sample of MSOT students")
     for model in sorted({r[0] for r in rows}):
         eng = [r[6] for r in rows if r[0] == model and r[2] == "english"]
-        print(f"{model}: English WER mean {statistics.mean(eng):.3f} over {len(eng)} clips" if eng else f"{model}: no English clips")
+        er = [r[13] for r in rows if r[0] == model and r[2] == "english"]
+        print(f"{model}: English WER mean {statistics.mean(eng):.3f}, term recall {statistics.mean(er):.2f} over {len(eng)} clips" if eng else f"{model}: no English clips")
         for lang in ("en", "hi", "auto"):
             hi = [r for r in rows if r[0] == model and r[2] == "hinglish" and r[3] == lang]
             if hi:
-                print(f"   Hinglish language={lang}: strict {statistics.mean(r[6] for r in hi):.3f} skeleton {statistics.mean(r[7] for r in hi):.3f} Devanagari output in {sum(r[12] for r in hi)}/{len(hi)}")
+                print(f"   Hinglish language={lang}: strict {statistics.mean(r[6] for r in hi):.3f} skeleton {statistics.mean(r[7] for r in hi):.3f} term recall {statistics.mean(r[13] for r in hi):.2f} loops {sum(r[14] >= 5 for r in hi)}/{len(hi)} Devanagari {sum(r[12] for r in hi)}/{len(hi)}")
 
 
 if __name__ == "__main__":

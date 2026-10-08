@@ -39,3 +39,14 @@ REFS = {
         "sirf wahi columns index karte hain jo queries mein bahut use hote hain."
     ),
 }
+
+# Technical terms in each clip, to measure whether the CONTENT survives when word-for-word WER cannot (Hinglish comes out translated or in Devanagari).
+TERMS = {
+    "c01": ["hash table", "key", "hash function", "index", "array", "collision", "chaining", "open addressing", "constant time", "load factor"],
+    "c02": ["big o", "running time", "input size", "constant factors", "binary search", "logarithmic", "linear"],
+    "c03": ["database index", "data structure", "b tree", "scanning", "reads faster", "extra storage", "writes", "insert", "update", "queries"],
+    "c04": ["url", "browser", "dns", "tcp", "tls handshake", "http request", "response", "renders", "caching"],
+    "c05": ["process", "memory space", "threads", "race conditions", "locks", "isolation", "crashes"],
+    "c06": ["hash table", "data structure", "key", "hash function", "index", "convert", "collision", "chaining", "open addressing", "average case", "lookup", "constant time"],
+    "c07": ["database", "index", "queries", "scan", "trade off", "insert", "update", "storage", "columns"],
+}

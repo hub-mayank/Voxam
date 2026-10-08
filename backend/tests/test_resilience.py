@@ -114,22 +114,30 @@ def test_cap_counts_every_attempt_including_retries(monkeypatch):
     llm, _ = llm_for(gemini_429(monkeypatch))
     with pytest.raises(AllProvidersFailed):
         llm.complete_text("s", "u")
-    assert json.loads(budget_path().read_text())["count"] == 3  # 1 try + 2 retries
+    assert len(json.loads(budget_path().read_text())["calls"]["gemini|m"]) == 3  # 1 try + 2 retries
 
 
-def test_cap_stops_the_adapter_and_never_falls_back(monkeypatch, tmp_path):
+def test_a_provider_out_of_budget_is_skipped_and_the_chain_moves_on(monkeypatch, tmp_path):
     monkeypatch.setenv("LLM_DAILY_CALL_CAP", "2")
     calls = []
     body = {"candidates": [{"content": {"parts": [{"text": "hi"}]}}]}
     monkeypatch.setattr("app.llm.gemini.httpx.post", lambda *a, **k: calls.append(1) or httpx.Response(200, json=body, request=REQ))
-    backup = FakeProvider()
+    backup = FakeProvider(text="from backup")
     llm, _ = llm_for(GeminiLLM(model="m", api_key="k"), backup)
-    llm.complete_text("s", "u")
+    assert llm.complete_text("s", "u") == "hi" and llm.complete_text("s", "u") == "hi"
+    assert llm.complete_text("s", "u") == "from backup", "third call: the budget is used up, so the backup serves"
+    assert len(calls) == 2 and backup.calls == 1 and llm.name == "fake:flaky"
+    assert [r["status"] for r in records(tmp_path)][-2:] == ["cap_exceeded", "ok"]
+
+
+def test_when_every_provider_is_out_of_budget_the_cap_error_surfaces(monkeypatch):
+    monkeypatch.setenv("LLM_DAILY_CALL_CAP", "1")
+    body = {"candidates": [{"content": {"parts": [{"text": "hi"}]}}]}
+    monkeypatch.setattr("app.llm.gemini.httpx.post", lambda *a, **k: httpx.Response(200, json=body, request=REQ))
+    llm, _ = llm_for(GeminiLLM(model="m", api_key="k"))
     llm.complete_text("s", "u")
     with pytest.raises(CallCapExceeded):
         llm.complete_text("s", "u")
-    assert len(calls) == 2 and backup.calls == 0
-    assert records(tmp_path)[-1]["status"] == "cap_exceeded"
 
 
 def test_mock_stub_and_local_providers_are_not_counted(monkeypatch):

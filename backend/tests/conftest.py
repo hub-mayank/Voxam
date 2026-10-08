@@ -17,6 +17,7 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(autouse=True)
 def isolate_state(request, tmp_path, monkeypatch):
     # offline tests never touch the real call counter or the real telemetry log
+    monkeypatch.setenv("AI_VIVA_NO_DOTENV", "1")  # tests never read the real .env
     if "live" not in request.keywords:
         monkeypatch.setenv("LLM_BUDGET_FILE", str(tmp_path / "budget.json"))
         monkeypatch.setenv("TELEMETRY_FILE", str(tmp_path / "telemetry.jsonl"))

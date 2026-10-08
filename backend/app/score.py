@@ -1,7 +1,8 @@
-"""python -m app.score session.jsonl [--llm mock|gemini|ollama] [--runs 3] [--out score.json]"""
+"""python -m app.score session.jsonl [--llm mock|gemini|ollama|groq:<model>|a,b fallback list] [--runs 3] [--out score.json]"""
 import argparse
 import json
 from pathlib import Path
+from .envfile import load_env
 from .llm.factory import make_llm
 from .config import load_config
 from .scorer import score_session
@@ -12,10 +13,11 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("session")
-    ap.add_argument("--llm", default="mock", help="mock, gemini, ollama, or a fallback list like gemini,ollama")
+    ap.add_argument("--llm", default="mock", help="mock, gemini, ollama, provider:model (groq:openai/gpt-oss-20b), or a fallback list like groq:openai/gpt-oss-20b,gemini,ollama")
     ap.add_argument("--runs", type=int, default=3)
     ap.add_argument("--out", default="score.json")
     a = ap.parse_args()
+    load_env()
     cfg = load_config(ROOT / "config/viva.config.json")
     llm = make_llm(a.llm)
     events = [json.loads(l) for l in open(a.session) if l.strip()]

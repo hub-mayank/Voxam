@@ -29,7 +29,7 @@ class GeminiLLM:
         body = {"systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
                 "generationConfig": gen}
-        count_call()
+        count_call(self.provider, self.model)
         try:
             r = httpx.post(url, json=body, headers={"x-goog-api-key": self.key}, timeout=self.timeout)
             r.raise_for_status()

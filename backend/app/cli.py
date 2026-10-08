@@ -1,9 +1,10 @@
-"""Text-mode viva. Usage: python -m app.cli [--llm mock|gemini|ollama]"""
+"""Text-mode viva. Usage: python -m app.cli [--llm mock|gemini|ollama|groq:<model>|a,b fallback list]"""
 import argparse
 from pathlib import Path
 from .clock import VivaClock
 from .llm.factory import make_llm
 from .config import load_config, load_bank
+from .envfile import load_env
 from .interviewer import Interviewer
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -11,9 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--llm", default="mock", help="mock, gemini, ollama, or a fallback list like gemini,ollama")
+    ap.add_argument("--llm", default="mock", help="mock, gemini, ollama, provider:model (groq:openai/gpt-oss-20b), or a fallback list like groq:openai/gpt-oss-20b,gemini,ollama")
     ap.add_argument("--out", default="session.jsonl")
     a = ap.parse_args()
+    load_env()
     cfg = load_config(ROOT / "config/viva.config.json")
     bank = load_bank(ROOT / "config/question_bank.sample.json")
     llm = make_llm(a.llm)

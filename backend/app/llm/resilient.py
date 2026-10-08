@@ -1,7 +1,8 @@
 """Retry with backoff, ordered fallback and telemetry around raw providers.
 Per provider: up to `retries` retries on 429/5xx/timeouts (non-retryable errors go straight to the next provider).
-CallCapExceeded is a hard stop: never retried, never falls back. `name` is the model that served the last call
-(for audit logs); share one instance per session, not across concurrent sessions."""
+A provider whose call budget is used up (CallCapExceeded: free-tier day budget, global ceiling, or per-minute pacing) is skipped for
+this call and the chain moves on; it is never retried. If every provider is out of budget the CallCapExceeded is raised.
+`name` is the model that served the last call (for audit logs); share one instance per session, not across concurrent sessions."""
 import json
 import random
 import time
@@ -41,15 +42,16 @@ class ResilientLLM:
     def _run(self, system, user, max_tokens, kind, json_mode):
         if kind not in telemetry.KINDS:
             raise ValueError(f"unknown kind {kind!r}")
-        errors = []
+        errors, capped = [], []
         for p in self.providers:
             for attempt in range(self.retries + 1):
                 t = time.perf_counter()
                 try:
                     reply = p.generate(system, user, max_tokens, json_mode)
-                except CallCapExceeded:
+                except CallCapExceeded as e:
                     self._log(p, kind, (time.perf_counter() - t) * 1000, "cap_exceeded", attempt)
-                    raise
+                    capped.append(e)
+                    break
                 except ProviderError as e:
                     self._log(p, kind, (time.perf_counter() - t) * 1000, e.status, attempt)
                     errors.append(e)
@@ -66,6 +68,8 @@ class ResilientLLM:
                 self._log(p, kind, ms, "ok", attempt, reply)
                 self._served = p
                 return out
+        if not errors:  # nobody was even tried: every provider is out of budget
+            raise capped[-1]
         last = errors[-1]
         raise AllProvidersFailed(f"all providers failed, last: {last}", last.status,
                                  any(e.retryable for e in errors), last.status_code, None, last.body)

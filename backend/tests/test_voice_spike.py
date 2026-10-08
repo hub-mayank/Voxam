@@ -1,5 +1,6 @@
 """Tests for the voice spike's helpers and for the shape of its committed results. Offline: no models, no audio."""
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -134,3 +135,96 @@ def test_vad_endpoint_rule():
     assert endpoint_frame(probs, 3000) is None, "a hangover longer than any silence in the audio never fires"
     assert endpoint_frame(np.zeros(100), 500) is None, "silence alone never starts a turn"
     assert speech_segments(probs, min_pause_ms=250) == [(5, 25), (55, 65)]
+
+
+# ---------- streaming probes (parsers tested with fake streams: no network) ----------
+
+class FakeStream:
+    def __init__(self, lines, status=200):
+        self.lines, self.status_code = lines, status
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def iter_lines(self):
+        return iter(self.lines)
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError("http error")
+
+    def read(self):
+        return b""
+
+
+def patch_stream(monkeypatch, lines, status=200):
+    import llm_stream
+    monkeypatch.setattr(llm_stream.httpx, "stream", lambda *a, **k: FakeStream(lines, status))
+    return llm_stream
+
+
+def test_first_sentence_is_detected_when_the_sentence_ends():
+    from llm_stream import _Clock
+    c = _Clock()
+    for piece in ("Good", ". What", " about edge cases?"):
+        c.feed(piece)
+    out = c.done("p", "m")
+    assert out.text == "Good. What about edge cases?" and out.ttft_s <= out.first_sentence_s <= out.total_s
+
+
+def test_a_reply_without_a_full_stop_counts_its_end_as_the_first_sentence():
+    from llm_stream import _Clock
+    c = _Clock()
+    c.feed('{"quality":"strong"}')
+    out = c.done("p", "m")
+    assert out.first_sentence_s == out.total_s and out.ttft_s is not None
+    assert _Clock().done("p", "m").ttft_s is None and _Clock().done("p", "m").first_sentence_s is None, "no text at all: no first token"
+
+
+def test_ollama_ndjson_stream_is_parsed(monkeypatch):
+    lines = [json.dumps({"message": {"content": "Hello"}, "done": False}), "", json.dumps({"message": {"content": " there."}, "done": False}),
+             json.dumps({"message": {"content": ""}, "done": True, "eval_count": 7})]
+    mod = patch_stream(monkeypatch, lines)
+    r = mod.ollama_stream("m", "s", "u", False, 50)
+    assert r.text == "Hello there." and r.tokens_out == 7 and r.provider == "ollama" and r.first_sentence_s <= r.total_s
+
+
+def test_openai_sse_stream_skips_non_data_lines_and_stops_at_done(monkeypatch):
+    chunk = lambda t: "data: " + json.dumps({"choices": [{"delta": {"content": t}}]})  # noqa: E731
+    lines = [": keep-alive", chunk(""), chunk("Okay"), chunk(", let's move on."), "data: [DONE]", chunk("never read")]
+    mod = patch_stream(monkeypatch, lines)
+    r = mod.openai_stream("groq", "m", "https://x/v1", "k", "s", "u", False, 20)
+    assert r.text == "Okay, let's move on." and r.provider == "groq"
+
+
+def test_openai_stream_error_status_raises(monkeypatch):
+    mod = patch_stream(monkeypatch, [], status=429)
+    with pytest.raises(RuntimeError):
+        mod.openai_stream("groq", "m", "https://x/v1", "k", "s", "u", False, 20)
+
+
+def test_gemini_stream_ignores_thinking_parts(monkeypatch):
+    part = lambda **kw: "data: " + json.dumps({"candidates": [{"content": {"parts": [kw]}}]})  # noqa: E731
+    lines = [part(text="(thinking...)", thought=True), part(text="Real answer."), part(text=" More.")]
+    mod = patch_stream(monkeypatch, lines)
+    r = mod.gemini_stream("m", "k", "s", "u", False, 20)
+    assert r.text == "Real answer. More." and r.first_sentence_s is not None
+
+
+def test_the_real_llm_probe_replays_the_same_prompts(monkeypatch):
+    """bench_e2e_real.probe: classify then phrase in sequence, then both started together; parallel is the slower of the two, not the sum."""
+    import bench_e2e_real as b
+    from brain import Call
+    from llm_stream import Streamed
+    calls = [Call("classify", 0, 0, real_s=0.4, system="S1", user="U1", json_mode=True, max_tokens=200),
+             Call("phrase", 0, 0, real_s=1.0, system="S2", user="U2", json_mode=False, max_tokens=120)]
+    times = {"S1": Streamed("ollama", "m", 0.05, 0.4, 0.4, "{}"), "S2": Streamed("ollama", "m", 0.2, 0.6, 1.0, "Go on. Please.")}
+    monkeypatch.setattr(b, "ollama_stream", lambda model, system, user, json_mode, max_tokens: times[system])
+    out = b.probe("m", calls)
+    assert out["seq_streamed"] == pytest.approx(0.4 + 0.6) and out["parallel"] == pytest.approx(0.6 if 0.6 > 0.4 else 0.4)
+    assert out["classify_ttft"] == 0.05 and out["phrase_first_sentence"] == 0.6
+    only = b.probe("m", calls[:1])
+    assert only["seq_streamed"] == only["parallel"] == 0.4, "a turn with no phrase call has nothing to parallelise"

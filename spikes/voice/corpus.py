@@ -66,3 +66,16 @@ AI_SENTENCES = [
     "Describe a bug that took you a long time to find, and how you finally found it.",
     "What would you measure first to be sure the change actually helped?",
 ]
+
+# 8 more AI sentences so the TTS comparison has 24 (at least 20 were asked for)
+AI_SENTENCES_EXTRA = [
+    "Welcome. This is a fifteen minute viva, and everyone gets the same structure.",
+    "Let's start simple. What is the difference between an array and a linked list?",
+    "That is a good start. Can you give me a concrete example from your own project?",
+    "I see. What would happen to your design if the number of users doubled overnight?",
+    "Take your time. Which part of the problem would you tackle first?",
+    "Thank you. We have about two minutes left, so let's wrap up with one last question.",
+    "Could you explain that in simpler terms, as if to a new teammate?",
+    "That is all from my side. Thank you for your time, and good luck.",
+]
+ALL_AI_SENTENCES = AI_SENTENCES + AI_SENTENCES_EXTRA

@@ -158,7 +158,7 @@ def main():
         add("transport_ws", "FastAPI WebSocket, real-time paced audio, canned reply", "server_stt_p50", percentile([float(r["server_stt_s"]) for r in data], 50), "s", f.name)
         add("transport_ws", "FastAPI WebSocket, real-time paced audio, canned reply", "barge_in_interrupt_after_first_sample", m["barge_in_interrupt_ms"], "ms", f.name)
 
-    for f in sorted(RESULTS.glob("wer_real_clips.csv")):
+    for f in sorted(RESULTS.glob("wer_real_clips*.csv")):
         data = load(f)
         for model in sorted({r["model"] for r in data}):
             for kind, lang in (("english", "en"), ("hinglish", "en"), ("hinglish", "hi"), ("hinglish", "auto")):

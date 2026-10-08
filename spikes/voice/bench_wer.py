@@ -45,6 +45,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="base,small,medium")
     ap.add_argument("--cpp", default="base,small", help="whisper.cpp sizes (q5_1, Metal); empty to skip")
+    ap.add_argument("--out", default="wer_real_clips.csv", help="file name inside results/voice_spike (use another name for a Groq-only run)")
     ap.add_argument("--groq", action="store_true", help="also call Groq whisper-large-v3-turbo (free tier: counts against the budget)")
     args = ap.parse_args()
     clips = {c: wav_for(c) for c in REFS}
@@ -72,7 +73,7 @@ def main():
                 s, d, i, n = counts(REFS[cid], text)
                 rows.append([stt.name, cid, "hinglish" if cid in HINGLISH else "english", lang or "auto", round(len(audio) / 16000, 1), round(secs, 2),
                              round(wer(REFS[cid], text), 4), round(wer(REFS[cid], text, "skeleton"), 4), s, d, i, n, int(bool(DEVANAGARI.search(text))), round(term_recall(cid, text), 3), max_repeat(text), text])
-    out = RESULTS / "wer_real_clips.csv"
+    out = RESULTS / args.out
     write_csv(out, ["model", "clip", "kind", "language_setting", "audio_s", "decode_s", "wer_strict", "wer_skeleton", "substitutions", "deletions",
                     "insertions", "ref_words", "output_has_devanagari", "term_recall", "max_trigram_repeat", "text"], rows)
     write_meta(out, provider="live", model=sorted({r[0] for r in rows}), n=len(present), n_unit="real clips (Mayank, read aloud)",

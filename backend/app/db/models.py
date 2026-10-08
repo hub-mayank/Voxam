@@ -51,7 +51,7 @@ class Question(Base):
     key_points: Mapped[list] = mapped_column(JsonType, default=list)
     source: Mapped[str] = mapped_column(String, default="bank")
     approved_by: Mapped[Optional[str]] = mapped_column(String)
-    __table_args__ = (one_of("type", ["concept", "applied"]), one_of("source", ["bank", "generated"]))
+    __table_args__ = (one_of("type", ["concept", "applied"]), one_of("source", ["bank", "ai-draft", "generated"]))
 
 
 class RosterEntry(Base):

@@ -62,7 +62,7 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 ## Faculty flow
 1. Paste token. Check it with `GET /faculty/vivas` (401 = bad token).
 2. `POST /faculty/vivas` {title, subject, topics, difficulty} -> `Viva`.
-3. `POST /faculty/vivas/{id}/questions` (file: `.json` array or `.csv` `id,topic,type,difficulty,text,key_points` with `|` between key points). All-or-nothing: show `details.rows` on 422. Response has `warnings` (small bank). Locked once a student has joined.
+3. `POST /faculty/vivas/{id}/questions` (file: `.json` array or `.csv` `id,topic,type,difficulty,text,key_points` with `|` between key points, plus an optional `source` column: `bank` or `ai-draft`). `config/question_bank.dsa.json` and `.csv` are a 30-question AI-drafted DSA bank (marked `ai-draft`: faculty must approve before real use). All-or-nothing: show `details.rows` on 422. Response has `warnings` (small bank). Locked once a student has joined.
 4. `POST /faculty/vivas/{id}/roster` (file: `.csv` `student_id,name`). The response is the **only** time the plaintext `access_code`s are shown: show/print/download them now. Lost one: `POST .../roster/{student_id}/reset-code`.
 5. `GET /faculty/vivas/{id}/sessions?status=&low_confidence=&search=&limit=&cursor=` for the list; `needs_review` marks low-confidence sessions that nobody has reviewed or overridden.
 6. `GET /faculty/sessions/{sid}`: transcript, `scoring` (3 runs, median, per-dimension reason + `evidence` turn numbers), `feedback`, `overrides`, `integrity_events`, `audio`.

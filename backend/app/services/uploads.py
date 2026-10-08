@@ -48,9 +48,11 @@ def parse_bank(filename: str, data: bytes) -> list:
     """-> list[QuestionIn]. CSV: id,topic,type,difficulty,text,key_points (key points separated by |). JSON: array of objects."""
     text, kind = _text(data), _kind(filename, ("csv", "json"))
     if kind == "csv":
-        rows = _csv_rows(text, BANK_COLUMNS)
+        rows = _csv_rows(text, BANK_COLUMNS, ("source",))
         for r in rows:
             r["key_points"] = [p.strip() for p in r["key_points"].split("|") if p.strip()]
+            if not r.get("source"):
+                r.pop("source", None)  # an empty cell means the default (bank)
     else:
         try:
             rows = json.loads(text)

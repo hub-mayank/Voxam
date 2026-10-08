@@ -1,0 +1,422 @@
+[
+  {
+    "id": "o01",
+    "topic": "arrays",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "What is an array, and how do you read an element at a given position?",
+    "key_points": [
+      "contiguous block of memory",
+      "index to address arithmetic",
+      "constant time access by index",
+      "fixed size or resizable"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "o02",
+    "topic": "basics",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "What is a data structure, and why does the choice of data structure matter for a program?",
+    "key_points": [
+      "way of organising data",
+      "different operations cost differently",
+      "trade-offs in time and memory",
+      "match structure to access pattern"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "o03",
+    "topic": "stacks-queues",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "What does LIFO mean, and can you name something in everyday computing that behaves like a stack?",
+    "key_points": [
+      "last in first out",
+      "push and pop",
+      "undo history or call stack",
+      "browser back button"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "o04",
+    "topic": "complexity",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "In simple words, what is the difference between an O(n) algorithm and an O(n squared) one?",
+    "key_points": [
+      "work grows linearly vs quadratically with input",
+      "doubling input doubles vs quadruples the work",
+      "matters for large inputs",
+      "example such as one loop vs nested loops"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c01",
+    "topic": "complexity",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "What does Big-O notation describe, and why do we ignore constant factors when we use it?",
+    "key_points": [
+      "upper bound on growth rate",
+      "behaviour as input size grows",
+      "constants and lower terms dominated for large n",
+      "compare algorithms independent of hardware"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c02",
+    "topic": "arrays",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "How does a dynamic array grow when it runs out of space, and what is the cost of appending an element?",
+    "key_points": [
+      "allocate larger block and copy",
+      "doubling capacity",
+      "amortised constant time append",
+      "occasional linear-cost copy"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c03",
+    "topic": "linked-lists",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "When would you choose a linked list over an array, and when would you not?",
+    "key_points": [
+      "cheap insert or delete given a node",
+      "no random access by index",
+      "extra memory for pointers",
+      "poor cache locality"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c04",
+    "topic": "stacks-queues",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "Compare a stack and a queue: how do they differ, and where does each appear in real systems?",
+    "key_points": [
+      "LIFO vs FIFO",
+      "stack: call stack, undo, parsing",
+      "queue: scheduling, buffering, BFS",
+      "both can be built on arrays or linked lists"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c05",
+    "topic": "hash-tables",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "How does a hash table handle two keys that map to the same slot, and what happens to performance as it fills up?",
+    "key_points": [
+      "collision handling by chaining or open addressing",
+      "load factor",
+      "resizing and rehashing",
+      "average constant time, worst case linear"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c06",
+    "topic": "trees",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "What is a binary search tree, and what goes wrong when it becomes unbalanced?",
+    "key_points": [
+      "left smaller right larger ordering",
+      "search insert delete follow one path",
+      "degenerates to a linked list",
+      "height decides cost, O(log n) vs O(n)"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c07",
+    "topic": "trees",
+    "type": "concept",
+    "difficulty": 3,
+    "text": "At a high level, how do self-balancing trees such as AVL or red-black trees keep their height small?",
+    "key_points": [
+      "track balance information per node",
+      "rotations restore balance after insert or delete",
+      "guaranteed logarithmic height",
+      "cost is extra bookkeeping"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c08",
+    "topic": "heaps",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "What is a binary heap, and how does a priority queue use it?",
+    "key_points": [
+      "complete binary tree with heap property",
+      "stored in an array",
+      "insert and extract in logarithmic time",
+      "peek the min or max in constant time"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c09",
+    "topic": "graphs",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "Compare breadth-first and depth-first search: how each traverses a graph, what structure it uses, and when you would pick each.",
+    "key_points": [
+      "BFS uses a queue, DFS a stack or recursion",
+      "BFS finds fewest edges in unweighted graphs",
+      "DFS for cycles, topological order, components",
+      "both visit each vertex and edge once"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c10",
+    "topic": "graphs",
+    "type": "concept",
+    "difficulty": 3,
+    "text": "How does Dijkstra's algorithm find shortest paths, and why does it break when edges can be negative?",
+    "key_points": [
+      "greedy choice of the closest unvisited vertex",
+      "priority queue of tentative distances",
+      "relaxation of edges",
+      "settled vertices assumed final, which negative edges violate"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c11",
+    "topic": "sorting",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "Compare quicksort and merge sort in terms of time, memory, stability and worst case.",
+    "key_points": [
+      "both n log n on average",
+      "quicksort worst case n squared, in place",
+      "merge sort stable, needs extra space",
+      "pivot choice matters"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c12",
+    "topic": "sorting",
+    "type": "concept",
+    "difficulty": 3,
+    "text": "Why can a comparison-based sort not beat n log n, and when is it possible to sort faster?",
+    "key_points": [
+      "decision tree argument gives n log n lower bound",
+      "counting or radix sort avoid comparisons",
+      "need bounded keys or digits",
+      "trade-off is memory and assumptions"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c13",
+    "topic": "searching",
+    "type": "concept",
+    "difficulty": 1,
+    "text": "How does binary search work, what must be true of the data, and where do people usually make mistakes implementing it?",
+    "key_points": [
+      "data must be sorted",
+      "halve the search range each step",
+      "logarithmic time",
+      "off-by-one errors in bounds and midpoint overflow"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c14",
+    "topic": "recursion",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "What makes a recursive solution correct, and how can recursion cause a stack overflow?",
+    "key_points": [
+      "base case",
+      "each call moves toward the base case",
+      "every call uses stack space",
+      "convert to iteration or use tail calls where supported"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c15",
+    "topic": "dynamic-programming",
+    "type": "concept",
+    "difficulty": 3,
+    "text": "What do overlapping subproblems and optimal substructure mean, and how do memoization and tabulation differ?",
+    "key_points": [
+      "subproblems repeat so cache results",
+      "optimal answer built from optimal sub-answers",
+      "memoization is top down",
+      "tabulation is bottom up and avoids recursion"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c16",
+    "topic": "greedy",
+    "type": "concept",
+    "difficulty": 3,
+    "text": "How is a greedy algorithm different from dynamic programming? Give one problem where greedy is correct and one where it is not.",
+    "key_points": [
+      "greedy commits to a local best choice",
+      "needs the greedy-choice property",
+      "example: interval scheduling or Huffman coding",
+      "counter-example: coin change with unusual denominations"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c17",
+    "topic": "strings",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "How would you check whether two strings are anagrams, and what are the trade-offs between the approaches?",
+    "key_points": [
+      "sort both and compare",
+      "count characters with a hash map or array",
+      "linear vs n log n time",
+      "extra space and character set size"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c18",
+    "topic": "tries",
+    "type": "concept",
+    "difficulty": 3,
+    "text": "What is a trie, and what is it good at compared with storing strings in a hash set?",
+    "key_points": [
+      "tree keyed by characters",
+      "prefix queries and autocomplete",
+      "lookup cost depends on string length",
+      "higher memory use"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c19",
+    "topic": "union-find",
+    "type": "concept",
+    "difficulty": 3,
+    "text": "What does the union-find data structure do, and which optimisations make its operations nearly constant time?",
+    "key_points": [
+      "tracks disjoint sets",
+      "find and union operations",
+      "path compression",
+      "union by rank or size"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "c20",
+    "topic": "complexity",
+    "type": "concept",
+    "difficulty": 2,
+    "text": "What is the difference between time and space complexity, and between worst-case and amortised cost? Give an example of each.",
+    "key_points": [
+      "time counts steps, space counts memory",
+      "worst case is the single most expensive input",
+      "amortised averages over a sequence of operations",
+      "example: dynamic array append"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "a01",
+    "topic": "hash-tables",
+    "type": "applied",
+    "difficulty": 3,
+    "text": "Design an LRU cache whose get and put both run in constant time. Which data structures would you combine, and why?",
+    "key_points": [
+      "hash map for lookup",
+      "doubly linked list for recency order",
+      "move a node to the front on access",
+      "evict from the tail when full"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "a02",
+    "topic": "graphs",
+    "type": "applied",
+    "difficulty": 2,
+    "text": "You have a map of cities and roads. How would you find the route with the fewest road segments between two cities, and how would your approach change if roads had different lengths?",
+    "key_points": [
+      "model as a graph",
+      "BFS for fewest segments",
+      "Dijkstra for weighted lengths",
+      "track visited and predecessors to rebuild the path"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "a03",
+    "topic": "complexity",
+    "type": "applied",
+    "difficulty": 2,
+    "text": "A function that checks for duplicates in a list of one million items takes minutes to run. How would you find out why, and how would you fix it?",
+    "key_points": [
+      "profile or reason about complexity",
+      "nested loops give quadratic time",
+      "use a hash set for linear time",
+      "trade extra memory for speed"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "a04",
+    "topic": "heaps",
+    "type": "applied",
+    "difficulty": 3,
+    "text": "Numbers arrive as a stream and at any moment you must report the k largest. How would you do it and what does each new number cost?",
+    "key_points": [
+      "min-heap of size k",
+      "compare new item with the heap minimum",
+      "logarithmic in k per item",
+      "memory limited to k items"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "a05",
+    "topic": "dynamic-programming",
+    "type": "applied",
+    "difficulty": 3,
+    "text": "Given two strings, how would you compute the minimum number of edits needed to turn one into the other?",
+    "key_points": [
+      "edit distance with insert delete replace",
+      "table indexed by prefixes of both strings",
+      "recurrence from neighbouring cells",
+      "time and space proportional to the product of lengths"
+    ],
+    "source": "ai-draft"
+  },
+  {
+    "id": "a06",
+    "topic": "tries",
+    "type": "applied",
+    "difficulty": 3,
+    "text": "Design autocomplete for a search box with a million words. Which structure would you use and how would you rank the suggestions?",
+    "key_points": [
+      "trie or prefix index",
+      "walk to the prefix node then collect completions",
+      "rank by frequency or recency",
+      "limit to top k and cache popular prefixes"
+    ],
+    "source": "ai-draft"
+  }
+]

@@ -1,0 +1,8 @@
+worker,jobs_claimed
+worker-0,75
+worker-1,74
+worker-2,75
+worker-3,76
+TOTAL,300
+duplicate_claims,0
+jobs_never_claimed,0

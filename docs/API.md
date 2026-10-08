@@ -22,7 +22,7 @@ python -m uvicorn app.api.main:app --port 8000
 ```
 Everything seeded is fake and labelled DEMO (viva `demo-dsa`, students `DEMO001`..`DEMO006`, scores from a mock model). It shows every dashboard state: scored, low-confidence (needs review), overridden, in progress, joined-not-started. To start over delete `backend/viva_dev.db*` and reseed. The real backend refuses to start without `AUDIO_SIGNING_SECRET` (and `ACCESS_CODE_PEPPER` unless `REQUIRE_ACCESS_CODE=false`).
 
-Environment: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `CONTRACT_STUB`, `DATABASE_URL` (default local SQLite), `ACCESS_CODE_PEPPER`, `AUDIO_SIGNING_SECRET`, `LLM_CHAIN` (default `mock`; the interviewer's providers), `REQUIRE_ACCESS_CODE` (default true; the code is required, D10), `CODE_MAX_ATTEMPTS` (5) and `CODE_LOCKOUT_SECONDS` (900), `ANSWER_LEASE_SECONDS` (60).
+Environment: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `CONTRACT_STUB`, `DATABASE_URL` (default local SQLite), `ACCESS_CODE_PEPPER`, `AUDIO_SIGNING_SECRET`, `LLM_CHAIN` (default `mock`; the interviewer's providers), `REQUIRE_ACCESS_CODE` (default true; the code is required, D10), `CODE_DELAY_CAP_SECONDS` (60) and `IP_FAILURES_PER_MINUTE` (30) for wrong access codes, `TRUST_FORWARDED_FOR`, `ANSWER_LEASE_SECONDS` (60).
 Not built yet: the voice WebSocket (task T4). Build the text flow; voice will reuse the same session, token, timer and `turn.idx`.
 
 ## Conventions
@@ -55,7 +55,7 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 | `range_not_satisfiable` | 416 | bad `Range` on audio |
 | `audio_not_available` | 404 | the session has no recording (text mode) |
 | `results_not_released` | 403 | student result requested before faculty released results |
-| `rate_limited` | 429 | `details.retry_after_ms` (too many wrong access codes: the student is locked out for a while) |
+| `rate_limited` | 429 | `details.retry_after_ms`: after n wrong access codes the student must wait min(60 s, 2^(n-1) s), and one client address may send only a limited number of wrong codes per minute |
 | `provider_unavailable` | 503 | LLM down; retry the same request |
 | `internal_error` | 500 | |
 

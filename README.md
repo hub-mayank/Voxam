@@ -36,19 +36,30 @@ Text mode runs fully offline with the mock LLM. It needs no Docker, database or 
 
 Frontend guide: `docs/API.md`. Contract changes after G0 are listed in `docs/CHANGELOG-api.md`.
 
-## Real models
-Keys come from environment variables only, never from files in the repo (see `.env.example`).
+## Real models (free tiers and local only)
+Keys live in the environment or in a gitignored `.env` at the repo root (copy `.env.example`; variables already set in your shell win;
+a git worktree uses the main checkout's `.env`). Nothing prints a key; `python -m app.envfile GROQ_API_KEY` shows only set/unset.
 
-    export GEMINI_API_KEY=...                        # never commit
-    python -m app.list_models                        # pick GEMINI_MODEL from this list
-    export GEMINI_MODEL=<name>
-    python -m app.cli --llm gemini
-    python -m app.cli --llm ollama                   # local, no key; needs OLLAMA_MODEL (and OLLAMA_HOST)
-    python -m app.cli --llm gemini,ollama            # comma list = fallback order (or set LLM_CHAIN)
+    python -m app.list_models                        # Gemini model IDs your key can call (one metadata request)
+    python -m app.cli --llm gemini:gemini-3.5-flash-lite
+    python -m app.cli --llm groq:openai/gpt-oss-20b  # any OpenAI-compatible endpoint: groq, cerebras, openrouter, or NAME_BASE_URL + NAME_API_KEY
+    python -m app.cli --llm ollama:llama3.2:3b       # local, no key
+    python -m app.cli --llm groq:openai/gpt-oss-20b,gemini:gemini-3.5-flash-lite,ollama:llama3.2:3b   # comma list = fallback order (or LLM_CHAIN)
 
-- Every live call counts against a daily cap, `LLM_DAILY_CALL_CAP` (default 30). Mock and Ollama are not counted.
+- Zero-spend (D15): free tiers, free credits behind a hard spending limit, local models. Never a pay-as-you-go plan.
+- Every provider attempt is counted per (provider, model) in a rolling 24 h window against the free-tier limits in `config/free_tier_limits.json`
+  (re-verify them before an evidence run): refused at 90% of the daily limit (`FREE_TIER_MARGIN`) and spaced to stay under the per-minute limit.
+  A refused provider is skipped and the next one in the chain serves. `LLM_DAILY_CALL_CAP` (default 30) is the global ceiling and the cap for
+  models not in the file. Mock and Ollama are never counted.
 - Tests that call a real provider are marked `live` and skipped unless you run `python -m pytest --live`.
 - Provider calls are logged to `~/.cache/ai-viva/telemetry.jsonl` (override with `TELEMETRY_FILE`).
+
+## PostgreSQL
+    brew install postgresql@16 && brew services start postgresql@16 && createdb ai_viva_test      # once
+    echo 'TEST_DATABASE_URL=postgresql+psycopg://YOUR_USER@localhost/ai_viva_test' >> .env
+    python -m pytest -q --postgres                   # the same suite, a fresh schema per test, dropped afterwards
+    python scripts/prove_job_claim.py --jobs 600 --workers 8     # competing OS processes claim scoring jobs: none twice
+The app uses `DATABASE_URL` (default: a local SQLite file); `postgresql://...` means the psycopg 3 driver.
 
 ## Other commands
     python scripts/check_secrets.py                  # scan the repo for API-key shapes

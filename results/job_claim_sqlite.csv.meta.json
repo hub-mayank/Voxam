@@ -1,0 +1,13 @@
+{
+  "provider": "live",
+  "model": "SQLite 3.50.4",
+  "date": "2026-10-08",
+  "git_sha": "1350d702e6fe15cd918de782b5025b8193e21448",
+  "n": 300,
+  "n_unit": "jobs claimed by competing OS processes",
+  "workers": 4,
+  "work_ms": 5,
+  "wall_s": 0.88,
+  "dialect": "sqlite",
+  "note": "a local database, not a provider; every job must be claimed exactly once"
+}

@@ -3,6 +3,7 @@ Azure: POST the SSML, read the streamed body, time to the first audio bytes (hea
 counted by the budget registry and logged. Piper alba runs locally on the same sentences in the same script.
 Usage: python spikes/voice/bench_tts_azure.py [--voice en-IN-NeerjaNeural] [--repeats 2]"""
 import argparse
+import re
 import statistics
 import time
 from xml.sax.saxutils import escape
@@ -43,7 +44,12 @@ def main():
     ap.add_argument("--voice", default="en-IN-NeerjaNeural")
     ap.add_argument("--repeats", type=int, default=2)
     a = ap.parse_args()
-    k, region = key("AZURE_SPEECH_KEY"), key("AZURE_SPEECH_REGION")
+    k, raw_region = key("AZURE_SPEECH_KEY"), key("AZURE_SPEECH_REGION")
+    region = re.match(r"[a-z0-9]+", raw_region).group(0) if re.match(r"[a-z0-9]+", raw_region) else ""
+    if region != raw_region:  # e.g. a missing newline in .env glued the next setting onto the region
+        print(f"WARNING: AZURE_SPEECH_REGION has {len(raw_region) - len(region)} unexpected trailing characters; using {region!r}. Fix the .env line.")
+    if not region:
+        raise SystemExit("AZURE_SPEECH_REGION is empty or malformed")
     azure_first_chunk(region, k, a.voice, "Warm up.")  # connection set-up and DNS: not recorded (but counted)
     piper = Piper("en_GB-alba-medium")
     piper.first_chunk("Warm up.")

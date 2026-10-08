@@ -79,9 +79,9 @@ def main():
     rec = Recorder()
     brain = Brain(lambda spec: TimedLLM(make_llm("ollama"), rec))
     manifest = list(csv.DictReader(open(SYNTH / "manifest.csv")))
+    stt.transcribe(sf.read(SYNTH / f"{manifest[5]['id']}.wav", dtype="float32")[0][:16000 * 3])
     if a.turns:
         manifest = manifest[:a.turns]
-    stt.transcribe(sf.read(SYNTH / f"{manifest[5]['id']}.wav", dtype="float32")[0][:16000 * 3])
     tts.first_chunk("Warm up.")
     for _ in range(2):  # warm the model: the first Ollama call includes loading it into memory
         brain.say("I built a chat application with websockets and postgres.")

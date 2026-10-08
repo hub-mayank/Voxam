@@ -10,7 +10,7 @@ os.environ.setdefault("FREE_TIER_MAX_WAIT_S", "60")  # a benchmark may wait for 
 
 from app import telemetry  # noqa: E402
 from app.envfile import load_env  # noqa: E402
-from app.llm.budget import CallCapExceeded, count_call  # noqa: E402
+from app.llm.budget import CallCapExceeded, count_call, usage  # noqa: E402
 
 load_env()  # keys from the shell or the repo .env; never printed
 
@@ -34,3 +34,7 @@ def counted(provider: str, model: str, kind: str, fn, *, tokens=False):
     seconds = time.perf_counter() - t
     telemetry.log_call(provider, model, "live", kind, seconds * 1000, "ok", 0, None, None)
     return result, seconds
+
+
+def usage_snapshot() -> dict:
+    return usage()

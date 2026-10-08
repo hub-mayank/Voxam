@@ -52,6 +52,8 @@ def main():
         add("stt", cfg, "model_load", m["model_load_s"], "s", f.name)
 
     for f in sorted(RESULTS.glob("tts_*.csv")):
+        if f.name.startswith("tts_azure"):
+            continue  # its own columns; summarised below
         data, m = load(f), meta(f)
         first = [float(r["first_chunk_s"]) for r in data]
         add("tts", m["model"], "first_chunk_p50", percentile(first, 50), "s", f.name)

@@ -4,7 +4,7 @@ so we add headroom (GEMINI_TOKEN_HEADROOM, default 1500) and fail loudly on empt
 import os
 import httpx
 from .base import Reply
-from .budget import count_call
+from .budget import count_call, estimate_tokens, record_tokens, tokens_used
 from .errors import ProviderError, from_httpx
 
 
@@ -29,23 +29,28 @@ class GeminiLLM:
         body = {"systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
                 "generationConfig": gen}
-        count_call(self.provider, self.model)
+        reserved = estimate_tokens(system, user) + max_tokens + self.headroom
+        count_call(self.provider, self.model, est_tokens=reserved)
         try:
             r = httpx.post(url, json=body, headers={"x-goog-api-key": self.key}, timeout=self.timeout)
             r.raise_for_status()
             data = r.json()
         except httpx.HTTPError as e:
+            record_tokens(self.provider, self.model, reserved, 0)  # no reply: nothing was used
             raise from_httpx(e) from e
         except ValueError as e:
+            record_tokens(self.provider, self.model, reserved, 0)
             raise ProviderError("malformed response (not JSON)") from e
-        cands = data.get("candidates") or []
-        if not cands:
-            raise ProviderError(f"no candidates, promptFeedback={data.get('promptFeedback')}")
-        parts = cands[0].get("content", {}).get("parts") or []
-        text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
-        if not text.strip():
-            raise ProviderError(f"empty response, finishReason={cands[0].get('finishReason')}")
         use = data.get("usageMetadata") or {}
         out = [use.get("candidatesTokenCount"), use.get("thoughtsTokenCount")]  # thinking tokens are billed as output
         tokens_out = sum(t for t in out if t is not None) if any(t is not None for t in out) else None
-        return Reply(text, use.get("promptTokenCount"), tokens_out)
+        cands = data.get("candidates") or []
+        parts = (cands[0].get("content", {}).get("parts") or []) if cands else []
+        text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+        reply = Reply(text, use.get("promptTokenCount"), tokens_out)
+        record_tokens(self.provider, self.model, reserved, tokens_used(reply, system, user))
+        if not cands:
+            raise ProviderError(f"no candidates, promptFeedback={data.get('promptFeedback')}")
+        if not text.strip():
+            raise ProviderError(f"empty response, finishReason={cands[0].get('finishReason')}")
+        return reply

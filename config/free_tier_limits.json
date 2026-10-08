@@ -1,5 +1,5 @@
 {
-  "_about": "Free-tier limits per (provider, model). The call budget (backend/app/llm/budget.py) refuses at floor(FREE_TIER_MARGIN x rpd) and spaces calls to stay under rpm. tpm, tpd and audio seconds are recorded but not enforced. Re-verify before evidence runs.",
+  "_about": "Free-tier limits per (provider, model). The call budget (backend/app/llm/budget.py) refuses at floor(FREE_TIER_MARGIN x rpd) and spaces calls to stay under rpm. tpm and tpd are enforced over rolling 60 s and 24 h windows (the same margin applies); audio seconds are recorded but not enforced. Re-verify before evidence runs.",
   "limits": [
     {
       "provider": "gemini",

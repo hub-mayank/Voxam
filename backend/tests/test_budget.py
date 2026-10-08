@@ -4,9 +4,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+import httpx
 import pytest
 
-from app.llm.budget import CallCapExceeded, budget_path, count_call, model_cap, usage
+from app.llm.base import Reply
+from app.llm.budget import (CallCapExceeded, budget_path, count_call, estimate_tokens, model_cap, record_tokens, token_usage, tokens_used,
+                            usage)
+from app.llm.errors import ProviderError
+from app.llm.openai_compat import OpenAICompatLLM
 from app.llm.limits import Limits, load_limits
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -166,7 +171,7 @@ def test_limits_entries_need_a_source_and_a_date_and_no_duplicates(tmp_path):
 
 def test_every_counted_adapter_passes_its_provider_and_model():
     for name in ("gemini.py", "openai_compat.py"):
-        assert "count_call(self.provider, self.model)" in (ROOT / "backend" / "app" / "llm" / name).read_text()
+        assert "count_call(self.provider, self.model, est_tokens=reserved)" in (ROOT / "backend" / "app" / "llm" / name).read_text()
     assert "count_call" not in (ROOT / "backend" / "app" / "llm" / "ollama.py").read_text(), "local models are never counted"
 
 
@@ -176,3 +181,93 @@ def test_every_gemini_id_in_the_registry_was_seen_in_the_models_list():
                  "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.8-flash-tts", "gemini-3.8-flash-lite-tts",
                  "gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts", "gemini-3.5-transcribe"}
     assert {m for (p, m) in load_limits() if p == "gemini"} == confirmed
+
+
+# ---------- tokens per minute and per day ----------
+
+TOKEN_LIMITS = {("p", "t"): Limits("p", "t", rpm=None, rpd=1000, tpm=1000, tpd=5000, source="test", retrieved="2026-10-08")}
+
+
+def tcall(clock, est, model="t"):
+    return count_call("p", model, est_tokens=est, clock=clock, sleep=clock.sleep, limits=TOKEN_LIMITS)
+
+
+def test_tokens_per_day_refuse_at_the_margin_and_roll_off_after_24_hours(clock):
+    for _ in range(5):  # floor(0.9 x 5000) = 4500 tokens a day
+        tcall(clock, 900)
+        clock.t += 61  # keep the minute window clear
+    with pytest.raises(CallCapExceeded, match="token budget used"):
+        tcall(clock, 10)
+    assert token_usage(clock)["p|t"]["tpd"] == 4500
+    clock.t += 24 * 3600
+    assert tcall(clock, 900) == 1  # old calls rolled off
+
+
+def test_tokens_per_minute_wait_for_the_window_instead_of_refusing(clock):
+    tcall(clock, 500)
+    clock.t += 10
+    tcall(clock, 400)  # 900 = floor(0.9 x 1000): the minute is full
+    t0 = clock.t
+    tcall(clock, 300)  # needs the first call (500 tokens, 10 s old) to leave the window
+    assert clock.slept[-1] == pytest.approx(50.0, abs=0.01) and clock.t == pytest.approx(t0 + 50.0, abs=0.01)
+
+
+def test_a_token_wait_longer_than_the_limit_refuses_and_leaves_no_trace(clock, monkeypatch):
+    monkeypatch.setenv("FREE_TIER_MAX_WAIT_S", "5")
+    tcall(clock, 900)
+    with pytest.raises(CallCapExceeded, match="tokens/min needs a"):
+        tcall(clock, 300)
+    assert usage(clock)["p|t"] == 1 and token_usage(clock)["p|t"]["tpd"] == 900
+
+
+def test_a_call_that_can_never_fit_a_minute_is_refused(clock):
+    with pytest.raises(CallCapExceeded, match="can never fit"):
+        tcall(clock, 901)
+
+
+def test_record_tokens_swaps_the_reservation_for_the_real_use(clock):
+    tcall(clock, 900)
+    record_tokens("p", "t", 900, 120, clock=clock, limits=TOKEN_LIMITS)
+    assert token_usage(clock)["p|t"] == {"tpm": 120, "tpd": 120}
+    record_tokens("p", "t", 120, 0, clock=clock, limits=TOKEN_LIMITS)  # a failed attempt releases it
+    assert token_usage(clock)["p|t"]["tpd"] == 0
+
+
+def test_models_without_token_limits_track_nothing(clock):
+    count_call("p", "other", est_tokens=10_000, clock=clock, sleep=clock.sleep, limits=TOKEN_LIMITS)
+    record_tokens("p", "other", 10_000, 5, clock=clock, limits=TOKEN_LIMITS)
+    assert token_usage(clock) == {}
+
+
+def test_tokens_used_prefers_the_provider_numbers_and_falls_back_to_chars_over_4():
+    assert tokens_used(Reply("hello", 11, 5), "s" * 400, "u" * 400) == 16
+    assert tokens_used(Reply("r" * 40, None, None), "s" * 40, "u" * 40) == 30
+    assert tokens_used(Reply("r" * 40, 11, None), "s" * 40, "u" * 40) == 30  # half a number is no number
+    assert estimate_tokens("abcde") == 2
+
+
+def groq(monkeypatch, body):
+    monkeypatch.setenv("GROQ_API_KEY", "k")
+    monkeypatch.setenv("LLM_DAILY_CALL_CAP", "1000")
+    monkeypatch.setattr("app.llm.openai_compat.httpx.post", lambda *a, **k: httpx.Response(200, json=body, request=httpx.Request("POST", "https://x.test")))
+    return OpenAICompatLLM("groq", model="openai/gpt-oss-20b")
+
+
+def test_the_adapter_books_the_providers_token_counts(monkeypatch):
+    body = {"choices": [{"message": {"content": "{}"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 300, "completion_tokens": 40}}
+    groq(monkeypatch, body).generate("s", "u", 50, True)
+    assert token_usage()["groq|openai/gpt-oss-20b"]["tpd"] == 340  # not the reservation (about 1000 headroom + 50)
+
+
+def test_the_adapter_estimates_when_the_provider_sends_no_usage(monkeypatch):
+    body = {"choices": [{"message": {"content": "r" * 80}, "finish_reason": "stop"}]}
+    groq(monkeypatch, body).generate("s" * 400, "u" * 400, 50, False)
+    assert token_usage()["groq|openai/gpt-oss-20b"]["tpd"] == 200 + 20  # chars / 4 of prompt (800) and reply (80)
+
+
+def test_a_failed_attempt_counts_the_request_but_releases_the_tokens(monkeypatch):
+    llm = groq(monkeypatch, {})
+    monkeypatch.setattr("app.llm.openai_compat.httpx.post", lambda *a, **k: (_ for _ in ()).throw(httpx.ConnectError("refused")))
+    with pytest.raises(ProviderError):
+        llm.generate("s", "u", 50, False)
+    assert usage()["groq|openai/gpt-oss-20b"] == 1 and token_usage()["groq|openai/gpt-oss-20b"]["tpd"] == 0

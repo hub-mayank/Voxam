@@ -19,7 +19,7 @@ from urllib.parse import parse_qsl
 import httpx
 
 from .base import Reply
-from .budget import count_call
+from .budget import count_call, estimate_tokens, record_tokens, tokens_used
 from .errors import ProviderError, from_httpx
 
 KNOWN_BASE_URLS = {
@@ -73,22 +73,28 @@ class OpenAICompatLLM:
         if self.effort:
             body["reasoning_effort"] = self.effort
         headers = {"Authorization": f"Bearer {self.key}"} if self.auth == "bearer" else {"api-key": self.key}
-        count_call(self.provider, self.model)
+        reserved = estimate_tokens(system, user) + max_tokens + self.headroom
+        count_call(self.provider, self.model, est_tokens=reserved)
         try:
             r = httpx.post(f"{self.base_url}/chat/completions", json=body, headers=headers, params=self.params or None, timeout=self.timeout)
             r.raise_for_status()
             data = r.json()
         except httpx.HTTPError as e:
+            record_tokens(self.provider, self.model, reserved, 0)  # no reply: nothing was used
             raise from_httpx(e) from e
         except ValueError as e:
+            record_tokens(self.provider, self.model, reserved, 0)
             raise ProviderError("malformed response (not JSON)") from e
+        use = data.get("usage") or {}
         choices = data.get("choices") or []
         if not choices:
+            record_tokens(self.provider, self.model, reserved, tokens_used(Reply("", use.get("prompt_tokens"), use.get("completion_tokens")), system, user))
             raise ProviderError(f"no choices in response: {str(data.get('error'))[:200]}")
         content = (choices[0].get("message") or {}).get("content")
         if isinstance(content, list):  # some servers return content parts
             content = "".join(p.get("text", "") for p in content if isinstance(p, dict))
-        if not (content or "").strip():
+        reply = Reply(content or "", use.get("prompt_tokens"), use.get("completion_tokens"))
+        record_tokens(self.provider, self.model, reserved, tokens_used(reply, system, user))
+        if not reply.text.strip():
             raise ProviderError(f"empty response, finish_reason={choices[0].get('finish_reason')}")
-        use = data.get("usage") or {}
-        return Reply(content, use.get("prompt_tokens"), use.get("completion_tokens"))
+        return reply

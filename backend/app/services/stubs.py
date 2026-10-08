@@ -37,6 +37,7 @@ class StubFaculty:
     def update_viva(self, viva_id, body): return example_of(Viva)
     def upload_questions(self, viva_id, filename, data): return example_of(QuestionList)
     def list_questions(self, viva_id): return example_of(QuestionList)
+    def approve_questions(self, viva_id, body, faculty): return example_of(QuestionList)
     def upload_roster(self, viva_id, filename, data): return example_of(RosterUploadResult)
     def list_roster(self, viva_id): return example_of(RosterList)
     def reset_code(self, viva_id, student_id): return example_of(ResetCodeResult)

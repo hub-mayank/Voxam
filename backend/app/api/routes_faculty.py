@@ -8,7 +8,7 @@ from ..session_state import SessionStatus
 from .auth import faculty_scheme, require_faculty
 from ..services.secrets_util import audio_signature_ok
 from .errors import ErrorCode, error_responses
-from .schemas.faculty import (OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest,
+from .schemas.faculty import (ApproveQuestions, OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest,
                               ReviewResult, RosterList, RosterUploadResult, SessionDetail, SessionList, Viva, VivaCreate,
                               VivaList, VivaUpdate)
 from .deps import faculty_ops
@@ -68,6 +68,16 @@ def upload_questions(viva_id: str = VIVA, file: UploadFile = File(description="A
 def list_questions(viva_id: str = VIVA, ops=Depends(faculty_ops)):
     """Includes `key_points`, which students never see."""
     return ops.list_questions(viva_id)
+
+
+@router.post("/vivas/{viva_id}/questions/approve", response_model=QuestionList, summary="Approve AI-drafted questions",
+             responses=error_responses(*AUTH, ErrorCode.not_found, ErrorCode.validation_error, ErrorCode.invalid_state))
+def approve_questions(body: ApproveQuestions, viva_id: str = VIVA, ops=Depends(faculty_ops), faculty=Depends(require_faculty)):
+    """Turns `ai-draft` questions into `bank` questions and records who approved them (`approved_by`, the reviewer of the token).
+    Send `question_ids` to approve some, or `{}` to approve every draft. Idempotent: approving a question that is already
+    `bank` changes nothing, and the original `approved_by` stays. An unknown id is a 404 and nothing changes. Locked (409
+    `invalid_state`, reason `students_joined`) once any student has joined, like the upload. Returns the whole bank."""
+    return ops.approve_questions(viva_id, body, faculty)
 
 
 @router.post("/vivas/{viva_id}/roster", response_model=RosterUploadResult, summary="Upload the roster, issue access codes",

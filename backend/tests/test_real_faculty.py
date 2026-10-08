@@ -129,6 +129,75 @@ def test_the_bank_is_locked_once_a_student_has_joined(env):
     assert r.status_code == 409 and r.json()["error"]["details"]["reason"] == "students_joined"
 
 
+def drafted_viva(client, viva="draft-viva"):
+    """A viva whose bank is the CSV bank with its first three concept questions marked ai-draft."""
+    fresh_viva(client, viva)
+    head, *rows = CSV_BANK.strip().split("\n")
+    lines = [head + ",source"] + [r + (",ai-draft" if i < 3 else ",") for i, r in enumerate(rows)]
+    assert put_bank(client, "bank.csv", "\n".join(lines).encode(), viva).status_code == 200
+    return viva
+
+
+def approve(client, viva, body, headers=RAO):
+    return client.post(f"/faculty/vivas/{viva}/questions/approve", headers=headers, json=body)
+
+
+def sources(client, viva):
+    return {q["id"]: (q["source"], q["approved_by"]) for q in client.get(f"/faculty/vivas/{viva}/questions", headers=RAO).json()["items"]}
+
+
+def test_approving_some_drafts_sets_source_and_the_reviewer_from_the_token(env):
+    app, client, clock, codes = env
+    v = drafted_viva(client)
+    assert sorted(i for i, (src, _) in sources(client, v).items() if src == "ai-draft") == ["c0", "c1", "c2"]
+    r = approve(client, v, {"question_ids": ["c0", "c2"]}, IYER)
+    assert r.status_code == 200
+    got = sources(client, v)
+    assert got["c0"] == ("bank", "dr-iyer") and got["c2"] == ("bank", "dr-iyer") and got["c1"] == ("ai-draft", None)
+    assert [q["id"] for q in r.json()["items"]] == sorted(got), "returns the whole bank"
+
+
+def test_approving_with_no_ids_approves_every_draft_and_is_idempotent(env):
+    app, client, clock, codes = env
+    v = drafted_viva(client)
+    approve(client, v, {"question_ids": ["c0"]}, IYER)
+    assert approve(client, v, {}, RAO).status_code == 200
+    got = sources(client, v)
+    assert {src for src, _ in got.values()} == {"bank"}
+    assert got["c0"][1] == "dr-iyer", "the first approver stays"
+    assert got["c1"][1] == "dr-rao" and got["a0"] == ("bank", None), "uploaded bank questions are not touched"
+    before = got
+    assert approve(client, v, {"question_ids": ["c1", "c1"]}, IYER).status_code == 200
+    assert sources(client, v) == before
+
+
+def test_an_unknown_id_is_a_404_and_nothing_changes(env):
+    app, client, clock, codes = env
+    v = drafted_viva(client)
+    before = sources(client, v)
+    r = approve(client, v, {"question_ids": ["c0", "nope"]})
+    assert r.status_code == 404 and r.json()["error"]["details"]["ids"] == ["nope"]
+    assert sources(client, v) == before
+    assert approve(client, "no-such-viva", {}).status_code == 404
+    assert approve(client, v, {"question_ids": []}).status_code == 422, "an empty list is a mistake, not 'all'"
+
+
+def test_approval_is_locked_once_a_student_has_joined(env):
+    app, client, clock, codes = env
+    join(client, codes["S1"])
+    r = approve(client, "demo-viva", {})
+    assert r.status_code == 409 and r.json()["error"]["details"]["reason"] == "students_joined"
+
+
+def test_only_faculty_can_approve(env):
+    app, client, clock, codes = env
+    v = drafted_viva(client)
+    sid, student, _ = join(client, codes["S1"], viva_id="demo-viva")
+    assert approve(client, v, {}, student).status_code == 403
+    assert approve(client, v, {}, {}).status_code == 401
+    assert {src for src, _ in sources(client, v).values()} == {"ai-draft", "bank"} and sources(client, v)["c0"][0] == "ai-draft"
+
+
 # ---------- roster and codes ----------
 
 def test_roster_upload_returns_codes_once_and_stores_only_hashes(env):

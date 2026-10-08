@@ -11,7 +11,7 @@ from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
 
 from ..api.errors import ApiError, ErrorCode
-from ..api.schemas.faculty import (IssuedEntry, OverrideRequest, OverrideResult, Question, QuestionList, RescoreResult,
+from ..api.schemas.faculty import (ApproveQuestions, IssuedEntry, OverrideRequest, OverrideResult, Question, QuestionList, RescoreResult,
                                    ResetCodeResult, ReviewRequest, ReviewResult, RosterEntry, RosterList, RosterUploadResult,
                                    SessionList, Viva, VivaCreate, VivaList, VivaUpdate)
 from ..db import models as m
@@ -115,6 +115,25 @@ class FacultyService:
         db.add_all([m.Question(viva_id=viva_id, id=q.id, topic=q.topic, type=q.type.value, difficulty=q.difficulty, text=q.text,
                                key_points=q.key_points, source=q.source.value) for q in questions])
         db.commit()  # delete and insert land together or not at all
+        return self._bank_out(viva_id)
+
+    def approve_questions(self, viva_id, body: ApproveQuestions, faculty) -> QuestionList:
+        db = self.db
+        self._viva(viva_id)
+        if db.scalar(select(exists().where(m.Session.viva_id == viva_id))):
+            raise ApiError(ErrorCode.invalid_state, "The question bank is locked: a student has already joined this viva.",
+                           {"reason": "students_joined"})
+        rows = {q.id: q for q in db.scalars(select(m.Question).where(m.Question.viva_id == viva_id))}
+        if body.question_ids is None:
+            todo = [q for q in rows.values() if q.source == "ai-draft"]
+        else:
+            missing = [i for i in body.question_ids if i not in rows]
+            if missing:
+                raise ApiError(ErrorCode.not_found, "No such question.", {"resource": "question", "ids": missing})
+            todo = [rows[i] for i in dict.fromkeys(body.question_ids) if rows[i].source == "ai-draft"]
+        for q in todo:
+            q.source, q.approved_by = "bank", faculty.reviewer
+        db.commit()
         return self._bank_out(viva_id)
 
     def upload_roster(self, viva_id, filename, data: bytes) -> RosterUploadResult:

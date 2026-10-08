@@ -197,7 +197,7 @@ def test_auth_matrix_over_every_route():
         else:
             checked["public"] += 1
             assert path in ("/health", "/student/join"), f"{path} has no auth"
-    assert checked == {"faculty": 16, "student": 5, "public": 2}
+    assert checked == {"faculty": 17, "student": 5, "public": 2}
 
 
 def test_no_faculty_tokens_configured_means_everything_is_401():
@@ -258,6 +258,7 @@ def test_every_stub_response_validates_against_its_own_schema():
         body = {"json": {"new_total": 50, "reason": "ok ok"}} if path.endswith("/override") else {}
         body = {"json": {"viva_id": "dsa-midterm-2026", "student_id": "S1", "access_code": "K7M2-9QXP"}} if path == "/student/join" else body
         body = {"json": {"note": "checked it"}} if path.endswith("/review") else body
+        body = {"json": {"question_ids": ["q001"]}} if path.endswith("/questions/approve") else body
         body = {"json": {"results_visible_to_students": True}} if method == "patch" else body
         body = {"json": {"accepted": True, "rules_version": "rules-v1"}} if path.endswith("/consent") else body
         body = {"json": {"text": "hello", "client_seq": 1}} if path.endswith("/answer") else body
@@ -328,7 +329,7 @@ def test_openapi_is_independent_of_the_environment():
 def test_openapi_basics():
     spec = make_app().openapi()
     ids = [op["operationId"] for _, _, op in operations(make_app())]
-    assert len(ids) == len(set(ids)) == 23
+    assert len(ids) == len(set(ids)) == 24
     assert all(op.get("summary") for _, _, op in operations(make_app()))
     assert set(spec["components"]["securitySchemes"]) == {"FacultyToken", "StudentToken"}
     assert "Voice" in spec["info"]["description"] and "TBD" in spec["info"]["description"]

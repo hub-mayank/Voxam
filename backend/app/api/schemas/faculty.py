@@ -142,12 +142,20 @@ class Question(ApiResponse):
     text: str
     key_points: list[str]
     source: str = Field(description="bank (reviewed by faculty), ai-draft (written by an AI, awaiting faculty approval) or generated (AI variant; not produced yet).")
-    approved_by: Optional[str] = Field(None, description="Reviewer who approved a generated question; null for uploads.")
+    approved_by: Optional[str] = Field(None, description="Reviewer who approved the question (an ai-draft approved through POST .../questions/approve, "
+                                                         "or a generated question); null for plain uploads.")
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "id": "q001", "topic": "hash-tables", "type": "concept", "difficulty": 1,
         "text": "Can you explain how a hash table works?",
         "key_points": ["hash function maps key to index", "collision handling", "average O(1) lookup", "resizing/load factor"],
         "source": "bank", "approved_by": None}]})
+
+
+class ApproveQuestions(ApiRequest):
+    """Approve AI-drafted questions. Each one becomes `source: bank` with `approved_by` set to the reviewer of the token."""
+    question_ids: Optional[list[str]] = Field(None, min_length=1, description="Which questions to approve. Omit to approve every ai-draft in the bank. "
+                                                                              "A question that is already `bank` is left alone.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{"question_ids": ["c01", "c02"]}]})
 
 
 class QuestionList(ApiResponse):

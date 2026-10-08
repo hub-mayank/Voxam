@@ -48,6 +48,10 @@ class Call:
     tokens: float             # output tokens in the whole reply
     first_tokens: float       # output tokens before the first sentence ends (when TTS can start)
     real_s: float | None = None   # measured seconds, only for a real LLM
+    system: str = ""              # the prompt, kept for a real LLM so the same call can be replayed (streaming probe, other providers)
+    user: str = ""
+    json_mode: bool = False
+    max_tokens: int = 0
 
     def seconds(self, profile: Profile | None, rng: random.Random, first_sentence: bool):
         """Seconds this call puts on the critical path. Real calls report what was measured; simulated ones use the profile."""
@@ -101,17 +105,17 @@ class TimedLLM:
         self.inner, self.recorder, self._now = inner, recorder, now
         self.name = getattr(inner, "name", "real")
 
-    def _timed(self, fn, kind, *a):
+    def _timed(self, fn, kind, system, user, max_tokens, json_mode):
         t = self._now()
-        out = fn(*a)
-        self.recorder.calls.append(Call(kind, 0, 0, real_s=self._now() - t))
+        out = fn(system, user, max_tokens, kind)
+        self.recorder.calls.append(Call(kind, 0, 0, real_s=self._now() - t, system=system, user=user, json_mode=json_mode, max_tokens=max_tokens))
         return out
 
     def complete_json(self, system, user, max_tokens=200, kind="classify"):
-        return self._timed(self.inner.complete_json, kind, system, user, max_tokens, kind)
+        return self._timed(self.inner.complete_json, kind, system, user, max_tokens, True)
 
     def complete_text(self, system, user, max_tokens=120, kind="phrase"):
-        return self._timed(self.inner.complete_text, kind, system, user, max_tokens, kind)
+        return self._timed(self.inner.complete_text, kind, system, user, max_tokens, False)
 
 
 class Brain:

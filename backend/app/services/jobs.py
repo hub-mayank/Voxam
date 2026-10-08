@@ -38,11 +38,14 @@ def claim_next_job(db: Db, worker_id: str, now: datetime, *, kind: str = "score"
     return None
 
 
-def complete_job(db: Db, job_id: int, worker_id: str, now: datetime) -> bool:
-    """Mark a job done. Only the worker that holds it can; False otherwise (its lease expired and someone else took over)."""
+def complete_job(db: Db, job_id: int, worker_id: str, now: datetime, *, commit: bool = True) -> bool:
+    """Mark a job done. Only the worker that holds it can; False otherwise (its lease expired and someone else took over).
+    commit=False leaves the transaction open, so the caller can make its own writes and the job's completion land together
+    (and roll everything back when this returns False)."""
     done = db.execute(update(m.Job).where(m.Job.id == job_id, m.Job.status == "running", m.Job.locked_by == worker_id)
                       .values(status="done", error=None, updated_at=now))
-    db.commit()
+    if commit:
+        db.commit()
     return done.rowcount == 1
 
 
@@ -59,3 +62,17 @@ def fail_job(db: Db, job_id: int, worker_id: str, now: datetime, error: str, *, 
                .values(status=status, error=error[:1000], run_after=run_after, locked_at=None, locked_by=None, updated_at=now))
     db.commit()
     return status
+
+
+def defer_job(db: Db, job_id: int, worker_id: str, now: datetime, reason: str, *, delay_seconds: int = 300) -> bool:
+    """Put a job back for later without counting the attempt: the work was not tried (e.g. the provider's free-tier budget is used up).
+    False if this worker no longer holds the job."""
+    job = db.get(m.Job, job_id)
+    if job is None or job.status != "running" or job.locked_by != worker_id:
+        db.rollback()
+        return False
+    db.execute(update(m.Job).where(m.Job.id == job_id, m.Job.locked_by == worker_id)
+               .values(status="queued", attempts=max(0, job.attempts - 1), error=reason[:1000], run_after=now + timedelta(seconds=delay_seconds),
+                       locked_at=None, locked_by=None, updated_at=now))
+    db.commit()
+    return True

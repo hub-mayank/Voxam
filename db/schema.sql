@@ -145,6 +145,7 @@ CREATE TABLE scores (
 	model VARCHAR NOT NULL, 
 	dims JSONB NOT NULL, 
 	total NUMERIC(5, 2), 
+	run_spread NUMERIC(5, 2), 
 	confidence NUMERIC(4, 3), 
 	low_confidence BOOLEAN NOT NULL, 
 	low_confidence_reasons JSONB, 

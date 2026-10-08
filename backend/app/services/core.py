@@ -136,12 +136,13 @@ def aggregate_scores(rows: list, rubric: list):
 
 
 def turns_to_events(turns: list, started_at: datetime) -> list:
-    """Stored turns -> the event dicts the scorer reads (t = seconds since the session started). Audit notes kept in
+    """Stored turns -> the event dicts the scorer reads (t = seconds since the session started; t_start_ms is the audio offset). Audit notes kept in
     `meta` become system events again, because the scorer's confidence flags look for them."""
     events = []
     for t in turns:
         events.append({"role": t.role, "text": t.text, "t": round((t.created_at - started_at).total_seconds(), 2), "phase": t.phase,
-                       "question_id": t.question_id, "action": t.action})
+                       "question_id": t.question_id, "action": t.action, "t_start_ms": t.t_start_ms,
+                       "stt_confidence": (t.meta or {}).get("stt_confidence")})  # voice mode (T4) stores the STT confidence in turns.meta
         for note in ("classify_error", "bank_exhausted"):
             if (t.meta or {}).get(note):
                 events.append({"role": "system", "action": note, "t": events[-1]["t"], "phase": t.phase})

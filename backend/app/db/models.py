@@ -126,7 +126,8 @@ class Turn(Base):
 
 
 class Score(Base):
-    """One scorer run. The median over runs is computed on read."""
+    """One scorer run. The median over runs is computed on read. `dims[key]` = {score, reason, evidence, evidence_ms}: evidence is
+    turn idx values, evidence_ms the audio offset of each (null in text mode), frozen at scoring time."""
     __tablename__ = "scores"
     session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sessions.id"), primary_key=True)
     run: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -135,6 +136,7 @@ class Score(Base):
     model: Mapped[str] = mapped_column(String)
     dims: Mapped[dict] = mapped_column(JsonType)
     total: Mapped[Optional[float]] = mapped_column(Total)
+    run_spread: Mapped[Optional[float]] = mapped_column(Total)  # max - min of the run totals of this scoring, repeated on every run row
     confidence: Mapped[Optional[float]] = mapped_column(Numeric(4, 3, asdecimal=False))
     low_confidence: Mapped[bool] = mapped_column(Boolean, default=False)
     low_confidence_reasons: Mapped[Optional[list]] = mapped_column(JsonType)

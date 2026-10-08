@@ -1,0 +1,35 @@
+turn,words,endpoint_delay_ms,stt_final_s,wer,llm_calls,classify_s,phrase_s,backend_overhead_ms,tts_first_chunk_s,e2e_s,classify_ttft_s,classify_stream_total_s,phrase_ttft_s,phrase_first_sentence_s,phrase_stream_total_s,llm_seq_streamed_s,llm_parallel_s,e2e_streamed_s,e2e_parallel_s,e2e_parallel_speculative_stt_s,reply_first_sentence
+t00,3,608,0.325,0.0,1,0.406,0,9.9,0.137,1.486,0.052,0.214,,,,0.214,0.214,1.294,1.294,0.986,"What does Big-O notation tell us, and why do we care about it?"
+t01,4,599,0.324,0.0,1,0.405,0,12.5,0.135,1.475,0.061,0.223,,,,0.223,0.223,1.293,1.293,0.994,What is an index in a database and what is the trade-off of adding one?
+t02,7,640,0.326,0.0,1,0.404,0,12.2,0.152,1.535,0.062,0.226,,,,0.226,0.226,1.356,1.356,1.03,What happens between typing a URL in a browser and seeing the page?
+t03,6,675,0.32,0.0,1,0.408,0,12.8,0.156,1.572,0.056,0.218,,,,0.218,0.218,1.381,1.381,1.061,Pick any technical decision from a project of yours and explain why you made it.
+t04,8,610,0.328,0.0,1,0.4,0,10.2,0.124,1.472,0.057,0.219,,,,0.219,0.219,1.291,1.291,0.981,What is something you learned recently that changed how you write code?
+t05,11,650,0.342,0.0,1,0.398,0,13.2,0.142,1.545,0.059,0.221,,,,0.221,0.221,1.368,1.368,1.026,"Describe a bug that took you a long time to find, and how you found it."
+t06,11,645,0.338,0.0,1,0.408,0,29.9,0.07,1.491,0.052,0.214,,,,0.214,0.214,1.297,1.297,0.959,Is there anything you'd like to add?
+t07,8,636,0.329,0.0,0,0,0,3.8,0.097,1.065,,,,,,,,1.065,1.065,0.737,What is the difference between a process and a thread?
+t08,12,614,0.335,0.0,1,0.408,0,9.5,0.128,1.495,0.054,0.218,,,,0.218,0.218,1.305,1.305,0.991,"What does Big-O notation tell us, and why do we care about it?"
+t09,9,625,0.33,0.0,2,0.443,1.054,10.0,0.119,2.581,0.057,0.247,0.048,0.314,0.768,0.561,0.991,1.646,2.076,1.751,That's not quite what Big-O notation is about.
+t10,11,652,0.37,0.364,1,0.436,0,11.5,0.14,1.61,0.06,0.25,,,,0.25,0.25,1.423,1.423,1.071,What is an index in a database and what is the trade-off of adding one?
+t11,13,668,0.344,0.0,1,0.498,0,10.0,0.145,1.665,0.054,0.216,,,,0.216,0.216,1.383,1.383,1.039,What happens between typing a URL in a browser and seeing the page?
+t12,24,620,0.391,0.0,2,0.52,1.28,11.2,0.225,3.047,0.056,0.247,0.048,0.665,0.693,0.912,0.887,2.159,2.134,1.814,"The browser's DNS cache plays a crucial role in resolving the URL, but it's not directly related to handling collisions."
+t13,24,643,0.417,0.0,1,0.436,0,18.6,0.093,1.608,0.054,0.244,,,,0.244,0.244,1.416,1.416,1.073,Can you explain how a hash table works?
+t14,24,627,0.396,0.083,1,0.496,0,10.3,0.161,1.69,0.063,0.226,,,,0.226,0.226,1.42,1.42,1.093,Pick any technical decision from a project of yours and explain why you made it.
+t15,22,586,0.384,0.182,1,0.408,0,13.2,0.122,1.513,0.055,0.217,,,,0.217,0.217,1.322,1.322,1.036,What is something you learned recently that changed how you write code?
+t16,22,625,0.396,0.0,1,0.408,0,13.3,0.148,1.59,0.051,0.214,,,,0.214,0.214,1.397,1.397,1.072,"Describe a bug that took you a long time to find, and how you found it."
+t17,23,651,0.406,0.0,1,0.486,0,13.4,0.081,1.638,0.054,0.217,,,,0.217,0.217,1.369,1.369,1.018,Is there anything you'd like to add?
+t18,22,623,0.385,0.0,0,0,0,3.7,0.13,1.142,,,,,,,,1.142,1.142,0.819,What happens between typing a URL in a browser and seeing the page?
+t19,22,621,0.389,0.0,2,0.517,0.72,7.1,0.202,2.456,0.052,0.245,0.045,0.581,0.609,0.826,0.83,2.045,2.049,1.728,"That's an interesting approach, but how does it handle cache invalidation and updates to the underlying data?"
+t20,26,613,0.424,0.038,1,0.395,0,12.7,0.141,1.585,0.06,0.223,,,,0.223,0.223,1.414,1.414,1.101,"What does Big-O notation tell us, and why do we care about it?"
+t21,23,601,0.403,0.043,1,0.487,0,9.6,0.091,1.591,0.056,0.223,,,,0.223,0.223,1.327,1.327,1.026,Can you explain how a hash table works?
+t22,48,634,0.507,0.0,2,0.613,1.23,9.9,0.18,3.174,0.058,0.249,0.048,0.557,0.934,0.806,1.158,2.137,2.489,2.155,"That's an interesting approach, but it doesn't seem to directly address how a hash table works."
+t23,51,-11041,0.361,0.725,1,0.341,0,60.0,0.139,-10.141,0.061,0.25,,,,0.25,0.25,-10.231,-10.231,1.11,What is an index in a database and what is the trade-off of adding one?
+t24,42,676,0.488,0.024,2,0.598,1.77,9.4,0.25,3.791,0.062,0.252,0.048,0.718,1.474,0.97,1.7,2.394,3.124,2.748,An index in a database is a data structure that improves the speed of data retrieval by allowing for efficient searching and sorting of data.
+t25,54,609,0.532,0.074,1,0.409,0,6.5,0.096,1.652,0.057,0.221,,,,0.221,0.221,1.464,1.464,1.155,What is the difference between a process and a thread?
+t26,42,618,0.474,0.048,2,0.525,1.032,9.9,0.09,2.748,0.055,0.246,0.047,0.262,0.827,0.509,1.05,1.7,2.242,1.924,Let's move on to the next question.
+t27,16,607,0.371,0.0,1,0.307,0,10.2,0.163,1.458,0.061,0.223,,,,0.223,0.223,1.374,1.374,1.067,Pick any technical decision from a project of yours and explain why you made it.
+t28,18,609,0.38,0.0,1,0.404,0,24.0,0.114,1.531,0.052,0.215,,,,0.215,0.215,1.342,1.342,1.033,What is something you learned recently that changed how you write code?
+t29,11,626,0.34,0.0,1,0.406,0,13.4,0.14,1.526,0.058,0.221,,,,0.221,0.221,1.34,1.34,1.014,"Describe a bug that took you a long time to find, and how you found it."
+t30,14,613,0.352,0.0,2,0.426,0.871,9.8,0.045,2.317,0.048,0.236,0.047,0.127,0.714,0.363,0.349,1.383,1.369,1.056,That's an...
+t31,17,651,0.371,0.0,1,0.317,0,14.9,0.075,1.428,0.052,0.214,,,,0.214,0.214,1.326,1.326,0.975,Is there anything you'd like to add?
+t32,25,598,0.41,0.16,0,0,0,3.8,0.127,1.139,,,,,,,,1.139,1.139,0.841,"What does Big-O notation tell us, and why do we care about it?"
+t33,15,638,0.355,0.0,1,0.498,0,13.0,0.095,1.599,0.053,0.216,,,,0.216,0.216,1.317,1.317,0.979,Can you explain how a hash table works?

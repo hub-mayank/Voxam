@@ -1,0 +1,19 @@
+{
+  "provider": "live",
+  "model": [
+    "silero-vad",
+    "faster-whisper-base-int8",
+    "ollama:llama3.2:3b",
+    "piper-en_GB-alba-medium"
+  ],
+  "date": "2026-10-08",
+  "git_sha": "293d8857682b9b133b9de047dae91ad88a6c3cb5",
+  "n": 34,
+  "n_unit": "turns (synthetic speech, macOS say)",
+  "audio": "synthetic",
+  "stack": "Silero + faster-whisper base int8 (CPU) + Ollama llama3.2:3b + Piper alba",
+  "hangover_ms": 600,
+  "llm_leg": "real (Ollama, local)",
+  "sessions": 4,
+  "note": "e2e_s: adapters as shipped (no streaming, classify then phrase, full phrase); *_streamed_s: first sentence of the phrase; *_parallel_s: classify and phrase started together"
+}

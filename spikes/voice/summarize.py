@@ -79,6 +79,69 @@ def main():
             add("e2e_llm_sensitivity", f"{f.stem.replace('e2e_sensitivity_', '')} / assumed LLM {r['llm_profile_assumed']}", "e2e_p50", float(r["e2e_p50_s"]), "s", f.name, "simulated-llm")
             add("e2e_llm_sensitivity", f"{f.stem.replace('e2e_sensitivity_', '')} / assumed LLM {r['llm_profile_assumed']}", "e2e_p95", float(r["e2e_p95_s"]), "s", f.name, "simulated-llm")
 
+    for f in sorted(RESULTS.glob("e2e_real_ollama_*.csv")):
+        data, m = load(f), meta(f)
+        cfg = f"{f.stem.replace('e2e_real_ollama_', '')} ({m['stack']})"
+        for col, name in (("e2e_s", "e2e_as_shipped"), ("e2e_streamed_s", "e2e_first_sentence_streamed"), ("e2e_parallel_s", "e2e_parallel_classify_phrase"),
+                          ("e2e_parallel_speculative_stt_s", "e2e_parallel_plus_speculative_stt")):
+            vals = [float(r[col]) for r in data]
+            add("e2e_real_ollama", cfg, f"{name}_p50", percentile(vals, 50), "s", f.name)
+            add("e2e_real_ollama", cfg, f"{name}_p95", percentile(vals, 95), "s", f.name)
+        for col, name, unit in (("endpoint_delay_ms", "endpoint_delay_p50", "ms"), ("stt_final_s", "stt_p50", "s"), ("backend_overhead_ms", "backend_p50", "ms"),
+                                ("tts_first_chunk_s", "tts_first_p50", "s")):
+            add("e2e_real_ollama", cfg, name, percentile([float(r[col]) for r in data], 50), unit, f.name)
+        for col, name in (("classify_s", "classify_call_as_shipped"), ("phrase_s", "phrase_call_as_shipped")):
+            vals = [float(r[col]) for r in data if float(r[col]) > 0]
+            add("e2e_real_ollama", cfg, f"{name}_p50", percentile(vals, 50), "s", f.name)
+            add("e2e_real_ollama", cfg, f"{name}_p95", percentile(vals, 95), "s", f.name)
+            add("e2e_real_ollama", cfg, f"{name}_n", len(vals), "calls", f.name)
+        for col in ("classify_ttft_s", "classify_stream_total_s", "phrase_ttft_s", "phrase_first_sentence_s", "phrase_stream_total_s"):
+            vals = [float(r[col]) for r in data if r[col] != ""]
+            add("e2e_real_ollama", cfg, f"{col}_p50", percentile(vals, 50), "s", f.name)
+            add("e2e_real_ollama", cfg, f"{col}_p95", percentile(vals, 95), "s", f.name)
+        add("e2e_real_ollama", cfg, "turns", len(data), "turns", f.name)
+        add("e2e_real_ollama", cfg, "turns_without_an_llm_call", sum(r["llm_calls"] == "0" for r in data), "turns", f.name)
+        add("e2e_real_ollama", cfg, "llm_calls_per_turn_mean", statistics.mean(int(r["llm_calls"]) for r in data), "calls", f.name)
+
+    for f in sorted(RESULTS.glob("stt_long_answers.csv")):
+        for r in load(f):
+            add("stt_long_answers", f"{r['engine']} / {r['audio_s']} s answer", "decode_median", float(r["decode_median_s"]), "s", f.name)
+            add("stt_long_answers", f"{r['engine']} / {r['audio_s']} s answer", "wer", float(r["wer"]), "ratio", f.name)
+
+    for f in sorted(RESULTS.glob("llm_cloud_*.csv")):
+        data, m = load(f), meta(f)
+        for kind in ("classify", "phrase"):
+            for mode in ("sequential", "parallel"):
+                sel = [r for r in data if r["kind"] == kind and r["mode"] == mode and not r["error"]]
+                if sel:
+                    for col in ("ttft_s", "first_sentence_s", "total_s"):
+                        vals = [float(r[col]) for r in sel]
+                        add("llm_cloud", f"{m['model']} {kind} {mode}", f"{col}_p50", percentile(vals, 50), "s", f.name)
+                        add("llm_cloud", f"{m['model']} {kind} {mode}", f"{col}_p95", percentile(vals, 95), "s", f.name)
+                    add("llm_cloud", f"{m['model']} {kind} {mode}", "calls_ok", len(sel), "calls", f.name)
+        add("llm_cloud", m["model"], "calls_attempted", m["llm_calls"], "calls", f.name)
+        add("llm_cloud", m["model"], "calls_failed", sum(1 for r in data if r["error"]), "calls", f.name)
+
+    for f in sorted(RESULTS.glob("e2e_real_*_stack*.csv")):
+        data, m = load(f), meta(f)
+        seq = [float(r["e2e_sequential_streamed_s"]) for r in data]
+        par = [float(r["e2e_parallel_s"]) for r in data if r["e2e_parallel_s"]]
+        add("e2e_real_cloud", f"{m['model']} on stack {m['stack']}", "e2e_sequential_streamed_p50", percentile(seq, 50), "s", f.name)
+        add("e2e_real_cloud", f"{m['model']} on stack {m['stack']}", "e2e_sequential_streamed_p95", percentile(seq, 95), "s", f.name)
+        add("e2e_real_cloud", f"{m['model']} on stack {m['stack']}", "turns", len(seq), "turns", f.name)
+        if par:
+            add("e2e_real_cloud", f"{m['model']} on stack {m['stack']}", "e2e_parallel_p50", percentile(par, 50), "s", f.name)
+            add("e2e_real_cloud", f"{m['model']} on stack {m['stack']}", "e2e_parallel_p95", percentile(par, 95), "s", f.name)
+            add("e2e_real_cloud", f"{m['model']} on stack {m['stack']}", "parallel_turns", len(par), "turns", f.name)
+
+    for f in sorted(RESULTS.glob("tts_azure_vs_piper_alba.csv")):
+        data = load(f)
+        for engine in sorted({r["engine"] for r in data}):
+            vals = [float(r["first_audio_s"]) for r in data if r["engine"] == engine]
+            add("tts_azure", engine, "first_audio_p50", percentile(vals, 50), "s", f.name)
+            add("tts_azure", engine, "first_audio_p95", percentile(vals, 95), "s", f.name)
+            add("tts_azure", engine, "requests", len(vals), "requests", f.name)
+
     for f in sorted(RESULTS.glob("stt_concurrency.csv")):
         for r in load(f):
             cfg = f"{r['model']} x{r['concurrent_decodes']} concurrent"
@@ -103,6 +166,10 @@ def main():
                 if sel:
                     add("wer_real_clips", f"{model} {kind} language={lang}", "wer_strict_mean", statistics.mean(float(r["wer_strict"]) for r in sel), "ratio", f.name)
                     add("wer_real_clips", f"{model} {kind} language={lang}", "wer_skeleton_mean", statistics.mean(float(r["wer_skeleton"]) for r in sel), "ratio", f.name)
+                    add("wer_real_clips", f"{model} {kind} language={lang}", "term_recall_mean", statistics.mean(float(r["term_recall"]) for r in sel), "ratio", f.name)
+                    add("wer_real_clips", f"{model} {kind} language={lang}", "decode_median", statistics.median(float(r["decode_s"]) for r in sel), "s", f.name)
+                    add("wer_real_clips", f"{model} {kind} language={lang}", "clips_with_a_repetition_loop", sum(int(r["max_trigram_repeat"]) >= 5 for r in sel), "clips", f.name)
+                    add("wer_real_clips", f"{model} {kind} language={lang}", "clips_in_devanagari", sum(int(r["output_has_devanagari"]) for r in sel), "clips", f.name)
                     add("wer_real_clips", f"{model} {kind} language={lang}", "clips", len(sel), "clips", f.name)
 
     out = RESULTS / "summary.csv"

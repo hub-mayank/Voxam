@@ -1,6 +1,6 @@
-# AI Viva
+# Voxam
 
-A fair, auditable 15-minute technical viva run by an AI interviewer (MSOT challenge, Problem 1).
+Voxam is a fair, auditable 15-minute technical viva run by an AI interviewer (MSOT "AI Viva" challenge, Problem 1).
 The code owns the clock and follow-up policy; the LLM only classifies answers and phrases replies.
 Scoring runs afterwards on the full transcript against a rubric, and every score cites transcript turns.
 

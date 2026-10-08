@@ -15,7 +15,7 @@ from .schemas.common import Health, example_of
 from .settings import Settings
 
 DESCRIPTION = """
-Backend for AI Viva: a fair, auditable 15-minute viva. Faculty set up vivas and review results; students take the viva.
+Backend for Voxam: a fair, auditable 15-minute viva. Faculty set up vivas and review results; students take the viva.
 
 **Contract status:** during the contract phase every route marked as a stub returns its example payload with the header
 `X-Contract-Stub: 1`, so `uvicorn` is a working mock backend. Send `X-Mock-Error: <code>` to any stub route to get that error.
@@ -47,7 +47,7 @@ def create_app(settings: Settings = None, llm_factory=None, now=None, engine=Non
         load_env()  # the repo .env fills in what the shell did not set
         settings = Settings.from_env()
     settings.check()
-    app = FastAPI(title="AI Viva API", version="1.0.0", description=DESCRIPTION, openapi_tags=TAGS,
+    app = FastAPI(title="Voxam API", version="1.0.0", description=DESCRIPTION, openapi_tags=TAGS,
                   generate_unique_id_function=lambda route: route.name)
     app.state.settings = settings
     app.state.now = now or utc_now

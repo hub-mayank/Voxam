@@ -399,32 +399,113 @@ def test_ending_and_enqueueing_scoring_are_one_transaction(env, monkeypatch):
 
 # ---------- access codes and tokens ----------
 
-def test_wrong_codes_lock_the_student_out_then_the_lockout_expires(env):
+BODY = {"viva_id": "demo-viva", "student_id": "S1"}
+WRONG = {**BODY, "access_code": "AAAA-AAAA"}
+
+
+def join_status(client, code, student="S1"):
+    r = client.post("/student/join", json={"viva_id": "demo-viva", "student_id": student, "access_code": code})
+    return r.status_code, (r.json()["error"]["details"].get("retry_after_ms") if r.status_code == 429 else None)
+
+
+def test_wrong_codes_earn_a_growing_delay_capped_at_60_seconds(env):
     app, client, clock, codes, _ = env
-    body = {"viva_id": "demo-viva", "student_id": "S1"}
+    expected_ms = [1000, 2000, 4000, 8000, 16000, 32000, 60000, 60000, 60000]
+    for n, delay in enumerate(expected_ms, start=1):
+        assert client.post("/student/join", json=WRONG).status_code == 403, n
+        status, retry = join_status(client, codes["S1"])  # even the right code waits out the delay
+        assert (status, retry) == (429, delay), (n, status, retry)
+        clock.advance(delay / 1000)  # the delay is over: the next wrong code is checked (and earns the next delay)
+    assert join_status(client, codes["S1"])[0] == 200, "after the delay the right code gets in"
+
+
+def test_attempts_during_the_delay_are_refused_unchecked_and_do_not_extend_it(env):
+    app, client, clock, codes, _ = env
+    client.post("/student/join", json=WRONG)  # first wrong code: 1 s
+    clock.advance(1)
+    client.post("/student/join", json=WRONG)  # second wrong code: 2 s
+    waits = []
+    for _ in range(20):  # a flood of further attempts, 50 ms apart, all inside the 2 s delay
+        status, retry = join_status(client, "ZZZZ-ZZZZ")
+        assert status == 429
+        waits.append(retry)
+        clock.advance(0.05)
+    assert waits[0] == 2000
+    assert waits == sorted(waits, reverse=True) and len(set(waits)) == 20, "the remaining wait only shrinks: refused attempts add nothing"
+    clock.advance(1.05)  # the 2 s are now over, counted from the second wrong code
+    assert join_status(client, codes["S1"])[0] == 200
+
+
+def test_a_wrong_code_spammer_cannot_keep_the_real_student_out_longer_than_the_cap(env):
+    """The spammer hammers S1 with wrong codes for ten minutes. At every moment the real student, trying the right code, is told to wait
+    no longer than the cap; and as soon as the spammer stops, one wait of at most the cap is enough to get in."""
+    app, client, clock, codes, _ = env
+    worst = 0
+    for step in range(1200):  # 10 minutes in half-second steps
+        client.post("/student/join", json=WRONG)
+        if step % 10 == 0:
+            status, retry = join_status(client, codes["S1"])
+            assert status == 429
+            worst = max(worst, retry)
+        clock.advance(0.5)
+    assert 0 < worst <= 60_000
+    status, retry = join_status(client, codes["S1"])
+    clock.advance((retry or 0) / 1000)
+    assert join_status(client, codes["S1"])[0] == 200
+
+
+def test_other_students_are_not_delayed_by_someone_elses_failures(env):
+    app, client, clock, codes, _ = env
     for _ in range(3):
-        r = client.post("/student/join", json={**body, "access_code": "AAAA-AAAA"})
-        assert r.status_code == 403 and r.json()["error"]["code"] == "invalid_credentials"
-    locked = client.post("/student/join", json={**body, "access_code": codes["S1"]})
-    assert locked.status_code == 429 and locked.json()["error"]["details"]["retry_after_ms"] == 900_000, "even the right code is refused"
-    assert client.post("/student/join", json={**body, "student_id": "S2", "access_code": codes["S2"]}).status_code == 200, "others are unaffected"
-    clock.advance(901)
-    assert client.post("/student/join", json={**body, "access_code": codes["S1"]}).status_code == 200
+        client.post("/student/join", json=WRONG)
+        clock.advance(10)
+    client.post("/student/join", json=WRONG)
+    assert join_status(client, codes["S2"], "S2")[0] == 200
 
 
-def test_a_success_resets_the_failure_count_and_reset_code_unlocks(env):
+def test_a_success_resets_the_delay_and_reset_code_clears_it(env):
     app, client, clock, codes, _ = env
-    body = {"viva_id": "demo-viva", "student_id": "S1"}
-    client.post("/student/join", json={**body, "access_code": "AAAA-AAAA"})
-    client.post("/student/join", json={**body, "access_code": "AAAA-AAAA"})
-    assert client.post("/student/join", json={**body, "access_code": codes["S1"]}).status_code == 200
-    for _ in range(2):
-        client.post("/student/join", json={**body, "access_code": "AAAA-AAAA"})
-    assert client.post("/student/join", json={**body, "access_code": "AAAA-AAAA"}).status_code == 403  # 3rd, not 5th
-    assert client.post("/student/join", json={**body, "access_code": codes["S1"]}).status_code == 429
+    client.post("/student/join", json=WRONG)
+    clock.advance(1)
+    assert join_status(client, codes["S1"])[0] == 200
+    assert client.post("/student/join", json=WRONG).status_code == 403
+    assert join_status(client, codes["S1"]) == (429, 1000), "the count started again at one failure"
+    for _ in range(3):
+        clock.advance(100)
+        client.post("/student/join", json=WRONG)
+    assert join_status(client, codes["S1"])[0] == 429
     new = client.post("/faculty/vivas/demo-viva/roster/S1/reset-code", headers=RAO).json()["access_code"]
-    assert client.post("/student/join", json={**body, "access_code": codes["S1"]}).status_code == 403, "old code is dead"
-    assert client.post("/student/join", json={**body, "access_code": new}).status_code == 200
+    assert join_status(client, new)[0] == 200, "the faculty reset also cleared the delay"
+    assert join_status(client, codes["S1"])[0] == 403, "and the old code is dead"
+
+
+def test_one_client_address_gets_a_per_minute_budget_of_wrong_codes(tmp_path):
+    from fastapi.testclient import TestClient
+    app, client, clock = build(tmp_path, ip_failures_per_minute=5)
+    codes = make_viva(client, students=tuple(f"S{i}" for i in range(8)))
+    noisy = TestClient(app, client=("10.0.0.7", 5000))
+    quiet = TestClient(app, client=("10.0.0.8", 5000))
+    for i in range(5):  # five wrong codes, each for a different student, so no per-student delay is involved
+        assert noisy.post("/student/join", json={"viva_id": "demo-viva", "student_id": f"S{i}", "access_code": "AAAA-AAAA"}).status_code == 403
+    r = noisy.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S6", "access_code": codes["S6"]})
+    assert r.status_code == 429 and 0 < r.json()["error"]["details"]["retry_after_ms"] <= 60_001, "the address is over its budget"
+    assert quiet.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S6", "access_code": codes["S6"]}).status_code == 200, "others are unaffected"
+    clock.advance(61)
+    assert noisy.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S7", "access_code": codes["S7"]}).status_code == 200, "the window slides"
+
+
+def test_forwarded_for_is_only_trusted_when_asked(tmp_path):
+    from fastapi.testclient import TestClient
+    app, client, clock = build(tmp_path, ip_failures_per_minute=2)
+    make_viva(client, students=("S1", "S2", "S3"))
+    wrong = lambda who: client.post("/student/join", json={"viva_id": "demo-viva", "student_id": who, "access_code": "AAAA-AAAA"},  # noqa: E731
+                                    headers={"X-Forwarded-For": f"203.0.113.{who[-1]}"})
+    assert [wrong(s).status_code for s in ("S1", "S2", "S3")] == [403, 403, 429], "ignored by default: all three look like one address"
+    app2, client2, _ = build(tmp_path / "b", ip_failures_per_minute=2, trust_forwarded_for=True) if (tmp_path / "b").mkdir() is None else (None, None, None)
+    make_viva(client2, students=("S1", "S2", "S3"))
+    out = [client2.post("/student/join", json={"viva_id": "demo-viva", "student_id": s, "access_code": "AAAA-AAAA"},
+                        headers={"X-Forwarded-For": f"203.0.113.{s[-1]}"}).status_code for s in ("S1", "S2", "S3")]
+    assert out == [403, 403, 403], "trusted: each forwarded address has its own budget"
 
 
 def test_unknown_student_and_wrong_code_look_identical(env):

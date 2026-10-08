@@ -1,11 +1,14 @@
 """Benchmark LLMs as scorer on the 4 personas. One variable at a time, raw results saved.
-Usage (from repo root, venv active, GEMINI_API_KEY set):
-  python scripts/bench_models.py gemini-2.5-flash gemini-3.5-flash --runs 3
-  python scripts/bench_models.py --llm mock          # dry run, no key"""
+Usage (from repo root, venv active; keys come from the environment or the repo's .env):
+  python scripts/bench_models.py gemini-3.5-flash-lite --runs 3                 # bare names use --llm (default gemini)
+  python scripts/bench_models.py groq:openai/gpt-oss-20b ollama:llama3.2:3b     # `provider:model` picks the provider
+  python scripts/bench_models.py --llm mock          # dry run, no key
+Free-tier budgets (config/free_tier_limits.json) apply: calls are paced and refused at 0.9 x the daily limit."""
 import argparse
 import csv
 import datetime
 import json
+import os
 import statistics
 import sys
 import time
@@ -14,8 +17,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 from app.config import load_config  # noqa: E402
+from app.envfile import load_env  # noqa: E402
 from app.scorer import score_session, ScoreError  # noqa: E402
-from app.llm.factory import make_llm  # noqa: E402
+from app.llm.factory import is_provider_name, make_llm  # noqa: E402
 from app.results_meta import write_meta  # noqa: E402
 
 PERSONAS = ["strong", "weak", "idk", "injection"]
@@ -49,11 +53,13 @@ class Timed:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("models", nargs="*")
-    ap.add_argument("--llm", default="gemini", choices=["gemini", "mock"])
+    ap.add_argument("--llm", default="gemini", help="provider for bare model names: gemini, ollama, groq, ... or mock (dry run)")
     ap.add_argument("--runs", type=int, default=3)
     ap.add_argument("--personas", default="strong,weak,idk,injection", help="comma list, to re-run only some")
     ap.add_argument("--delay", type=float, default=0.0, help="seconds between calls (free tiers: try 6)")
     a = ap.parse_args()
+    load_env()
+    os.environ.setdefault("FREE_TIER_MAX_WAIT_S", "120")  # a benchmark may wait for its per-minute slot; the live interviewer may not
     cfg = load_config(ROOT / "config/viva.config.json")
     targets = ["mock"] if a.llm == "mock" else a.models
     if not targets:
@@ -64,7 +70,9 @@ def main():
             from app.llm.mock import MockLLM
             llm = Timed(MockLLM())
         else:
-            g = make_llm("gemini", model=m, retries=0)  # retries live in Timed below (longer waits)
+            head = m.partition(":")[0]
+            spec = m if is_provider_name(head) else f"{a.llm}:{m}"  # `groq:openai/gpt-oss-20b` or a bare model name
+            g = make_llm(spec, retries=0)  # retries live in Timed below (longer waits)
             pre_err = None
             for wait in (0, 20, 45):  # preflight, retried on transient errors only (404 = not callable: no retry)
                 time.sleep(wait)

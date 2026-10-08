@@ -8,9 +8,18 @@ from .models import Base
 DEFAULT_URL = "sqlite:///viva_dev.db"
 
 
+def normalise_url(url: str) -> str:
+    """postgresql:// and postgres:// mean the psycopg v3 driver here (D17); SQLAlchemy would otherwise look for psycopg2."""
+    for prefix in ("postgresql://", "postgres://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
 def make_engine(url: str = None) -> Engine:
-    """DATABASE_URL, e.g. postgresql+psycopg://user:pw@host/viva. Default: a local SQLite file for dev."""
-    engine = create_engine(url or os.environ.get("DATABASE_URL") or DEFAULT_URL)
+    """DATABASE_URL, e.g. postgresql://user@localhost/viva (or postgresql+psycopg://...). Default: a local SQLite file for dev."""
+    url = normalise_url(url or os.environ.get("DATABASE_URL") or DEFAULT_URL)
+    engine = create_engine(url, pool_pre_ping=True) if url.startswith("postgresql") else create_engine(url)
     if engine.dialect.name == "sqlite":
         @event.listens_for(engine, "connect")
         def sqlite_settings(dbapi_connection, record):

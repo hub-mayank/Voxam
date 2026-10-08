@@ -13,6 +13,7 @@ from app.db import models as m
 from app.db.ddl import postgres_ddl
 from app.db.engine import init_db, make_engine
 from app.session_state import SessionStatus
+from harness import db_url_for
 
 ROOT = __import__("pathlib").Path(__file__).resolve().parents[2]
 TABLES = {"vivas", "questions", "roster", "access_codes", "sessions", "turns", "scores", "overrides",
@@ -22,7 +23,7 @@ NOW = datetime(2026, 10, 12, 5, 30, 12, tzinfo=timezone.utc)
 
 @pytest.fixture()
 def engine(tmp_path):
-    e = make_engine(f"sqlite:///{tmp_path / 'viva.db'}")
+    e = make_engine(db_url_for(tmp_path))
     init_db(e)
     return e
 
@@ -199,9 +200,25 @@ def test_every_contract_field_has_a_column(api_model, table, derived):
     assert not missing, f"{api_model.__name__} fields without a column in {table.__tablename__}: {missing}"
 
 
+@pytest.mark.sqlite_only
 def test_make_engine_reads_database_url(monkeypatch, tmp_path):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'x.db'}")
     e = make_engine()
     assert str(e.url).endswith("x.db")
     with e.connect() as c:
         assert c.execute(text("PRAGMA foreign_keys")).scalar() == 1
+
+
+def test_the_suite_runs_on_the_database_it_claims_to(engine):
+    """Guards against a --postgres run that quietly used SQLite: the dialect, the per-test schema and the real column types are checked."""
+    import harness
+    expected = "postgresql" if harness.PG_BASE else "sqlite"
+    assert engine.dialect.name == expected
+    with engine.connect() as c:
+        if expected == "postgresql":
+            schema = c.execute(text("select current_schema()")).scalar()
+            assert schema.startswith("t_"), "every test gets a schema of its own"
+            kinds = dict(c.execute(text("select column_name, data_type from information_schema.columns where table_schema = current_schema() "
+                                        "and ((table_name='sessions' and column_name in ('id','started_at')) or (table_name='vivas' and column_name='topics'))")).all())
+            assert kinds == {"id": "uuid", "started_at": "timestamp with time zone", "topics": "jsonb"}
+            assert c.execute(text("select count(*) from pg_indexes where schemaname = current_schema() and indexdef like '%WHERE (revoked_at IS NULL)%'")).scalar() == 1

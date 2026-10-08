@@ -26,7 +26,7 @@ CREATE TABLE questions (
 	approved_by VARCHAR, 
 	PRIMARY KEY (viva_id, id), 
 	CONSTRAINT ck_type CHECK (type IN ('concept', 'applied')), 
-	CONSTRAINT ck_source CHECK (source IN ('bank', 'generated')), 
+	CONSTRAINT ck_source CHECK (source IN ('bank', 'ai-draft', 'generated')), 
 	FOREIGN KEY(viva_id) REFERENCES vivas (id)
 );
 

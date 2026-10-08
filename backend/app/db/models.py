@@ -51,7 +51,7 @@ class Question(Base):
     key_points: Mapped[list] = mapped_column(JsonType, default=list)
     source: Mapped[str] = mapped_column(String, default="bank")
     approved_by: Mapped[Optional[str]] = mapped_column(String)
-    __table_args__ = (one_of("type", ["concept", "applied"]), one_of("source", ["bank", "generated"]))
+    __table_args__ = (one_of("type", ["concept", "applied"]), one_of("source", ["bank", "ai-draft", "generated"]))
 
 
 class RosterEntry(Base):
@@ -59,8 +59,8 @@ class RosterEntry(Base):
     viva_id: Mapped[str] = mapped_column(ForeignKey("vivas.id"), primary_key=True)
     student_id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[Optional[str]] = mapped_column(String)
-    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)  # wrong access codes since the last success
-    locked_until: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)  # consecutive wrong access codes since the last success
+    locked_until: Mapped[Optional[datetime]] = mapped_column(UtcDateTime)  # next code attempt allowed at (growing delay)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow)
 
 

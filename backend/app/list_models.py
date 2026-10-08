@@ -1,6 +1,9 @@
 """Lists models your GEMINI_API_KEY can call for generateContent. Pick from THIS list."""
 import os
 import httpx
+from .envfile import load_env
+
+load_env()  # GEMINI_API_KEY from the shell or the repo .env (never printed)
 
 key = os.environ.get("GEMINI_API_KEY")
 if not key:

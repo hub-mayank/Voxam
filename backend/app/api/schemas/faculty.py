@@ -22,6 +22,11 @@ class QuestionType(str, Enum):
     applied = "applied"
 
 
+class QuestionSource(str, Enum):
+    bank = "bank"
+    ai_draft = "ai-draft"
+
+
 # ---------- vivas ----------
 
 class VivaCreate(ApiRequest):
@@ -119,10 +124,13 @@ class QuestionIn(ApiRequest):
     difficulty: int = Field(ge=1, le=5)
     text: str = Field(min_length=1, description="What the AI asks. Students see this.")
     key_points: list[str] = Field(default_factory=list, description="Private marking hints. Students never see these.")
+    source: QuestionSource = Field(QuestionSource.bank, description="bank: reviewed by faculty. ai-draft: written by an AI; faculty must review "
+                                                                    "and approve it before real use (re-upload it as bank once approved).")
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "id": "q001", "topic": "hash-tables", "type": "concept", "difficulty": 1,
         "text": "Can you explain how a hash table works?",
-        "key_points": ["hash function maps key to index", "collision handling", "average O(1) lookup", "resizing/load factor"]}]})
+        "key_points": ["hash function maps key to index", "collision handling", "average O(1) lookup", "resizing/load factor"],
+        "source": "bank"}]})
 
 
 class Question(ApiResponse):
@@ -133,7 +141,7 @@ class Question(ApiResponse):
     difficulty: int
     text: str
     key_points: list[str]
-    source: str = Field(description="bank (uploaded) or generated (AI variant; not produced yet).")
+    source: str = Field(description="bank (reviewed by faculty), ai-draft (written by an AI, awaiting faculty approval) or generated (AI variant; not produced yet).")
     approved_by: Optional[str] = Field(None, description="Reviewer who approved a generated question; null for uploads.")
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "id": "q001", "topic": "hash-tables", "type": "concept", "difficulty": 1,

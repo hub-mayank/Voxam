@@ -9,8 +9,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 from app.api.settings import Settings  # noqa: E402
+from app.envfile import load_env  # noqa: E402
 from app.demo_seed import STUDENTS, VIVA_ID, seed  # noqa: E402
 
+load_env()
 settings = Settings.from_env()
 if settings.contract_stub or not settings.faculty_tokens:
     sys.exit("set FACULTY_TOKENS (and the secrets), and unset CONTRACT_STUB: this seeds the real backend")

@@ -163,6 +163,7 @@ def test_reset_code_revokes_the_old_one_and_is_refused_after_the_end(env):
     new = client.post("/faculty/vivas/demo-viva/roster/S2/reset-code", headers=RAO).json()
     assert new["student_id"] == "S2" and new["access_code"] != codes["S2"]
     assert client.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S2", "access_code": codes["S2"]}).status_code == 403
+    clock.advance(1)  # the wrong (old) code earned a one second delay
     assert client.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S2", "access_code": new["access_code"]}).status_code == 200
     assert client.post("/faculty/vivas/demo-viva/roster/NOPE/reset-code", headers=RAO).json()["error"]["code"] == "not_found"
     ended_session(client, clock, codes, "S1")
@@ -320,10 +321,10 @@ def test_audio_is_404_in_text_mode(env):
     assert r.status_code == 404 and r.json()["error"]["code"] == "audio_not_available"
 
 
-def test_audio_signed_url_range_and_expiry(env):
+def test_audio_signed_url_range_and_expiry(env, tmp_path):
     app, client, clock, codes = env
     sid, _ = begin(client, codes["S1"])
-    path = wav_file(__import__("pathlib").Path(app.state.settings.database_url[len("sqlite:///"):]).parent)
+    path = wav_file(tmp_path)
     with db_of(app) as db:
         db.get(m.Session, uuid.UUID(sid)).audio_uri = str(path)
         db.commit()

@@ -113,7 +113,7 @@ class FacultyService:
         questions = parse_bank(filename, data)  # raises before anything is touched
         db.query(m.Question).filter(m.Question.viva_id == viva_id).delete()
         db.add_all([m.Question(viva_id=viva_id, id=q.id, topic=q.topic, type=q.type.value, difficulty=q.difficulty, text=q.text,
-                               key_points=q.key_points, source="bank") for q in questions])
+                               key_points=q.key_points, source=q.source.value) for q in questions])
         db.commit()  # delete and insert land together or not at all
         return self._bank_out(viva_id)
 
@@ -161,7 +161,7 @@ class FacultyService:
         code = new_code()
         db.add(m.AccessCode(viva_id=viva_id, student_id=student_id, code_hash=hash_code(st.access_code_pepper, viva_id, student_id, code),
                             created_at=now))
-        roster.failed_attempts, roster.locked_until = 0, None  # a reset also unlocks a locked-out student
+        roster.failed_attempts, roster.locked_until = 0, None  # a reset also clears the delay
         db.commit()
         return ResetCodeResult(student_id=student_id, access_code=code, issued_at=now)
 

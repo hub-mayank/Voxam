@@ -64,7 +64,7 @@ class StubStudent:
     def __init__(self, settings):
         self.settings = settings
 
-    def join(self, body):
+    def join(self, body, client_ip=None):
         if self.settings.require_access_code and not body.access_code:
             raise ApiError(ErrorCode.validation_error, "access_code is required.",
                            {"fields": [{"loc": ["body", "access_code"], "message": "Field required"}]})

@@ -57,7 +57,7 @@ def upload_questions(viva_id: str = VIVA, file: UploadFile = File(description="A
     `invalid_upload` with `details.rows` = [{row, field, message}] (row is 1-based, the CSV header is row 0).
 
     - **JSON**: an array of `QuestionIn` objects.
-    - **CSV**: header `id,topic,type,difficulty,text,key_points`; `key_points` are separated by `|`.
+    - **CSV**: header `id,topic,type,difficulty,text,key_points` plus an optional `source` column (`bank` or `ai-draft`); `key_points` are separated by `|`.
 
     Locked (409 `invalid_state`) once any student has joined. A small bank is allowed but returns `warnings`."""
     return ops.upload_questions(viva_id, file.filename, file.file.read(MAX_UPLOAD))

@@ -14,3 +14,5 @@ Every tool, library and model used. Add a line before adding a dependency.
 | Pydantic v2 | API request/response schemas | MIT | https://docs.pydantic.dev |
 | SQLAlchemy 2.x | database models (SQLite dev, PostgreSQL target) | MIT | https://www.sqlalchemy.org |
 | python-multipart | multipart form parsing for CSV/JSON uploads | Apache-2.0 | https://github.com/Kludex/python-multipart |
+| psycopg 3 (+ psycopg-binary) | PostgreSQL driver for SQLAlchemy | LGPL-3.0-only; used unmodified as a library, not copied or modified (D17) | https://www.psycopg.org |
+| PostgreSQL 16 (Homebrew) | development and test database (D17) | PostgreSQL License | https://www.postgresql.org |

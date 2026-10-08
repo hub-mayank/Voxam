@@ -1,0 +1,176 @@
+{
+  "_about": "Free-tier limits per (provider, model). The call budget (backend/app/llm/budget.py) refuses at floor(FREE_TIER_MARGIN x rpd) and spaces calls to stay under rpm. tpm, tpd and audio seconds are recorded but not enforced. Re-verify before evidence runs.",
+  "limits": [
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash",
+      "rpm": 5,
+      "rpd": 20,
+      "tpm": 250000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.8-flash",
+      "rpm": 5,
+      "rpd": 20,
+      "tpm": 250000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.6-flash",
+      "rpm": 5,
+      "rpd": 20,
+      "tpm": 250000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.7-flash",
+      "rpm": 5,
+      "rpd": 20,
+      "tpm": 250000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3-flash-preview",
+      "rpm": 5,
+      "rpd": 20,
+      "tpm": 250000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08",
+      "note": "ID confirmed with one list_models call on 2026-10-08 (the id gemini-3-flash does not exist)"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "rpm": 15,
+      "rpd": 500,
+      "tpm": 250000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.1-flash-lite",
+      "rpm": 15,
+      "rpd": 500,
+      "tpm": 250000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "rpm": 5,
+      "rpd": 20,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-lite",
+      "rpm": 10,
+      "rpd": 20,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.8-flash-tts",
+      "rpm": 3,
+      "rpd": 10,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.8-flash-lite-tts",
+      "rpm": 3,
+      "rpd": 10,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.1-flash-tts-preview",
+      "rpm": 3,
+      "rpd": 10,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-2.5-flash-preview-tts",
+      "rpm": 3,
+      "rpd": 10,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-transcribe",
+      "rpm": 3,
+      "rpd": 25,
+      "note": "Live API",
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "rpm": 30,
+      "rpd": 1000,
+      "tpm": 8000,
+      "tpd": 200000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "groq",
+      "model": "openai/gpt-oss-20b",
+      "rpm": 30,
+      "rpd": 1000,
+      "tpm": 8000,
+      "tpd": 200000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "groq",
+      "model": "qwen/qwen3.8-27b",
+      "rpm": 30,
+      "rpd": 1000,
+      "tpm": 8000,
+      "tpd": 200000,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "groq",
+      "model": "whisper-large-v3",
+      "rpm": 20,
+      "rpd": 2000,
+      "audio_seconds_per_hour": 7200,
+      "audio_seconds_per_day": 28800,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    },
+    {
+      "provider": "groq",
+      "model": "whisper-large-v3-turbo",
+      "rpm": 20,
+      "rpd": 2000,
+      "audio_seconds_per_hour": 7200,
+      "audio_seconds_per_day": 28800,
+      "source": "provider console rate-limit page, copied by Mayank",
+      "retrieved": "2026-10-08"
+    }
+  ]
+}

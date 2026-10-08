@@ -6,7 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import sessionmaker
 
 from ..db.engine import init_db, make_engine
+from ..envfile import load_env
 from ..llm.factory import make_llm
+from ..services.throttle import SlidingWindow
 from . import routes_faculty, routes_student
 from .errors import install_error_handlers, uniform_validation_errors
 from .schemas.common import Health, example_of
@@ -41,7 +43,9 @@ def utc_now() -> datetime:
 
 def create_app(settings: Settings = None, llm_factory=None, now=None, engine=None) -> FastAPI:
     """llm_factory(spec) -> an LLM for one request; now() -> aware UTC time. Both are injectable for tests and the demo seed."""
-    settings = settings or Settings.from_env()
+    if settings is None:
+        load_env()  # the repo .env fills in what the shell did not set
+        settings = Settings.from_env()
     settings.check()
     app = FastAPI(title="AI Viva API", version="1.0.0", description=DESCRIPTION, openapi_tags=TAGS,
                   generate_unique_id_function=lambda route: route.name)
@@ -52,6 +56,7 @@ def create_app(settings: Settings = None, llm_factory=None, now=None, engine=Non
         app.state.engine = engine or make_engine(settings.database_url or None)
         init_db(app.state.engine)
         app.state.sessionmaker = sessionmaker(app.state.engine)
+        app.state.ip_throttle = SlidingWindow(settings.ip_failures_per_minute)
     if settings.cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins), allow_methods=["*"],
                            allow_headers=["*"], expose_headers=["X-Contract-Stub", "Content-Range", "Accept-Ranges"])

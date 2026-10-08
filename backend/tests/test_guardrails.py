@@ -35,13 +35,18 @@ def test_cap_persists_across_restarts(monkeypatch, tmp_path):
     runs = [subprocess.run([sys.executable, "-c", code], cwd=ROOT / "backend", capture_output=True, text=True)
             for _ in range(3)]
     assert [r.stdout.strip() for r in runs[:2]] == ["1", "2"]
-    assert runs[2].returncode != 0 and "cap reached" in runs[2].stderr
+    assert runs[2].returncode != 0 and "ceiling reached" in runs[2].stderr
 
 
-def test_cap_resets_next_day(monkeypatch, tmp_path):
+def test_cap_is_a_rolling_24_hour_window_not_a_calendar_day(monkeypatch):
     monkeypatch.setenv("LLM_DAILY_CALL_CAP", "1")
-    (tmp_path / "budget.json").write_text('{"date": "2000-01-01", "count": 99}')
-    assert count_call() == 1
+    t = [1_000_000.0]
+    assert count_call(clock=lambda: t[0]) == 1
+    t[0] += 24 * 3600 - 1
+    with pytest.raises(CallCapExceeded):
+        count_call(clock=lambda: t[0])
+    t[0] += 2
+    assert count_call(clock=lambda: t[0]) == 1
 
 
 def test_corrupt_counter_fails_closed(tmp_path):

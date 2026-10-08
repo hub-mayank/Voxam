@@ -344,7 +344,7 @@ def free_port():
 
 def test_mock_server_boots_with_uvicorn(tmp_path):
     port = free_port()
-    env = {"PATH": "/usr/bin:/bin", "FACULTY_TOKENS": "demo:demo-token-0123456789", "HOME": str(tmp_path), "CONTRACT_STUB": "1"}
+    env = {"PATH": "/usr/bin:/bin", "FACULTY_TOKENS": "demo:demo-token-0123456789", "HOME": str(tmp_path), "CONTRACT_STUB": "1", "AI_VIVA_NO_DOTENV": "1"}
     proc = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(port), "--log-level", "warning"],
                             cwd=ROOT / "backend", env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     base = f"http://127.0.0.1:{port}"

@@ -37,8 +37,9 @@ class Settings:
     audio_signing_secret: str = ""    # AUDIO_SIGNING_SECRET: signs the expiring audio URLs
     database_url: str = ""            # DATABASE_URL; empty means the default local SQLite file
     llm_chain: str = ""               # LLM_CHAIN for the live interviewer; empty means mock
-    max_code_attempts: int = 5        # CODE_MAX_ATTEMPTS: wrong codes before a student is locked out
-    lockout_seconds: int = 900        # CODE_LOCKOUT_SECONDS
+    code_delay_cap_seconds: int = 60  # CODE_DELAY_CAP_SECONDS: after n wrong codes the next try waits min(cap, 2^(n-1)) s
+    ip_failures_per_minute: int = 30  # IP_FAILURES_PER_MINUTE: wrong codes one client IP may send per minute (all students)
+    trust_forwarded_for: bool = False  # TRUST_FORWARDED_FOR=1 behind a reverse proxy: use the first X-Forwarded-For address
     answer_lease_seconds: int = 60    # ANSWER_LEASE_SECONDS: longest one answer may be processed before another worker takes over
 
     @classmethod
@@ -53,8 +54,9 @@ class Settings:
             audio_signing_secret=env.get("AUDIO_SIGNING_SECRET", ""),
             database_url=env.get("DATABASE_URL", ""),
             llm_chain=env.get("LLM_CHAIN", ""),
-            max_code_attempts=int(env.get("CODE_MAX_ATTEMPTS", 5)),
-            lockout_seconds=int(env.get("CODE_LOCKOUT_SECONDS", 900)),
+            code_delay_cap_seconds=int(env.get("CODE_DELAY_CAP_SECONDS", 60)),
+            ip_failures_per_minute=int(env.get("IP_FAILURES_PER_MINUTE", 30)),
+            trust_forwarded_for=_flag(env.get("TRUST_FORWARDED_FOR"), False),
             answer_lease_seconds=int(env.get("ANSWER_LEASE_SECONDS", 60)))
 
     def check(self):

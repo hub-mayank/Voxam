@@ -943,7 +943,7 @@
             "type": "array"
           },
           "source": {
-            "description": "bank (uploaded) or generated (AI variant; not produced yet).",
+            "description": "bank (reviewed by faculty), ai-draft (written by an AI, awaiting faculty approval) or generated (AI variant; not produced yet).",
             "title": "Source",
             "type": "string"
           },
@@ -4757,7 +4757,7 @@
         ]
       },
       "post": {
-        "description": "Replaces the whole bank, atomically: if any row is invalid nothing changes and the response is a 422\n`invalid_upload` with `details.rows` = [{row, field, message}] (row is 1-based, the CSV header is row 0).\n\n- **JSON**: an array of `QuestionIn` objects.\n- **CSV**: header `id,topic,type,difficulty,text,key_points`; `key_points` are separated by `|`.\n\nLocked (409 `invalid_state`) once any student has joined. A small bank is allowed but returns `warnings`.",
+        "description": "Replaces the whole bank, atomically: if any row is invalid nothing changes and the response is a 422\n`invalid_upload` with `details.rows` = [{row, field, message}] (row is 1-based, the CSV header is row 0).\n\n- **JSON**: an array of `QuestionIn` objects.\n- **CSV**: header `id,topic,type,difficulty,text,key_points` plus an optional `source` column (`bank` or `ai-draft`); `key_points` are separated by `|`.\n\nLocked (409 `invalid_state`) once any student has joined. A small bank is allowed but returns `warnings`.",
         "operationId": "upload_questions",
         "parameters": [
           {

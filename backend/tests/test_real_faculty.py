@@ -163,6 +163,7 @@ def test_reset_code_revokes_the_old_one_and_is_refused_after_the_end(env):
     new = client.post("/faculty/vivas/demo-viva/roster/S2/reset-code", headers=RAO).json()
     assert new["student_id"] == "S2" and new["access_code"] != codes["S2"]
     assert client.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S2", "access_code": codes["S2"]}).status_code == 403
+    clock.advance(1)  # the wrong (old) code earned a one second delay
     assert client.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S2", "access_code": new["access_code"]}).status_code == 200
     assert client.post("/faculty/vivas/demo-viva/roster/NOPE/reset-code", headers=RAO).json()["error"]["code"] == "not_found"
     ended_session(client, clock, codes, "S1")

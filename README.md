@@ -6,7 +6,7 @@ Scoring runs afterwards on the full transcript against a rubric, and every score
 
 Status: text-mode interviewer, scorer, provider adapters (Gemini, Ollama, mock) with retry/fallback, telemetry and a call
 cap are built. The HTTP API contract is frozen (`docs/openapi.json`) and implemented: a database-backed, restart-safe text
-viva with faculty review. Not built yet: the scoring worker, voice and the dashboard.
+viva with faculty review, and the scoring worker (queue, retries, restart-safe). Not built yet: voice and the dashboard.
 
 ## Quick start
 Text mode runs fully offline with the mock LLM. It needs no Docker, database or API key.
@@ -50,9 +50,18 @@ a git worktree uses the main checkout's `.env`). Nothing prints a key; `python -
 - Every provider attempt is counted per (provider, model) in a rolling 24 h window against the free-tier limits in `config/free_tier_limits.json`
   (re-verify them before an evidence run): refused at 90% of the daily limit (`FREE_TIER_MARGIN`) and spaced to stay under the per-minute limit.
   A refused provider is skipped and the next one in the chain serves. `LLM_DAILY_CALL_CAP` (default 30) is the global ceiling and the cap for
-  models not in the file. Mock and Ollama are never counted.
+  models not in the file. Token limits (`tpm`, `tpd`) are enforced the same way. Mock and Ollama are never counted.
 - Tests that call a real provider are marked `live` and skipped unless you run `python -m pytest --live`.
 - Provider calls are logged to `~/.cache/ai-viva/telemetry.jsonl` (override with `TELEMETRY_FILE`).
+
+## Scoring worker
+    cd backend
+    python -m app.worker                             # loop: end expired sessions, score due jobs; --once for one pass
+    SCORER_LLM_CHAIN="groq:openai/gpt-oss-20b,ollama:llama3.2:3b" python -m app.worker     # default: LLM_CHAIN, then mock
+    python ../scripts/consistency.py --llm mock --runs 5       # scorer variance per transcript (mock = plumbing only; --live needs approval)
+Run as many workers as you like against one database: a job is claimed by one of them, and a worker that dies is replaced when its
+5-minute lease runs out. A job that fails is retried after 30 s, then 60 s, then the session is marked `failed` (faculty can rescore);
+a provider whose free-tier budget is used up delays the job instead of failing it.
 
 ## PostgreSQL
     brew install postgresql@16 && brew services start postgresql@16 && createdb ai_viva_test      # once
@@ -66,11 +75,12 @@ The app uses `DATABASE_URL` (default: a local SQLite file); `postgresql://...` m
     python scripts/make_personas.py                  # regenerate the scripted persona fixtures
     python scripts/bench_models.py <model> --runs 3 --delay 10   # live benchmark, counts against the cap
     python scripts/compare.py marks.csv              # AI vs human marks; columns session_id,ai_total,human_total
+    python scripts/free_tier_capacity.py --tokens-per-call 400 --tokens-per-score-call 3300   # what the free tiers allow (tokens are assumed)
 
 Results written under `results/` need a `.meta.json` sidecar (provider, model, date, git_sha, n); see `results/README.txt`.
 
 ## Layout
-    backend/app/       interviewer, clock, policy, scorer, config; llm/ adapters; telemetry.py; session_state.py
+    backend/app/       interviewer, clock, policy, scorer, config, worker; llm/ adapters; prompts/ (versioned scorer prompt); telemetry.py; session_state.py
                        api/ (FastAPI routes and schemas), services/ (student and faculty logic), db/ (models)
     backend/tests/     offline tests and persona fixtures
     config/            viva config (phases, rubric) and a sample question bank

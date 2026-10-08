@@ -1,9 +1,0 @@
-{
-  "provider": "stub",
-  "model": "n/a (consolidation of the other files)",
-  "date": "2026-10-08",
-  "git_sha": "1ecf09c5b96113bfc6c44ce9835fdfaee7040c8a",
-  "n": 273,
-  "n_unit": "summary rows",
-  "note": "rows labelled simulated-llm use an ASSUMED LLM latency profile; everything else is measured. See each source_file's own sidecar."
-}

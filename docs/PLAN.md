@@ -1,7 +1,8 @@
-# PLAN: AI Viva (owner: Planner; last updated 2026-10-07 evening)
+# PLAN: AI Viva / Voxam (owner: Planner; last updated 2026-10-08)
 
 Deadline **Sat 2026-10-17**. Target: submit **Fri 10-16 night**; Saturday is buffer (the cutoff time is unknown; see B5). Times IST.
 Autonomy, reporting and rules: `CLAUDE.md`.
+**Product name: Voxam** (chosen 2026-10-08). Use in README title, UI strings and demo; the repo and Python package names stay `ai-viva` until after submission. Trademark (IP India, classes 9/41/42) and domain checks: Mayank, no purchase (zero-spend).
 
 ## Planning principles
 1. **De-risk voice first.** p95 < 2.5 s through STT → LLM → TTS is the schedule risk. Spike it before building around it.

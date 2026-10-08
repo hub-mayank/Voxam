@@ -11,6 +11,8 @@ from app.api.settings import Settings
 from app.llm.mock import MockLLM
 
 ROOT = Path(__file__).resolve().parents[2]
+PG_BASE = None        # set by conftest with --postgres
+_SCHEMAS = set()
 SAMPLE_BANK = (ROOT / "config" / "question_bank.sample.json").read_bytes()
 START = datetime(2026, 10, 12, 5, 30, 0, tzinfo=timezone.utc)
 RAO = {"Authorization": "Bearer tok-rao-0123456789"}
@@ -54,10 +56,45 @@ class DownLLM:
         raise RuntimeError("all providers failed")
 
 
+def use_postgres(url):
+    global PG_BASE
+    from app.db.engine import normalise_url
+    PG_BASE = normalise_url(url)
+
+
+def db_url_for(tmp_path):
+    """The database URL a test should use. SQLite file in tmp_path by default. With --postgres: a schema of its own in the test database,
+    named from tmp_path, so building the app twice on the same tmp_path (a simulated restart) shares one database, like the SQLite file."""
+    if PG_BASE is None:
+        return f"sqlite:///{tmp_path / 'viva.db'}"
+    import hashlib
+    import sqlalchemy as sa
+    schema = "t_" + hashlib.sha1(str(tmp_path).encode()).hexdigest()[:16]
+    if schema not in _SCHEMAS:
+        engine = sa.create_engine(PG_BASE)
+        with engine.begin() as c:
+            c.execute(sa.text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
+        engine.dispose()
+        _SCHEMAS.add(schema)
+    return str(sa.engine.make_url(PG_BASE).update_query_dict({"options": f"-csearch_path={schema}"}).render_as_string(hide_password=False))
+
+
+def drop_schemas():
+    if PG_BASE is None or not _SCHEMAS:
+        return
+    import sqlalchemy as sa
+    engine = sa.create_engine(PG_BASE)
+    with engine.begin() as c:
+        for schema in sorted(_SCHEMAS):
+            c.execute(sa.text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+    engine.dispose()
+    _SCHEMAS.clear()
+
+
 def settings_for(tmp_path, **kw):
     base = dict(faculty_tokens={"tok-rao-0123456789": "dr-rao", "tok-iyer-0123456789": "dr-iyer"},
                 access_code_pepper="pepper-pepper-0123456789", audio_signing_secret="audio-secret-0123456789",
-                database_url=f"sqlite:///{tmp_path / 'viva.db'}")
+                database_url=db_url_for(tmp_path))
     return Settings(**{**base, **kw})
 
 

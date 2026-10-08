@@ -321,10 +321,10 @@ def test_audio_is_404_in_text_mode(env):
     assert r.status_code == 404 and r.json()["error"]["code"] == "audio_not_available"
 
 
-def test_audio_signed_url_range_and_expiry(env):
+def test_audio_signed_url_range_and_expiry(env, tmp_path):
     app, client, clock, codes = env
     sid, _ = begin(client, codes["S1"])
-    path = wav_file(__import__("pathlib").Path(app.state.settings.database_url[len("sqlite:///"):]).parent)
+    path = wav_file(tmp_path)
     with db_of(app) as db:
         db.get(m.Session, uuid.UUID(sid)).audio_uri = str(path)
         db.commit()

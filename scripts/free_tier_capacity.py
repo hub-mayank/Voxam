@@ -1,6 +1,6 @@
 """What do the free-tier limits in config/free_tier_limits.json allow? Arithmetic only: no provider is called.
 Every number that is not in the limits file is an explicit argument and is ASSUMED until T1b measures it:
-  --tokens-per-call        tokens (prompt + reply) of one live-interview LLM call (required)
+  --tokens-per-call        tokens (prompt + reply) of one live-interview LLM call (required; --call-tokens-source says if it was measured)
   --tokens-per-score-call  tokens of one scoring LLM call over a whole transcript (required)
   --answers 11.3, --calls-per-answer 1.41  from the T3 voice run (stub-free: scripted voice, real Ollama), --runs 3 scoring runs per viva
 For every chat model in the file: calls we may make per day (the smaller of floor(margin x rpd) and floor(margin x tpd / tokens per call)),
@@ -31,6 +31,7 @@ ap.add_argument("--calls-per-answer", type=float, default=1.41)
 ap.add_argument("--runs", type=int, default=3)
 ap.add_argument("--students", type=int, default=350)
 ap.add_argument("--viva-seconds", type=int, default=900)
+ap.add_argument("--call-tokens-source", default="assumed", help='where --tokens-per-call comes from, e.g. "measured: results/groq_interview_tokens.csv (n=118)"')
 ap.add_argument("--allow-dirty", action="store_true")
 ap.add_argument("--out", default=str(ROOT / "results" / "free_tier_capacity.csv"))
 a = ap.parse_args()
@@ -72,12 +73,13 @@ with open(out, "w", newline="") as f:
     w.writerow(["provider", "model", "rpm", "rpd", "tpm", "tpd", "usable_calls_per_day", "binding_daily_limit", "vivas_interviewed_per_day",
                 "vivas_scored_per_day", "students_talking_at_once", "binding_per_minute_limit", "days_to_interview_all_students",
                 "days_to_score_all_students", "basis"])
-    w.writerows([r + [f"assumed: {a.tokens_per_call} tokens per interview call, {a.tokens_per_score_call} per scoring call (not measured)"] for r in rows])
+    w.writerows([r + [f"{a.call_tokens_source}: {a.tokens_per_call} tokens per interview call; assumed: {a.tokens_per_score_call} per scoring call (not measured)"] for r in rows])
 write_meta(out, provider="stub", model="n/a (arithmetic on config/free_tier_limits.json)", n=len(rows), n_unit="models",
            assumptions={"tokens_per_interview_call": a.tokens_per_call, "tokens_per_score_call": a.tokens_per_score_call,
                         "answers_per_viva": a.answers, "llm_calls_per_answer": a.calls_per_answer, "scoring_runs": a.runs,
                         "students": a.students, "viva_seconds": a.viva_seconds, "margin": margin()},
-           note="ASSUMED, not measured: tokens per call are unmeasured until T1b, and the limits were copied from the providers' consoles on 2026-10-08")
+           note=f"interview tokens per call: {a.call_tokens_source}; scoring tokens per call are an assumption until a live scoring run measures them; limits were copied from the providers' consoles on 2026-10-08",
+           tokens_per_call_source=a.call_tokens_source)
 for r in rows:
     print(f"{r[0]}:{r[1][:26]:26} usable {r[6]:4}/day ({r[7] or '-'}) -> {r[8]:6} vivas interviewed/day, {r[9]:6} scored/day, "
           f"{r[10] or '-':>5} students at once ({r[11] or '-'}), {r[12]} days to interview {a.students}, {r[13]} days to score {a.students}  [assumed tokens]")

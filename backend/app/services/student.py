@@ -207,7 +207,8 @@ class StudentService:
     def _reply_to(self, turns, mine):
         return next((t for t in turns if t.idx == mine.idx + 1 and t.role == "ai"), None)
 
-    def answer(self, sid, body: AnswerRequest) -> AnswerResponse:
+    def answer(self, sid, body: AnswerRequest, stt_confidence: float = None) -> AnswerResponse:
+        """stt_confidence: set by the voice server (0-1); stored in the student turn's meta for the scorer's confidence flag."""
         now = self.now()
         s = self._session(sid)
         turns = core.turns_of(self.db, s.id)
@@ -231,7 +232,7 @@ class StudentService:
             if now >= s.deadline_at:
                 closing = self._expire(s)
                 raise ApiError(ErrorCode.deadline_passed, details={"closing_text": closing, "deadline_at": s.deadline_at.strftime("%Y-%m-%dT%H:%M:%SZ")})
-        return self._serialized(sid, seq, body)
+        return self._serialized(sid, seq, body, stt_confidence)
 
     def _claim(self, sid) -> bool:
         now = self.now()
@@ -256,7 +257,7 @@ class StudentService:
             raise ApiError(ErrorCode.bad_client_seq, "This client_seq was already used with different text.", {"received": seq})
         return self._out(self._session(sid), seq, reply, True, self.now())
 
-    def _serialized(self, sid, seq, body) -> AnswerResponse:
+    def _serialized(self, sid, seq, body, stt_confidence=None) -> AnswerResponse:
         """One answer at a time per session. The loser of a race waits for the winner's reply and returns it as a replay."""
         give_up = time.monotonic() + self.settings.answer_lease_seconds + 5
         while not self._claim(sid):
@@ -267,7 +268,7 @@ class StudentService:
                 raise ApiError(ErrorCode.provider_unavailable, "Still processing; retry the same request.", {"retry_after_ms": 3000})
             self.sleep(POLL_SECONDS)
         try:
-            return self._under_lease(sid, seq, body)
+            return self._under_lease(sid, seq, body, stt_confidence)
         finally:
             self._release(sid)
 
@@ -277,7 +278,7 @@ class StudentService:
         iv = Interviewer(llm, core.bank_of(self.db, viva.id), VivaClock.resume(cfg, s.started_at, self.now), cfg, seed=str(s.id))
         return iv.restore([core.turn_dict(t) for t in before]), llm, cfg
 
-    def _under_lease(self, sid, seq, body) -> AnswerResponse:
+    def _under_lease(self, sid, seq, body, stt_confidence=None) -> AnswerResponse:
         db = self.db
         db.expire_all()
         s = self._session(sid)
@@ -296,7 +297,8 @@ class StudentService:
         now = self.now()
         if mine is None:  # the answer is stored BEFORE any model is called
             mine = m.Turn(session_id=s.id, idx=len(before), role="student", text=body.text, phase=iv.phase_name,
-                          question_id=iv.q["id"], t_start_ms=body.t_start_ms, t_end_ms=body.t_end_ms, client_seq=seq, created_at=now)
+                          question_id=iv.q["id"], t_start_ms=body.t_start_ms, t_end_ms=body.t_end_ms, client_seq=seq, created_at=now,
+                          meta={"stt_confidence": round(float(stt_confidence), 3)} if stt_confidence is not None else None)
             db.add(mine)
             db.commit()
         marker = len(iv.log)

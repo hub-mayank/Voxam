@@ -5,6 +5,7 @@ import Join from './screens/Join'
 import MicCheck from './screens/MicCheck'
 import RulesConsent from './screens/RulesConsent'
 import Viva from './screens/Viva'
+import VoiceLab from './voice/VoiceLab'
 import Waiting from './screens/Waiting'
 
 export const studentRoutes: RouteObject[] = [
@@ -14,4 +15,5 @@ export const studentRoutes: RouteObject[] = [
   { path: 'mic-check', element: <MicCheck /> },
   { path: 'viva', element: <Viva /> },
   { path: 'done', element: <Done /> },
+  { path: 'voice-lab', element: <VoiceLab /> }, // developer page for the voice SDK
 ]

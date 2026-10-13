@@ -9,7 +9,7 @@ from ..db.engine import init_db, make_engine
 from ..envfile import load_env
 from ..llm.factory import make_llm
 from ..services.throttle import SlidingWindow
-from . import routes_faculty, routes_student
+from . import routes_faculty, routes_student, routes_voice
 from .errors import install_error_handlers, uniform_validation_errors
 from .schemas.common import Health, example_of
 from .settings import Settings
@@ -65,6 +65,7 @@ def create_app(settings: Settings = None, llm_factory=None, now=None, engine=Non
     app.include_router(routes_faculty.audio_router)
     app.include_router(routes_student.join_router)
     app.include_router(routes_student.router)
+    app.include_router(routes_voice.router)
 
     default_openapi = app.openapi
 

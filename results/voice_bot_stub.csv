@@ -1,0 +1,13 @@
+turn,server_latency_ms,client_latency_ms,ended
+12,321,322,False
+14,321,322,False
+16,325,326,False
+18,326,327,False
+20,316,316,False
+22,324,326,False
+24,328,329,False
+26,329,330,False
+28,323,324,False
+30,328,329,False
+32,323,324,False
+34,327,328,True

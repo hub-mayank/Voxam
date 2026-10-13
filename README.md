@@ -27,7 +27,10 @@ First run creates `backend/.venv` and installs the requirements. No cloud keys: 
 interviewer and scorer use it, otherwise the offline mock model (plumbing only). Faculty token, port and models can be overridden
 with `FACULTY_TOKENS`, `PORT`, `LLM_CHAIN`, `SCORER_LLM_CHAIN`. State lives in `.local/` (gitignored): database, logs, `codes.txt`.
 The seeded viva is `local-dsa` (30 AI-drafted DSA questions, approved by the faculty token for local use only) with students
-`LOCAL01`..`LOCAL10`. The voice WebSocket is specified in `docs/VOICE_PROTOCOL.md` (server: task T4).
+`LOCAL01`..`LOCAL10`. The voice WebSocket (`/student/sessions/{sid}/voice`, contract in `docs/VOICE_PROTOCOL.md`) runs in the same process:
+`VOICE_PROVIDER=stub` needs no models; `local` uses whisper.cpp and Piper (as separate processes) and needs `brew install whisper-cpp`,
+the models from `spikes/voice/fetch_models.py` and the `piper` executable. The script picks `local` when all of them are found.
+`python scripts/voice_bot.py --viva local-dsa --student LOCAL01 --code <code>` plays a scripted student over the WebSocket.
 
 ## API
     cd backend

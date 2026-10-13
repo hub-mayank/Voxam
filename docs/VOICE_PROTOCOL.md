@@ -56,7 +56,7 @@ C: ptt_start, bin, bin, ..., ptt_end
 S: state{thinking} ; endpoint{ptt} ; transcript ; ai_turn ; state{speaking} ; audio+bin... ; audio_done ; state{listening}
 ... repeat ... ; ai_turn{ended:true} ; audio... ; ended ; close 1000
 ```
-**Hands-free** (same, but no `ptt_*`): the client streams frames all the time; the server runs VAD, sends `speech_start` and `endpoint{silence}` (default 600 ms of silence ends the answer, configurable on the server). If the student speaks while the AI is talking, the server sends `interrupt` and listens.
+**Hands-free** (same, but no `ptt_*`): the client streams frames all the time; the server runs Silero VAD, sends `speech_start` and `endpoint{silence}` (600 ms of silence ends the answer, `VOICE_HANGOVER_MS`). A start needs about 100 ms of speech, and the answer includes about 300 ms from before it (`VOICE_PREROLL_MS`) so the first word is not clipped. While the AI is talking a barge-in needs about 320 ms of speech, so a cough or echo does not interrupt it; real speech then sends `interrupt` and the server listens. A pause longer than the hangover inside one answer ends it early (the next speech starts a new answer): that is the trade-off of the 600 ms setting.
 
 **Silence:** after the AI finishes, 20 s without speech → `silence_prompt` once per question. Policy is on the server; the client does nothing.
 
@@ -126,4 +126,5 @@ export type ServerMsg =
 
 ## Changelog
 - v1 (2026-10-13): first version.
+- v1 (2026-10-13, V3): hands-free uses Silero VAD with pre-roll and a longer barge-in threshold while the AI speaks (section 4). No message changes.
 - v1 (2026-10-13, same day): recording is stereo, student left and AI right, on one timeline (section 6). No client-visible change.

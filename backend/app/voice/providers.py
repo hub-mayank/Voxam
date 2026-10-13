@@ -59,7 +59,19 @@ class StubTTS:
         return audio.tone(seconds, self.rate), self.rate
 
 
+_LOCAL = {}  # one set of local providers per process: Piper keeps model processes alive between connections
+
+
 def make_providers(cfg: VoiceConfig):
     if cfg.provider == "stub":
         return StubSTT(cfg.stt_ms), StubTTS()
-    raise RuntimeError(f"VOICE_PROVIDER={cfg.provider!r} is not available yet (V2 adds 'local'); use VOICE_PROVIDER=stub")
+    if cfg.provider == "local":
+        from .local import CachedTTS, PiperTTS, WhisperCppSTT
+        key = (str(cfg.models_dir), cfg.whisper_size, cfg.whisper_lang, str(cfg.piper_model), cfg.piper_procs, str(cfg.tts_cache))
+        if key not in _LOCAL:
+            stt, tts = WhisperCppSTT(cfg), CachedTTS(PiperTTS(cfg), cfg.tts_cache)
+            stt.transcribe(bytes(32000))  # one second of silence: loads the model into the page cache
+            tts.inner.synthesize("Ready.")  # starts the Piper process(es) and loads the voice
+            _LOCAL[key] = (stt, tts)
+        return _LOCAL[key]
+    raise RuntimeError(f"unknown VOICE_PROVIDER={cfg.provider!r}; use stub or local")

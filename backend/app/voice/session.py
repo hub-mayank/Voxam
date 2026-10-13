@@ -34,7 +34,7 @@ class Closed(Exception):
 class VoiceSession:
     def __init__(self, ws, sid, app_state, cfg: VoiceConfig = None, providers=None):
         self.ws, self.sid, self.app, self.cfg = ws, sid, app_state, cfg or VoiceConfig.from_env()
-        self.stt, self.tts = providers or make_providers(self.cfg)
+        self.stt, self.tts = providers or (None, None)  # made on connect, so a missing model is an error message, not a crash
         self.state, self.mode = "listening", "push_to_talk"
         self.recorder = None
         self.deadline = None
@@ -141,6 +141,12 @@ class VoiceSession:
             await self.error("invalid_state", "The viva has not started: call start first.", False, 4400)
         if st.status.value != "in_progress":
             await self.error("session_ended", "The viva is over.", False, 1000)
+        if self.stt is None:
+            try:
+                self.stt, self.tts = await asyncio.to_thread(make_providers, self.cfg)
+            except Exception as e:
+                log.error("voice providers unavailable: %s", e)
+                await self.error("provider_unavailable", f"Speech providers are not available: {e}", False, 1011)
         old = CONNECTIONS.get(self.sid)
         if old is not None and old is not self:
             await old.kicked()

@@ -1,0 +1,10 @@
+{
+  "provider": "stub",
+  "model": "stub-stt+stub-tts",
+  "date": "2026-10-13",
+  "git_sha": "e0623d09b52280364c1358eb4318c6fd7465c2a7",
+  "n": 12,
+  "n_unit": "turns",
+  "mode": "push_to_talk",
+  "note": "scripted bot against VOICE_PROVIDER=stub: transport and engine hand-off only, not speech recognition or speech quality"
+}

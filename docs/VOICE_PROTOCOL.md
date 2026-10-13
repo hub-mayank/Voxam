@@ -20,7 +20,7 @@ The server owns the clock, the question flow and the end of the viva (D1). The c
 ### Client → server
 | type | fields | when |
 |---|---|---|
-| `hello` | `protocol: 1`, `token`, `mode`: `push_to_talk` or `hands_free`, `resume`: bool | first message after connect; `resume: true` on reconnect asks the server to speak the open question again |
+| `hello` | `protocol: 1`, `token`, `mode`: `push_to_talk` or `hands_free`, `resume`: bool | first message after connect. The server always speaks the open question after `ready` (first connect: the opener; reconnect: the question again); `resume` only marks a reconnect for the logs |
 | *binary* | PCM16 mono 16 kHz little-endian, any frame size (a 20 ms worklet frame = 640 bytes) | hands-free: continuously after `ready`. Push-to-talk: only between `ptt_start` and `ptt_end` |
 | `ptt_start` | | push-to-talk: button pressed. If the AI is speaking this is a barge-in: the server sends `interrupt` |
 | `ptt_end` | | push-to-talk: button released; the server transcribes and answers |
@@ -90,7 +90,7 @@ S: state{thinking} ; endpoint{ptt} ; transcript ; ai_turn ; state{speaking} ; au
 | `bad_message` | invalid JSON, wrong audio format, `text_answer` too long | none | yes |
 
 ## 8. Reconnect
-1. Network drop: reconnect with the same token and `hello{resume:true}`. The server rebuilds from the database (`ready.current_turn`, `remaining_ms`) and speaks the open question again. The clock never paused.
+1. Network drop: reconnect with the same token and `hello{resume:true}`. The server rebuilds from the database (`ready.current_turn`, `remaining_ms`) and speaks the open question again (it does so on every connect). The clock never paused.
 2. Page reload or rejoin: call HTTP `join` again (new token), then connect.
 3. An answer that was being processed when the socket dropped is finished by the server (it is stored before any model runs); on reconnect the client sees it in `ready.last_client_seq` and the next `ai_turn`.
 

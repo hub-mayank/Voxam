@@ -10,7 +10,16 @@ import { initialState, reducer, type SessionState } from './state'
 
 const KEY = 'voxam.student.session'
 
-function load(): { sessionId: string; token: string } | null {
+interface Saved {
+  sessionId: string
+  token: string
+  vivaTitle: string
+  rulesText: string
+  rulesVersion: string
+  durationMs: number
+}
+
+function load(): Saved | null {
   try {
     const raw = sessionStorage.getItem(KEY)
     return raw ? JSON.parse(raw) : null
@@ -19,7 +28,7 @@ function load(): { sessionId: string; token: string } | null {
   }
 }
 
-function save(v: { sessionId: string; token: string } | null) {
+function save(v: Saved | null) {
   try {
     if (v) sessionStorage.setItem(KEY, JSON.stringify(v))
     else sessionStorage.removeItem(KEY)
@@ -60,7 +69,8 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
     dispatch({ type: 'busy', busy: true })
     try {
       const res = await studentApi(null, fetchImpl).join({ viva_id: vivaId.trim(), student_id: studentId.trim(), access_code: accessCode.trim() })
-      save({ sessionId: res.session_id, token: res.session_token })
+      save({ sessionId: res.session_id, token: res.session_token, vivaTitle: res.viva_title, rulesText: res.rules_text,
+        rulesVersion: res.rules_version, durationMs: res.duration_ms })
       dispatch({ type: 'joined', res })
       if (res.status === 'in_progress') {
         const st = await studentApi(res.session_token, fetchImpl).status(res.session_id)
@@ -144,7 +154,7 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
     a.status(saved.sessionId).then(
       (st) => {
         dispatch({ type: 'joined', res: { session_id: saved.sessionId, session_token: saved.token, status: st.status, resumed: true,
-          viva_title: '', duration_ms: 0, rules_text: '', rules_version: '' } })
+          viva_title: saved.vivaTitle, duration_ms: saved.durationMs, rules_text: saved.rulesText, rules_version: saved.rulesVersion } })
         dispatch({ type: 'status', res: st, now: Date.now() })
       },
       () => save(null),

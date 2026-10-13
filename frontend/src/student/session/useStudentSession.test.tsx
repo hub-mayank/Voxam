@@ -95,13 +95,14 @@ describe('useStudentSession', () => {
   })
 
   it('resumes a saved session after a reload', async () => {
-    sessionStorage.setItem('voxam.student.session', JSON.stringify({ sessionId: 'sid1', token: 'st_abc' }))
+    sessionStorage.setItem('voxam.student.session', JSON.stringify({ sessionId: 'sid1', token: 'st_abc', vivaTitle: 'DSA',
+      rulesText: 'the rules', rulesVersion: 'rules-v1', durationMs: 900000 }))
     const { f } = server({
       'GET /student/sessions/:sid/status': () => json({ status: 'in_progress', phase: 'depth', server_now: '', remaining_ms: 600000, last_client_seq: 6, current_turn: turn(12) }),
     })
     const { result } = renderHook(() => useStudentSession(f))
     await waitFor(() => expect(result.current.phase).toBe('viva'))
-    expect(result.current).toMatchObject({ lastSeq: 6, sessionId: 'sid1' })
+    expect(result.current).toMatchObject({ lastSeq: 6, sessionId: 'sid1', rulesText: 'the rules', vivaTitle: 'DSA' })
   })
 
   it('shows a wrong code as an error and stays on login', async () => {

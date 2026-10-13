@@ -26,8 +26,11 @@ class ResilientLLM:
     def complete_json(self, system, user, max_tokens=200, kind="classify"):
         return self._run(system, user, max_tokens, kind, True)
 
-    def complete_text(self, system, user, max_tokens=120, kind="phrase"):
-        return self._run(system, user, max_tokens, kind, False)
+    def complete_text(self, system, user, max_tokens=120, kind="phrase", on_delta=None):
+        """on_delta(piece) is called as text arrives from a provider that can stream (others deliver the whole text once at the end).
+        Retries and fallback work as usual until the first piece has been delivered; after that a failure is raised (the caller has
+        already shown or spoken part of the reply)."""
+        return self._run(system, user, max_tokens, kind, False, on_delta)
 
     def _delay(self, attempt, err):
         delay = min(self.max_delay, self.backoff * 2 ** attempt)
@@ -39,15 +42,25 @@ class ResilientLLM:
         telemetry.log_call(p.provider, p.model, p.mode, kind, ms, status, attempt,
                            reply.tokens_in if reply else None, reply.tokens_out if reply else None)
 
-    def _run(self, system, user, max_tokens, kind, json_mode):
+    def _run(self, system, user, max_tokens, kind, json_mode, on_delta=None):
         if kind not in telemetry.KINDS:
             raise ValueError(f"unknown kind {kind!r}")
         errors, capped = [], []
         for p in self.providers:
             for attempt in range(self.retries + 1):
                 t = time.perf_counter()
+                started = []
                 try:
-                    reply = p.generate(system, user, max_tokens, json_mode)
+                    if on_delta is not None and not json_mode and hasattr(p, "generate_stream"):
+                        def forward(piece, _started=started):
+                            _started.append(1)
+                            on_delta(piece)
+                        reply = p.generate_stream(system, user, max_tokens, forward)
+                    else:
+                        reply = p.generate(system, user, max_tokens, json_mode)
+                        if on_delta is not None and not json_mode:
+                            started.append(1)
+                            on_delta(reply.text)
                 except CallCapExceeded as e:
                     self._log(p, kind, (time.perf_counter() - t) * 1000, "cap_exceeded", attempt)
                     capped.append(e)
@@ -55,6 +68,8 @@ class ResilientLLM:
                 except ProviderError as e:
                     self._log(p, kind, (time.perf_counter() - t) * 1000, e.status, attempt)
                     errors.append(e)
+                    if started:  # part of the reply is already out: a retry would repeat it
+                        raise
                     if not e.retryable or attempt == self.retries:
                         break
                     self.sleep(self._delay(attempt, e))

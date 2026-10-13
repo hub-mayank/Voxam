@@ -16,6 +16,7 @@ import os
 import re
 from urllib.parse import parse_qsl
 
+import json
 import httpx
 
 from .base import Reply
@@ -97,4 +98,46 @@ class OpenAICompatLLM:
         record_tokens(self.provider, self.model, reserved, tokens_used(reply, system, user))
         if not reply.text.strip():
             raise ProviderError(f"empty response, finish_reason={choices[0].get('finish_reason')}")
+        return reply
+
+    def generate_stream(self, system, user, max_tokens, on_delta):
+        """Like generate() (text only) but calls on_delta(piece) as chunks arrive (server-sent events). Same budget accounting."""
+        body = {"model": self.model, "temperature": 0, self.tokens_field: max_tokens + self.headroom, "stream": True,
+                "stream_options": {"include_usage": True},
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+        if self.effort:
+            body["reasoning_effort"] = self.effort
+        headers = {"Authorization": f"Bearer {self.key}"} if self.auth == "bearer" else {"api-key": self.key}
+        reserved = estimate_tokens(system, user) + max_tokens + self.headroom
+        count_call(self.provider, self.model, est_tokens=reserved)
+        text, usage = "", {}
+        try:
+            with httpx.stream("POST", f"{self.base_url}/chat/completions", json=body, headers=headers, params=self.params or None,
+                              timeout=self.timeout) as r:
+                if r.status_code >= 400:
+                    r.read()
+                    r.raise_for_status()
+                for line in r.iter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    payload = line[5:].strip()
+                    if payload == "[DONE]":
+                        break
+                    chunk = json.loads(payload)
+                    usage = chunk.get("usage") or (chunk.get("x_groq") or {}).get("usage") or usage
+                    for choice in chunk.get("choices") or []:
+                        piece = (choice.get("delta") or {}).get("content") or ""
+                        if piece:
+                            text += piece
+                            on_delta(piece)
+        except httpx.HTTPError as e:
+            record_tokens(self.provider, self.model, reserved, 0 if not text else tokens_used(Reply(text, None, None), system, user))
+            raise from_httpx(e) from e
+        except ValueError as e:
+            record_tokens(self.provider, self.model, reserved, 0)
+            raise ProviderError("malformed streaming response") from e
+        reply = Reply(text, usage.get("prompt_tokens"), usage.get("completion_tokens"))
+        record_tokens(self.provider, self.model, reserved, tokens_used(reply, system, user))
+        if not text.strip():
+            raise ProviderError("empty response (stream)")
         return reply

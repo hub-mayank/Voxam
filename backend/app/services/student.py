@@ -207,8 +207,10 @@ class StudentService:
     def _reply_to(self, turns, mine):
         return next((t for t in turns if t.idx == mine.idx + 1 and t.role == "ai"), None)
 
-    def answer(self, sid, body: AnswerRequest, stt_confidence: float = None) -> AnswerResponse:
-        """stt_confidence: set by the voice server (0-1); stored in the student turn's meta for the scorer's confidence flag."""
+    def answer(self, sid, body: AnswerRequest, stt_confidence: float = None, on_phrase_delta=None) -> AnswerResponse:
+        """stt_confidence: set by the voice server (0-1); stored in the student turn's meta for the scorer's confidence flag.
+        on_phrase_delta(piece): the voice server's hook to start speaking a model-phrased reply while it is still being written
+        (called from this thread, only when this call really produces the reply, never for a replay)."""
         now = self.now()
         s = self._session(sid)
         turns = core.turns_of(self.db, s.id)
@@ -232,7 +234,7 @@ class StudentService:
             if now >= s.deadline_at:
                 closing = self._expire(s)
                 raise ApiError(ErrorCode.deadline_passed, details={"closing_text": closing, "deadline_at": s.deadline_at.strftime("%Y-%m-%dT%H:%M:%SZ")})
-        return self._serialized(sid, seq, body, stt_confidence)
+        return self._serialized(sid, seq, body, stt_confidence, on_phrase_delta)
 
     def _claim(self, sid) -> bool:
         now = self.now()
@@ -257,7 +259,7 @@ class StudentService:
             raise ApiError(ErrorCode.bad_client_seq, "This client_seq was already used with different text.", {"received": seq})
         return self._out(self._session(sid), seq, reply, True, self.now())
 
-    def _serialized(self, sid, seq, body, stt_confidence=None) -> AnswerResponse:
+    def _serialized(self, sid, seq, body, stt_confidence=None, on_phrase_delta=None) -> AnswerResponse:
         """One answer at a time per session. The loser of a race waits for the winner's reply and returns it as a replay."""
         give_up = time.monotonic() + self.settings.answer_lease_seconds + 5
         while not self._claim(sid):
@@ -268,7 +270,7 @@ class StudentService:
                 raise ApiError(ErrorCode.provider_unavailable, "Still processing; retry the same request.", {"retry_after_ms": 3000})
             self.sleep(POLL_SECONDS)
         try:
-            return self._under_lease(sid, seq, body, stt_confidence)
+            return self._under_lease(sid, seq, body, stt_confidence, on_phrase_delta)
         finally:
             self._release(sid)
 
@@ -278,7 +280,7 @@ class StudentService:
         iv = Interviewer(llm, core.bank_of(self.db, viva.id), VivaClock.resume(cfg, s.started_at, self.now), cfg, seed=str(s.id))
         return iv.restore([core.turn_dict(t) for t in before]), llm, cfg
 
-    def _under_lease(self, sid, seq, body, stt_confidence=None) -> AnswerResponse:
+    def _under_lease(self, sid, seq, body, stt_confidence=None, on_phrase_delta=None) -> AnswerResponse:
         db = self.db
         db.expire_all()
         s = self._session(sid)
@@ -302,7 +304,7 @@ class StudentService:
             db.add(mine)
             db.commit()
         marker = len(iv.log)
-        iv.respond(mine.text)
+        iv.respond(mine.text, on_phrase_delta)
         quality, meta, event = harvest(iv.log[marker:])
         if llm.errors:
             meta["llm_errors"] = llm.errors

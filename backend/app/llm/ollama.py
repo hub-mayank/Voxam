@@ -1,5 +1,6 @@
 """Ollama adapter for free local dev (no key, not counted against the call cap).
 Needs a running server and OLLAMA_MODEL (e.g. llama3.2). OLLAMA_HOST defaults to http://localhost:11434."""
+import json
 import os
 import httpx
 from .base import Reply
@@ -36,6 +37,33 @@ class OllamaLLM:
         if not text.strip():
             raise ProviderError(f"empty response, done_reason={data.get('done_reason')}")
         return Reply(text, data.get("prompt_eval_count"), data.get("eval_count"))
+
+    def generate_stream(self, system, user, max_tokens, on_delta):
+        """Like generate() (text only) but calls on_delta(piece) as the model produces text. Returns the full Reply at the end."""
+        body = {"model": self.model, "stream": True,
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+                "options": {"temperature": 0, "num_predict": max_tokens}}
+        text, tokens_in, tokens_out = "", None, None
+        try:
+            with httpx.stream("POST", f"{self.host}/api/chat", json=body, timeout=self.timeout) as r:
+                r.raise_for_status()
+                for line in r.iter_lines():
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    piece = (data.get("message") or {}).get("content") or ""
+                    if piece:
+                        text += piece
+                        on_delta(piece)
+                    if data.get("done"):
+                        tokens_in, tokens_out = data.get("prompt_eval_count"), data.get("eval_count")
+        except httpx.HTTPError as e:
+            raise from_httpx(e) from e
+        except ValueError as e:
+            raise ProviderError("malformed streaming response") from e
+        if not text.strip():
+            raise ProviderError("empty response (stream)")
+        return Reply(text, tokens_in, tokens_out)
 
     def available(self) -> bool:
         try:

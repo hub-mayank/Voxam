@@ -23,10 +23,13 @@ class GracefulLLM:
         self.served = self.name
         return out
 
-    def complete_text(self, system, user, max_tokens=120, kind="phrase"):
+    def complete_text(self, system, user, max_tokens=120, kind="phrase", on_delta=None):
         self.calls += 1
         try:
-            out = self.inner.complete_text(system, user, max_tokens, kind)
+            if on_delta is None:
+                out = self.inner.complete_text(system, user, max_tokens, kind)
+            else:
+                out = self.inner.complete_text(system, user, max_tokens, kind, on_delta=on_delta)
         except Exception as e:
             self.errors.append(f"{kind}: {type(e).__name__}: {e}"[:200])
             action = re.search(r"ACTION:\s*(\w+)", user)

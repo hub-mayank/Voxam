@@ -7,6 +7,7 @@ import argparse
 import asyncio
 import csv
 import json
+import os
 import statistics
 import sys
 import time
@@ -122,7 +123,7 @@ async def run(a) -> dict:
                 if not msg["retryable"]:
                     break
             elif kind == "ended":
-                return {"sid": sid, "answers": answers, "rows": rows, "order_errors": order_errors, "ended": True, "status": msg["status"]}
+                return {"sid": sid, "answers": answers, "clips_sent": answers, "rows": rows, "order_errors": order_errors, "ended": True, "status": msg["status"]}
             elif kind == "state" and msg["state"] == "listening" and not waiting and answers >= a.answers:
                 break  # answered as many times as asked; the viva did not end by itself
             elif kind == "state" and msg["state"] == "listening" and not waiting and answers < a.answers:
@@ -142,7 +143,7 @@ async def run(a) -> dict:
                 else:
                     await stream(ws, 0.8, False, a.pace)
                     sent_at = time.perf_counter()
-    return {"sid": sid, "answers": answers, "rows": rows, "order_errors": order_errors, "ended": False, "status": "?"}
+    return {"sid": sid, "answers": answers, "clips_sent": answers, "rows": rows, "order_errors": order_errors, "ended": False, "status": "?"}
 
 
 def main():
@@ -166,10 +167,17 @@ def main():
     q = lambda p: sorted(lat)[min(len(lat) - 1, int(p * len(lat)))] if lat else None  # noqa: E731
     srv = [r["server_latency_ms"] for r in res["rows"] if r["server_latency_ms"] is not None]
     sq = lambda p: sorted(srv)[min(len(srv) - 1, int(p * len(srv)))] if srv else None  # noqa: E731
+    stream = None
     if res["rows"] and "wer" in res["rows"][0]:
+        refs_all = load_refs(a.refs)
+        clips_sent = res["clips_sent"]
+        ref_text = " ".join(refs_all[i % len(refs_all)] for i in range(clips_sent))
+        hyp_text = " ".join(r["hyp"] or "" for r in res["rows"])
+        stream = round(wer(ref_text, hyp_text), 3)
         w = [r["wer"] for r in res["rows"]]
-        print(f"word error rate over {len(w)} answers: mean {statistics.mean(w):.3f}, median {statistics.median(w):.3f}, "
-              f"{sum(1 for x in w if x == 0)} exact, worst {max(w):.2f}")
+        print(f"whole-stream word error rate {stream} ({clips_sent} clips sent, {len(w)} answers received; a clip cut in two by a long pause "
+              f"shifts the per-answer column, the stream figure does not); per-answer median {statistics.median(w):.3f}, "
+              f"{sum(1 for x in w if x == 0)} exact")
     print(f"session {res['sid']}: ended={res['ended']} status={res['status']} answers={res['answers']} turns={len(lat)} "
           f"server latency p50={statistics.median(srv) if srv else None} p95={sq(0.95)} ms; client latency p50={statistics.median(lat) if lat else None} "
           f"p95={q(0.95)} ms; order errors: {res['order_errors'] or 'none'}")
@@ -183,7 +191,7 @@ def main():
             w.writerows(res["rows"])
         note = ("scripted bot against VOICE_PROVIDER=stub: transport and engine hand-off only, not speech recognition or speech quality"
                 if a.provider == "stub" else "scripted bot with recorded/synthetic speech through the real STT, engine and TTS; latency = student stops speaking -> first AI audio, measured by the server")
-        write_meta(out, provider=a.provider, model=a.model, n=len(res["rows"]), n_unit="turns", mode=a.mode, speech_dir=a.speech_dir, note=note)
+        write_meta(out, provider=a.provider, model=a.model, n=len(res["rows"]), n_unit="turns", mode=a.mode, speech_dir=a.speech_dir, stream_wer=stream, hangover_ms=int(os.environ.get("VOICE_HANGOVER_MS", 600)), note=note)
     sys.exit(0 if res["ended"] and not res["order_errors"] else 1)
 
 

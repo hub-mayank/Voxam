@@ -96,6 +96,8 @@ async def run(a) -> dict:
                     break
             elif kind == "ended":
                 return {"sid": sid, "answers": answers, "rows": rows, "order_errors": order_errors, "ended": True, "status": msg["status"]}
+            elif kind == "state" and msg["state"] == "listening" and not waiting and answers >= a.answers:
+                break  # answered as many times as asked; the viva did not end by itself
             elif kind == "state" and msg["state"] == "listening" and not waiting and answers < a.answers:
                 answers += 1
                 waiting = True

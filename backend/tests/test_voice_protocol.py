@@ -266,3 +266,40 @@ def test_bad_json_and_unknown_messages_do_not_break_the_connection(env):
     c.ws.send_json({"type": "something_new"})
     c.ws.send_json({"type": "ping", "t": 1})
     assert c.until("pong")["t"] == 1
+
+
+def test_hands_free_keeps_the_lead_in_from_before_the_detector_was_sure(env):
+    """The detector needs ~100 ms of speech before it says "start"; the answer must still begin where the speech did."""
+    app, client, clock, codes = env
+    sid, h, token = started(client, codes)
+    c = connect(client, sid, token, mode="hands_free")
+    c.until("audio_done", turn_idx=0)
+    c.until("state", state="listening")
+    for _ in range(15):
+        c.ws.send_bytes(bytes(640))  # 300 ms of quiet
+    for _ in range(40):
+        c.ws.send_bytes(loud(0.02))  # 800 ms of speech
+    for _ in range(40):
+        c.ws.send_bytes(bytes(640))  # 800 ms of quiet ends the answer
+    c.until("transcript")
+    assert c.until("ai_turn")["idx"] == 2, "the answer was stored before the reply"
+    with db_of(app) as db:
+        mine = db.scalar(select(m.Turn).where(m.Turn.session_id == UUID(sid), m.Turn.role == "student"))
+    assert mine.t_start_ms <= 40, f"answer starts at {mine.t_start_ms} ms: the lead-in was kept, not cut at the detection point"
+    assert mine.t_end_ms - mine.t_start_ms >= 1100, "lead-in + speech + the hangover are all in the answer"
+
+
+def test_a_short_noise_while_the_ai_talks_is_not_a_barge_in_but_real_speech_is(env):
+    app, client, clock, codes = env
+    sid, h, token = started(client, codes)
+    c = connect(client, sid, token, mode="hands_free")
+    c.until("audio_done", turn_idx=0)  # audio is sent faster than real time, so the client is still "playing" it
+    for _ in range(5):
+        c.ws.send_bytes(loud(0.02))  # 100 ms: a cough or echo
+    c.ws.send_json({"type": "ping", "t": 1})
+    c.until("pong")
+    assert "interrupt" not in c.types() and "speech_start" not in c.types()
+    for _ in range(20):
+        c.ws.send_bytes(loud(0.02))  # 400 ms more: somebody is talking
+    c.until("interrupt")
+    assert c.until("speech_start")["type"] == "speech_start"

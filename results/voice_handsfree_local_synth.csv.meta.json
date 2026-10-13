@@ -1,0 +1,13 @@
+{
+  "provider": "live",
+  "model": "silero-vad+whisper.cpp-base-q5_1+piper-alba+mock-llm",
+  "date": "2026-10-13",
+  "git_sha": "663302b4c5621285d8965d2fda52719c3b643514",
+  "n": 40,
+  "n_unit": "turns",
+  "mode": "hands_free",
+  "speech_dir": "spikes/voice/data/synth",
+  "stream_wer": 0.059,
+  "hangover_ms": 600,
+  "note": "scripted bot with recorded/synthetic speech through the real STT, engine and TTS; latency = student stops speaking -> first AI audio, measured by the server"
+}

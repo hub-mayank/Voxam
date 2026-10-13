@@ -1,0 +1,11 @@
+{
+  "provider": "live",
+  "model": "whisper.cpp-base-q5_1+piper-alba+mock",
+  "date": "2026-10-13",
+  "git_sha": "25bcb6d2f59a65234d2352ec81b25d06dec1740f",
+  "n": 40,
+  "n_unit": "turns",
+  "mode": "push_to_talk",
+  "speech_dir": "spikes/voice/data/synth",
+  "note": "scripted bot with recorded/synthetic speech through the real STT, engine and TTS; latency = student stops speaking -> first AI audio, measured by the server"
+}

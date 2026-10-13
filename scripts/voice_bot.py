@@ -21,18 +21,34 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app.voice import audio  # noqa: E402
 
 
-async def stream(ws, seconds: float, loud: bool, pace: float):
+async def stream(ws, seconds: float, loud: bool, pace: float, pcm: bytes = None):
     """Send `seconds` of audio in 20 ms frames; pace 1.0 = real time (the recording's timeline stays realistic), 0 = as fast as possible."""
-    for f in frames(seconds, loud):
+    for f in frames(seconds, loud, pcm=pcm):
         await ws.send(f)
         if pace:
             await asyncio.sleep(0.02 / pace)
 
 
-def frames(seconds: float, loud: bool = True, ms: int = 20):
-    pcm = audio.tone(seconds, 16000, freq=300, amp=0.5) if loud else bytes(int(seconds * 16000) * 2)
+def frames(seconds: float, loud: bool = True, ms: int = 20, pcm: bytes = None):
+    if pcm is None:
+        pcm = audio.tone(seconds, 16000, freq=300, amp=0.5) if loud else bytes(int(seconds * 16000) * 2)
     step = ms * 16 * 2
     return [pcm[i:i + step] for i in range(0, len(pcm), step)]
+
+
+def load_speech(folder: str) -> list:
+    """16 kHz mono PCM16 of every .wav in the folder, sorted by name (real or synthetic speech for a real STT)."""
+    import wave
+    clips = []
+    for path in sorted(Path(folder).glob("*.wav")):
+        with wave.open(str(path)) as w:
+            pcm = w.readframes(w.getnframes())
+            if w.getnchannels() == 2:
+                pcm = b"".join(pcm[i:i + 2] for i in range(0, len(pcm), 4))
+            clips.append(audio.resample(pcm, w.getframerate(), 16000))
+    if not clips:
+        raise SystemExit(f"no .wav files in {folder}")
+    return clips
 
 
 async def run(a) -> dict:
@@ -49,6 +65,8 @@ async def run(a) -> dict:
     sent_at = None
     waiting = False
     seen_ready = False
+    speech = load_speech(a.speech_dir) if a.speech_dir else None
+    stt_ms = None
     play_until = 0.0  # when the audio the server sent so far would finish playing; a polite student waits for it
     async with websockets.connect(uri, max_size=None) as ws:
         await ws.send(json.dumps({"type": "hello", "protocol": 1, "token": j["session_token"], "mode": a.mode, "resume": False}))
@@ -65,9 +83,11 @@ async def run(a) -> dict:
                 play_until = max(play_until, time.time()) + msg["bytes"] / 2 / msg["sample_rate"]
             elif kind == "interrupt":
                 play_until = 0.0
+            elif kind == "transcript":
+                stt_ms = msg["stt_ms"]
             elif kind == "ai_turn":
                 if sent_at is not None:
-                    rows.append({"turn": msg["idx"], "server_latency_ms": msg["latency_ms"],
+                    rows.append({"turn": msg["idx"], "stt_ms": stt_ms, "server_latency_ms": msg["latency_ms"],
                                  "client_latency_ms": int((time.perf_counter() - sent_at) * 1000), "ended": msg["ended"]})
                     sent_at, waiting = None, False
             elif kind == "error":
@@ -76,6 +96,8 @@ async def run(a) -> dict:
                     break
             elif kind == "ended":
                 return {"sid": sid, "answers": answers, "rows": rows, "order_errors": order_errors, "ended": True, "status": msg["status"]}
+            elif kind == "state" and msg["state"] == "listening" and not waiting and answers >= a.answers:
+                break  # answered as many times as asked; the viva did not end by itself
             elif kind == "state" and msg["state"] == "listening" and not waiting and answers < a.answers:
                 answers += 1
                 waiting = True
@@ -83,7 +105,8 @@ async def run(a) -> dict:
                     await asyncio.sleep(max(0.0, play_until - time.time()) / a.pace)
                 if a.mode == "push_to_talk":
                     await ws.send(json.dumps({"type": "ptt_start"}))
-                await stream(ws, a.answer_seconds, True, a.pace)
+                clip = speech[(answers - 1) % len(speech)] if speech else None
+                await stream(ws, a.answer_seconds, True, a.pace, pcm=clip)
                 if a.mode == "push_to_talk":
                     sent_at = time.perf_counter()
                     await ws.send(json.dumps({"type": "ptt_end"}))
@@ -103,13 +126,19 @@ def main():
     ap.add_argument("--answers", type=int, default=60)
     ap.add_argument("--answer-seconds", type=float, default=1.5)
     ap.add_argument("--pace", type=float, default=1.0, help="1 = send audio in real time (default), 2 = twice as fast, 0 = no pacing")
-    ap.add_argument("--out", help="write per-turn latencies to this CSV (+ .meta.json sidecar, provider=stub)")
+    ap.add_argument("--speech-dir", help="folder of 16 kHz .wav answers to speak in order (cycled); default: a tone")
+    ap.add_argument("--provider", default="stub", choices=["stub", "live"], help="label for the result sidecar (local real models count as live)")
+    ap.add_argument("--model", default="stub-stt+stub-tts", help="model description for the result sidecar")
+    ap.add_argument("--out", help="write per-turn latencies to this CSV (+ .meta.json sidecar)")
     a = ap.parse_args()
     res = asyncio.run(run(a))
     lat = [r["client_latency_ms"] for r in res["rows"]]
     q = lambda p: sorted(lat)[min(len(lat) - 1, int(p * len(lat)))] if lat else None  # noqa: E731
+    srv = [r["server_latency_ms"] for r in res["rows"] if r["server_latency_ms"] is not None]
+    sq = lambda p: sorted(srv)[min(len(srv) - 1, int(p * len(srv)))] if srv else None  # noqa: E731
     print(f"session {res['sid']}: ended={res['ended']} status={res['status']} answers={res['answers']} turns={len(lat)} "
-          f"client latency p50={statistics.median(lat) if lat else None} p95={q(0.95)} ms; order errors: {res['order_errors'] or 'none'}")
+          f"server latency p50={statistics.median(srv) if srv else None} p95={sq(0.95)} ms; client latency p50={statistics.median(lat) if lat else None} "
+          f"p95={q(0.95)} ms; order errors: {res['order_errors'] or 'none'}")
     if a.out and res["rows"]:
         from app.results_meta import write_meta
         out = Path(a.out)
@@ -118,8 +147,9 @@ def main():
             w = csv.DictWriter(f, fieldnames=list(res["rows"][0]))
             w.writeheader()
             w.writerows(res["rows"])
-        write_meta(out, provider="stub", model="stub-stt+stub-tts", n=len(res["rows"]), n_unit="turns", mode=a.mode,
-                   note="scripted bot against VOICE_PROVIDER=stub: transport and engine hand-off only, not speech recognition or speech quality")
+        note = ("scripted bot against VOICE_PROVIDER=stub: transport and engine hand-off only, not speech recognition or speech quality"
+                if a.provider == "stub" else "scripted bot with recorded/synthetic speech through the real STT, engine and TTS; latency = student stops speaking -> first AI audio, measured by the server")
+        write_meta(out, provider=a.provider, model=a.model, n=len(res["rows"]), n_unit="turns", mode=a.mode, speech_dir=a.speech_dir, note=note)
     sys.exit(0 if res["ended"] and not res["order_errors"] else 1)
 
 

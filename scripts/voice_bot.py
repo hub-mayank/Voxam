@@ -36,6 +36,27 @@ def frames(seconds: float, loud: bool = True, ms: int = 20, pcm: bytes = None):
     return [pcm[i:i + step] for i in range(0, len(pcm), step)]
 
 
+def words(text: str) -> list:
+    import re
+    return re.sub(r"[^a-z0-9' ]", " ", text.lower()).split()
+
+
+def wer(ref: str, hyp: str) -> float:
+    """Word error rate (Levenshtein over normalised words). Numbers are compared as written, so '62' vs 'sixty two' counts as errors."""
+    r, h = words(ref), words(hyp)
+    prev = list(range(len(h) + 1))
+    for i, rw in enumerate(r, 1):
+        cur = [i]
+        for j, hw in enumerate(h, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (rw != hw)))
+        prev = cur
+    return prev[-1] / max(1, len(r))
+
+
+def load_refs(path: str) -> list:
+    return [row["text"] for row in csv.DictReader(open(path))]
+
+
 def load_speech(folder: str) -> list:
     """16 kHz mono PCM16 of every .wav in the folder, sorted by name (real or synthetic speech for a real STT)."""
     import wave
@@ -66,6 +87,8 @@ async def run(a) -> dict:
     waiting = False
     seen_ready = False
     speech = load_speech(a.speech_dir) if a.speech_dir else None
+    refs = load_refs(a.refs) if a.refs else None
+    ref_now, hyp_now = None, None
     stt_ms = None
     play_until = 0.0  # when the audio the server sent so far would finish playing; a polite student waits for it
     async with websockets.connect(uri, max_size=None) as ws:
@@ -85,10 +108,14 @@ async def run(a) -> dict:
                 play_until = 0.0
             elif kind == "transcript":
                 stt_ms = msg["stt_ms"]
+                hyp_now = msg["text"]
             elif kind == "ai_turn":
                 if sent_at is not None:
-                    rows.append({"turn": msg["idx"], "stt_ms": stt_ms, "server_latency_ms": msg["latency_ms"],
-                                 "client_latency_ms": int((time.perf_counter() - sent_at) * 1000), "ended": msg["ended"]})
+                    row = {"turn": msg["idx"], "stt_ms": stt_ms, "server_latency_ms": msg["latency_ms"],
+                           "client_latency_ms": int((time.perf_counter() - sent_at) * 1000), "ended": msg["ended"]}
+                    if refs:
+                        row.update({"wer": round(wer(ref_now, hyp_now or ""), 3), "ref": ref_now, "hyp": hyp_now})
+                    rows.append(row)
                     sent_at, waiting = None, False
             elif kind == "error":
                 print(f"server error: {msg['code']} {msg['message']}")
@@ -106,6 +133,8 @@ async def run(a) -> dict:
                 if a.mode == "push_to_talk":
                     await ws.send(json.dumps({"type": "ptt_start"}))
                 clip = speech[(answers - 1) % len(speech)] if speech else None
+                if refs:
+                    ref_now = refs[(answers - 1) % len(refs)]
                 await stream(ws, a.answer_seconds, True, a.pace, pcm=clip)
                 if a.mode == "push_to_talk":
                     sent_at = time.perf_counter()
@@ -127,6 +156,7 @@ def main():
     ap.add_argument("--answer-seconds", type=float, default=1.5)
     ap.add_argument("--pace", type=float, default=1.0, help="1 = send audio in real time (default), 2 = twice as fast, 0 = no pacing")
     ap.add_argument("--speech-dir", help="folder of 16 kHz .wav answers to speak in order (cycled); default: a tone")
+    ap.add_argument("--refs", help="manifest.csv with a `text` column in the same order as the clips: adds per-turn word error rate")
     ap.add_argument("--provider", default="stub", choices=["stub", "live"], help="label for the result sidecar (local real models count as live)")
     ap.add_argument("--model", default="stub-stt+stub-tts", help="model description for the result sidecar")
     ap.add_argument("--out", help="write per-turn latencies to this CSV (+ .meta.json sidecar)")
@@ -136,6 +166,10 @@ def main():
     q = lambda p: sorted(lat)[min(len(lat) - 1, int(p * len(lat)))] if lat else None  # noqa: E731
     srv = [r["server_latency_ms"] for r in res["rows"] if r["server_latency_ms"] is not None]
     sq = lambda p: sorted(srv)[min(len(srv) - 1, int(p * len(srv)))] if srv else None  # noqa: E731
+    if res["rows"] and "wer" in res["rows"][0]:
+        w = [r["wer"] for r in res["rows"]]
+        print(f"word error rate over {len(w)} answers: mean {statistics.mean(w):.3f}, median {statistics.median(w):.3f}, "
+              f"{sum(1 for x in w if x == 0)} exact, worst {max(w):.2f}")
     print(f"session {res['sid']}: ended={res['ended']} status={res['status']} answers={res['answers']} turns={len(lat)} "
           f"server latency p50={statistics.median(srv) if srv else None} p95={sq(0.95)} ms; client latency p50={statistics.median(lat) if lat else None} "
           f"p95={q(0.95)} ms; order errors: {res['order_errors'] or 'none'}")

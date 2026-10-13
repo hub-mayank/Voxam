@@ -3,6 +3,7 @@ The engine (clock, question flow, scoring queue) is the same StudentService the 
 speech into the `answer` call and turns the reply into audio. It never decides phases, timing or marks (D1)."""
 import asyncio
 import json
+from collections import deque
 import logging
 import time
 from datetime import datetime
@@ -17,7 +18,7 @@ from ..services.student import StudentService
 from . import audio
 from .config import VoiceConfig
 from .providers import make_providers, split_sentences
-from .vad import LevelVad
+from .vad import LevelVad, make_vad
 
 log = logging.getLogger("aiviva.voice")
 MIN_ANSWER_S = 0.3
@@ -43,6 +44,7 @@ class VoiceSession:
         self.utt, self.utt_start, self.utt_end = bytearray(), None, None
         self.ptt_active = False
         self.vad = LevelVad()
+        self.preroll = deque()  # (frame, start_ms, end_ms) of the latest hands-free audio, so a start is never clipped
         self.playing_until = 0.0
         self.current_idx = self.prompted_idx = -1
         self.muted = self.closing = self.finished = self.warned = False
@@ -147,6 +149,8 @@ class VoiceSession:
             except Exception as e:
                 log.error("voice providers unavailable: %s", e)
                 await self.error("provider_unavailable", f"Speech providers are not available: {e}", False, 1011)
+        if self.mode == "hands_free":
+            self.vad = await asyncio.to_thread(make_vad, self.cfg.vad, self.cfg.hangover_ms)
         old = CONNECTIONS.get(self.sid)
         if old is not None and old is not self:
             await old.kicked()
@@ -235,7 +239,6 @@ class VoiceSession:
 
     def reset_utterance(self):
         self.utt, self.utt_start, self.utt_end = bytearray(), None, None
-        self.vad = LevelVad()
         self.last_activity = time.time()
 
     async def on_audio(self, frame: bytes):
@@ -248,13 +251,20 @@ class VoiceSession:
             self.collect(frame, start, end)
         else:
             start, end = self.recorder.write_student(frame, self.ts())
+            # speech must last longer to count as a barge-in while our own audio may still be playing (echo, a cough)
+            self.vad.set_start_ms(320 if time.time() < self.playing_until else 96)
+            self.preroll.append((frame, start, end))
+            keep = (self.vad.start_need + self.cfg.preroll_ms) // 20 + 1  # the detection delay plus the lead-in we promise
+            while len(self.preroll) > keep:
+                self.preroll.popleft()
             events = self.vad.feed(frame)
             if "speech_start" in events:
                 await self.barge_in()
                 self.reset_utterance()
-                self.vad.in_speech = True
-                await self.send(type="speech_start", t_ms=start)
-            if self.vad.in_speech or "speech_end" in events:
+                for f, s, e in self.preroll:  # includes this frame and ~300 ms before the detector was sure
+                    self.collect(f, s, e)
+                await self.send(type="speech_start", t_ms=self.utt_start)
+            elif self.vad.in_speech or "speech_end" in events:
                 self.collect(frame, start, end)
             if "speech_end" in events:
                 await self.end_utterance("silence")
@@ -279,6 +289,8 @@ class VoiceSession:
     async def end_utterance(self, reason: str):
         pcm, start, end = bytes(self.utt), self.utt_start, self.utt_end
         self.reset_utterance()
+        self.vad.reset()
+        self.preroll.clear()
         if not pcm:
             return
         self.t_stop = time.perf_counter()

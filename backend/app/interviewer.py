@@ -86,7 +86,8 @@ class Interviewer:
             return self.cfg.phases[1]
         return ph
 
-    def respond(self, answer: str) -> str:
+    def respond(self, answer: str, on_phrase_delta=None) -> str:
+        """on_phrase_delta(piece): called while a model-phrased reply is being generated (voice starts speaking before it is finished)."""
         if self.clock.expired():
             self.phase_name = "scoring"
             self._event(role="ai", action="close", text=CLOSER)
@@ -127,7 +128,10 @@ class Interviewer:
         else:
             self.followups += 1
         user = f"ACTION: {action}\nQUESTION: {self.q['text']}\n<answer>{answer}</answer>"
-        text = self.llm.complete_text(PHRASE_SYS, user)
+        if on_phrase_delta is None:
+            text = self.llm.complete_text(PHRASE_SYS, user)
+        else:
+            text = self.llm.complete_text(PHRASE_SYS, user, on_delta=on_phrase_delta)
         self._event(role="ai", action=action, text=text)
         return text
 

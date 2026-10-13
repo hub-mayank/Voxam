@@ -303,3 +303,76 @@ def test_a_short_noise_while_the_ai_talks_is_not_a_barge_in_but_real_speech_is(e
         c.ws.send_bytes(loud(0.02))  # 400 ms more: somebody is talking
     c.until("interrupt")
     assert c.until("speech_start")["type"] == "speech_start"
+
+
+# ---------- reply streaming: speak finished sentences while the model is still writing ----------
+
+import time as _time
+
+from app.llm.errors import ProviderError
+from app.llm.mock import MockLLM
+
+
+class StreamingLLM(MockLLM):
+    """Phrases a follow-up in pieces with a gap between them, like a slow local model."""
+    def __init__(self, pieces, gap=0.15, fail_at=None):
+        self.pieces, self.gap, self.fail_at = pieces, gap, fail_at
+
+    def complete_text(self, system, user, max_tokens=120, kind="phrase", on_delta=None):
+        for i, piece in enumerate(self.pieces):
+            if self.fail_at == i:
+                raise ProviderError("model died midway", status="unavailable", retryable=True)
+            _time.sleep(self.gap)
+            if on_delta:
+                on_delta(piece)
+        return "".join(self.pieces).strip()
+
+
+def streaming_env(tmp_path, monkeypatch, llm):
+    monkeypatch.setenv("AUDIO_DIR", str(tmp_path / "audio"))
+    monkeypatch.setenv("VOICE_PROVIDER", "stub")
+    monkeypatch.setenv("VOICE_TIMER_S", "0.2")
+    monkeypatch.setenv("VOICE_SILENCE_S", "999")
+    app, client, clock = build(tmp_path, llm=lambda spec: llm)
+    codes = make_viva(client, students=("S1",))
+    return app, client, clock, codes
+
+
+def reach_a_followup(c, clock):
+    """Past the warm-up (a new question, no model), then a short answer that the engine follows up with the model."""
+    c.until("state", state="listening")
+    clock.advance(70)
+    c.ws.send_json({"type": "text_answer", "text": "I built a small web app."})
+    c.until("audio_done", turn_idx=2)
+    c.ws.send_json({"type": "text_answer", "text": "it stores keys"})
+
+
+def test_a_followup_is_spoken_sentence_by_sentence_before_the_model_has_finished(tmp_path, monkeypatch):
+    app, client, clock, codes = streaming_env(tmp_path, monkeypatch, StreamingLLM(["Good point. ", "What about ", "hash ", "collisions?"]))
+    sid, h, token = started(client, codes)
+    c = connect(client, sid, token)
+    reach_a_followup(c, clock)
+    first_audio = c.until("audio", turn_idx=4)
+    turn = c.until("ai_turn", idx=4)
+    assert turn["text"] == "Good point. What about hash collisions?"
+    order = [(m["type"], m.get("turn_idx", m.get("idx"))) for m in c.log]
+    assert order.index(("audio", 4)) < order.index(("ai_turn", 4)), "the first sentence's audio went out before the reply was complete"
+    assert first_audio["last"] is False
+    c.until("audio_done", turn_idx=4)
+    assert len([m for m in c.log if m["type"] == "audio" and m["turn_idx"] == 4]) == 2, "sentence one while streaming, the rest after"
+    assert turn["latency_ms"] is not None
+    st = client.get(f"/student/sessions/{sid}/status", headers=h).json()
+    assert st["current_turn"]["text"] == "Good point. What about hash collisions?"
+
+
+def test_if_the_stream_dies_the_started_sentence_is_cut_and_the_real_reply_is_spoken(tmp_path, monkeypatch):
+    app, client, clock, codes = streaming_env(tmp_path, monkeypatch, StreamingLLM(["Alpha beta. ", "gamma delta"], fail_at=1))
+    sid, h, token = started(client, codes)
+    c = connect(client, sid, token)
+    reach_a_followup(c, clock)
+    c.until("audio", turn_idx=4)            # "Alpha beta." was already on its way
+    c.until("interrupt")                    # then the model failed, so that audio is cancelled
+    turn = c.until("ai_turn", idx=4)
+    assert "Alpha" not in turn["text"] and turn["text"], "the canned reply replaced it"
+    c.until("audio_done", turn_idx=4)
+    assert client.get(f"/student/sessions/{sid}/status", headers=h).json()["current_turn"]["text"] == turn["text"]

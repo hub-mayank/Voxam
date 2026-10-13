@@ -3,6 +3,7 @@ The engine (clock, question flow, scoring queue) is the same StudentService the 
 speech into the `answer` call and turns the reply into audio. It never decides phases, timing or marks (D1)."""
 import asyncio
 import json
+import re
 from collections import deque
 import logging
 import time
@@ -21,6 +22,7 @@ from .providers import make_providers, split_sentences
 from .vad import LevelVad, make_vad
 
 log = logging.getLogger("aiviva.voice")
+SENTENCE = re.compile(r"(?s)^\s*(.+?[.!?]['\")\]]?)\s+")  # a finished sentence: text up to ./!/? followed by a space
 MIN_ANSWER_S = 0.3
 TICK_S = 0.25
 SILENCE_LINE = "Take your time. Whenever you are ready, go ahead and answer."
@@ -316,32 +318,102 @@ class VoiceSession:
 
     async def handle_answer(self, text, confidence, start, end, stt_ms, t_stop):
         text = text[:4000]
+        self.interrupted.clear()  # a barge-in that started this answer has done its job: the reply may be spoken again
         seq = self.last_seq + 1
         await self.send(type="transcript", seq=seq, text=text, confidence=confidence, stt_ms=stt_ms)
         resp = None
-        for attempt in range(3):
-            try:
-                body = AnswerRequest(text=text, client_seq=seq, t_start_ms=start, t_end_ms=end)
-                resp = await self._run(lambda svc, db: svc.answer(self.sid, body, stt_confidence=confidence))
-                break
-            except ApiError as e:
-                if e.code in (ErrorCode.deadline_passed, ErrorCode.session_ended):
-                    await self.finish()
+        loop = asyncio.get_running_loop()
+        pieces: asyncio.Queue = asyncio.Queue()
+        streamer = asyncio.create_task(self.stream_reply(pieces))  # speaks finished sentences while the model is still writing
+        try:
+            for attempt in range(3):
+                try:
+                    body = AnswerRequest(text=text, client_seq=seq, t_start_ms=start, t_end_ms=end)
+                    resp = await self._run(lambda svc, db: svc.answer(
+                        self.sid, body, stt_confidence=confidence,
+                        on_phrase_delta=lambda piece: loop.call_soon_threadsafe(pieces.put_nowait, piece)))
+                    break
+                except ApiError as e:
+                    if e.code in (ErrorCode.deadline_passed, ErrorCode.session_ended):
+                        await self.finish()
+                        return
+                    if e.code == ErrorCode.bad_client_seq and attempt < 2:
+                        seq = (await self._status()).last_client_seq + 1
+                        continue
+                    if e.code == ErrorCode.provider_unavailable and attempt < 2:
+                        await asyncio.sleep(0.5)
+                        continue
+                    await self.error(e.code.value, e.message, e.code == ErrorCode.provider_unavailable)
+                    await self.set_state("listening")
                     return
-                if e.code == ErrorCode.bad_client_seq and attempt < 2:
-                    seq = (await self._status()).last_client_seq + 1
-                    continue
-                if e.code == ErrorCode.provider_unavailable and attempt < 2:
-                    await asyncio.sleep(0.5)
-                    continue
-                await self.error(e.code.value, e.message, e.code == ErrorCode.provider_unavailable)
-                await self.set_state("listening")
-                return
+        finally:
+            pieces.put_nowait(None)
+            streamed = await streamer
         self.last_seq = seq
         turn = resp.turn
-        await self.speak_turn(turn.idx, turn.text, turn.phase, turn.ended, resp.remaining_ms, t_stop)
+        await self.finish_reply(turn, resp.remaining_ms, t_stop, streamed)
         if turn.ended:
             await self.finish(spoken=True)
+
+    async def stream_reply(self, pieces: asyncio.Queue) -> dict:
+        """Consumes the model's text as it arrives and speaks each finished sentence at once. -> what was spoken, the unfinished tail,
+        and when the first audio went out. Nothing is sent for a reply that is not model-phrased (bank question, closing line)."""
+        buf, spoken, first_at = "", [], None
+        idx = self.current_idx + 2  # the answer is turn current_idx + 1, the reply the one after
+        while True:
+            piece = await pieces.get()
+            if piece is None:
+                break
+            buf += piece
+            while not self.interrupted.is_set():
+                m = SENTENCE.match(buf)
+                if not m:
+                    break
+                sentence, buf = m.group(1).strip(), buf[m.end():]
+                if first_at is None:
+                    self.interrupted.clear()
+                    await self.set_state("speaking")
+                    first_at = time.perf_counter()
+                await self.send_sentence(sentence, idx, last=False)
+                spoken.append(sentence)
+        return {"spoken": " ".join(spoken), "tail": buf, "first_at": first_at}
+
+    async def send_sentence(self, sentence: str, turn_idx: int, last: bool):
+        try:
+            pcm, rate = await asyncio.to_thread(self.tts.synthesize, sentence)
+        except Exception as e:  # the text still reaches the student; only this sentence is silent
+            log.error("tts failed for one sentence: %s", e)
+            await self.error("provider_unavailable", "Speech synthesis failed for part of this turn.", True)
+            pcm, rate = bytes(2 * 22_050 // 4), 22_050
+        if self.interrupted.is_set():
+            return
+        await self.send(type="audio", turn_idx=turn_idx, sample_rate=rate, format="pcm_s16le", bytes=len(pcm), last=last)
+        await self.ws.send_bytes(pcm)
+        self.recorder.write_ai(audio.resample(pcm, rate), self.ts())
+        self.playing_until = max(self.playing_until, time.time()) + audio.duration_s(pcm, rate)
+
+    async def finish_reply(self, turn, remaining_ms: int, t_stop, streamed: dict):
+        """Say the reply. If sentences were already spoken while it was being written and they are the start of the final text, only the
+        rest is spoken now; if the final text differs (the provider failed midway and a canned line replaced it), stop and say it all."""
+        said, final = " ".join(streamed["spoken"].split()), " ".join(turn.text.split())
+        if streamed["first_at"] is None or turn.ended:
+            await self.speak_turn(turn.idx, turn.text, turn.phase, turn.ended, remaining_ms, t_stop)
+            return
+        if not final.startswith(said):
+            await self.send(type="interrupt")
+            self.playing_until = 0.0
+            await self.speak_turn(turn.idx, turn.text, turn.phase, turn.ended, remaining_ms, t_stop)
+            return
+        latency = None if t_stop is None else int((streamed["first_at"] - t_stop) * 1000)
+        self.current_idx = turn.idx
+        await self.send(type="ai_turn", idx=turn.idx, text=turn.text, phase=turn.phase, ended=turn.ended, remaining_ms=remaining_ms, latency_ms=latency)
+        rest = final[len(said):].strip()
+        if rest and not self.interrupted.is_set():
+            await self.stream_audio(rest, turn.idx)
+        else:
+            await self.send(type="audio_done", turn_idx=turn.idx)
+        await self.set_state("listening")
+        self.last_activity = time.time()
 
     async def stream_audio(self, text: str, turn_idx: int, on_first=None):
         """Synthesize `text` sentence by sentence and send each chunk; stops at once after a barge-in."""

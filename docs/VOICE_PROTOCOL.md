@@ -58,6 +58,8 @@ S: state{thinking} ; endpoint{ptt} ; transcript ; ai_turn ; state{speaking} ; au
 ```
 **Hands-free** (same, but no `ptt_*`): the client streams frames all the time; the server runs Silero VAD, sends `speech_start` and `endpoint{silence}` (600 ms of silence ends the answer, `VOICE_HANGOVER_MS`). A start needs about 100 ms of speech, and the answer includes about 300 ms from before it (`VOICE_PREROLL_MS`) so the first word is not clipped. While the AI is talking a barge-in needs about 320 ms of speech, so a cough or echo does not interrupt it; real speech then sends `interrupt` and the server listens. A pause longer than the hangover inside one answer ends it early (the next speech starts a new answer): that is the trade-off of the 600 ms setting.
 
+**Reply streaming:** when the model writes a follow-up, the server speaks each finished sentence as soon as it exists, so the first `audio` chunks of a turn can arrive **before** that turn's `ai_turn` (their `turn_idx` is the idx the `ai_turn` will carry, and `last` is false). `ai_turn` then carries the final text, and the remaining sentences follow. If the model fails midway and a canned line replaces the reply, the server sends `interrupt` and speaks the real reply from the start. Bank questions, the opener and the closing line are not streamed.
+
 **Silence:** after the AI finishes, 20 s without speech → `silence_prompt` once per question. Policy is on the server; the client does nothing.
 
 **Typing fallback:** at any time send `text_answer`; the flow continues from `transcript` (with `confidence: null`).
@@ -126,5 +128,6 @@ export type ServerMsg =
 
 ## Changelog
 - v1 (2026-10-13): first version.
+- v1 (2026-10-13, V3b): reply streaming: audio of a follow-up may precede its `ai_turn` (section 4). Clients that start playback on `audio` need no change.
 - v1 (2026-10-13, V3): hands-free uses Silero VAD with pre-roll and a longer barge-in threshold while the AI speaks (section 4). No message changes.
 - v1 (2026-10-13, same day): recording is stereo, student left and AI right, on one timeline (section 6). No client-visible change.

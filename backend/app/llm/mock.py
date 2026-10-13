@@ -35,10 +35,13 @@ class MockLLM:
              [{"text": f"mock feedback {n}", "evidence": []} for n in range(3)]
         return {"dimensions": dims, "feedback": fb}
 
-    def complete_text(self, system, user, max_tokens=120, kind="phrase"):
+    def complete_text(self, system, user, max_tokens=120, kind="phrase", on_delta=None):
         action = re.search(r"ACTION:\s*(\w+)", user).group(1)
-        return {
+        text = {
             "deeper": "Good. What edge cases or trade-offs would you worry about here?",
             "nudge": "You're partway there. Think about what happens as the input grows.",
             "redirect": "Let's bring it back to the question. Could you answer that directly?",
         }.get(action, "Okay, let's move on.")
+        if on_delta is not None:
+            on_delta(text)
+        return text

@@ -6,7 +6,7 @@ Scoring runs afterwards on the full transcript against a rubric, and every score
 
 Status: text-mode interviewer, scorer, provider adapters (Gemini, Ollama, mock) with retry/fallback, telemetry and a call
 cap are built. The HTTP API contract is frozen (`docs/openapi.json`) and implemented: a database-backed, restart-safe text
-viva with faculty review, and the scoring worker (queue, retries, restart-safe). Not built yet: voice and the dashboard.
+viva with faculty review, the scoring worker (queue, retries, restart-safe) and the voice WebSocket server (stub and real whisper.cpp + Piper). Not built yet: the browser frontend (dashboard, student pages, voice client) and hands-free voice activity detection.
 
 ## Quick start
 Text mode runs fully offline with the mock LLM. It needs no Docker, database or API key.
@@ -99,5 +99,6 @@ Results written under `results/` need a `.meta.json` sidecar (provider, model, d
     backend/app/db/    SQLAlchemy models; db/schema.sql is generated from them
     docker-compose.yml PostgreSQL for the later stages; not needed for local dev (SQLite)
     scripts/           benchmark, persona, secret-scan and comparison scripts
-    docs/              SPEC, PLAN, DECISIONS, CREDITS, task reports in docs/reports/
+    docs/              SPEC, PLAN, DECISIONS, CREDITS, GLOSSARY, TEAM_PLAN, task reports in docs/reports/
+    frontend/          (planned, CL-4) React + Vite + TypeScript: faculty/ and student/ screens on a typed API client
     results/           raw evidence files

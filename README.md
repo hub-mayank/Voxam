@@ -20,6 +20,15 @@ Text mode runs fully offline with the mock LLM. It needs no Docker, database or 
     python -m app.cli --llm mock                     # text viva, writes session.jsonl
     python -m app.score session.jsonl --llm mock     # score it, writes score.json
 
+## Local profile (one command)
+    scripts/run_local.sh            # API + scoring worker on SQLite, a seeded LOCAL viva, access codes printed; Ctrl-C stops it
+    scripts/run_local.sh --fresh    # start over with an empty database
+First run creates `backend/.venv` and installs the requirements. No cloud keys: with Ollama running and `llama3.2:3b` pulled the
+interviewer and scorer use it, otherwise the offline mock model (plumbing only). Faculty token, port and models can be overridden
+with `FACULTY_TOKENS`, `PORT`, `LLM_CHAIN`, `SCORER_LLM_CHAIN`. State lives in `.local/` (gitignored): database, logs, `codes.txt`.
+The seeded viva is `local-dsa` (30 AI-drafted DSA questions, approved by the faculty token for local use only) with students
+`LOCAL01`..`LOCAL10`. The voice WebSocket is specified in `docs/VOICE_PROTOCOL.md` (server: task T4).
+
 ## API
     cd backend
     # mock backend for the frontend (static examples, no database):

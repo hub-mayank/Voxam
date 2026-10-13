@@ -10,3 +10,4 @@ CLAUDE.local.md
 *.db-wal
 *.db-shm
 audio/
+.local/

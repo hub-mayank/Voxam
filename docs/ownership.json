@@ -1,0 +1,38 @@
+{
+  "_about": "Who may change which files (docs/TEAM_PLAN.md section 3). `python scripts/check_paths.py <owner>` lists files a branch changed outside its owner's paths. Patterns use * which also matches /. Claude's paths are everything not listed here.",
+  "common": [
+    "docs/CREDITS.md"
+  ],
+  "parth": {
+    "allow": [
+      "frontend/src/faculty/*"
+    ],
+    "deny": []
+  },
+  "bhavesh": {
+    "allow": [
+      "frontend/src/student/*",
+      "docs/qa/*",
+      "docs/DEMO_SCRIPT.md"
+    ],
+    "deny": [
+      "frontend/src/student/voice/*",
+      "frontend/src/student/session/*"
+    ]
+  },
+  "tejas": {
+    "allow": [
+      "docs/consent/*",
+      "docs/PRIVACY.md",
+      "docs/marking_sheet.csv",
+      "config/question_bank.webdev.*",
+      "backend/tests/test_question_bank_webdev.py",
+      "evidence/*",
+      "scripts/wer.py",
+      "scripts/build_report.py",
+      "backend/tests/test_wer_script.py",
+      "results/wer_*"
+    ],
+    "deny": []
+  }
+}

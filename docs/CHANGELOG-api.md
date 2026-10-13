@@ -1,6 +1,6 @@
 # API changelog
 
-One line per change to `docs/openapi.json` after G0. Additive changes are allowed with a line here and a message to Friend A; removals, renames and type changes need Mayank's approval. Newest first.
+One line per change to `docs/openapi.json` after G0. Additive changes are allowed with a line here and a message to the frontend team (Parth, Bhavesh); removals, renames and type changes need Mayank's approval. Newest first.
 
 - 2026-10-08 (T5, cosmetic) The product name is Voxam: `info.title` is now "Voxam API" and the description says Voxam. No route or schema changed.
 - 2026-10-08 (T5, additive) `POST /faculty/vivas/{viva_id}/questions/approve {question_ids?}`: turns `ai-draft` questions into `bank` and sets `approved_by` from the token; omit `question_ids` to approve every draft; idempotent; unknown id is 404 (nothing changes); 409 `invalid_state` (reason `students_joined`) once any student has joined; returns the whole bank (`QuestionList`). `Question.approved_by` description now also covers approved drafts. New schema `ApproveQuestions`.

@@ -1,4 +1,6 @@
-# API guide for the frontend (Friend A)
+# API guide for the frontend (Parth: faculty screens, Bhavesh: student screens)
+
+The typed client generated from `docs/openapi.json` (`frontend/src/api/schema.ts`, `npm run gen:api` once the frontend foundation CL-4 lands) is the source of truth for field names; use it instead of writing request or response types by hand.
 
 Contract: `docs/openapi.json` (OpenAPI 3.1, generated, frozen at G0). Every operation has a description, every model an example. Generate a typed client from it, or browse `/docs` while the mock runs.
 

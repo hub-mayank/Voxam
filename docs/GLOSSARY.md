@@ -11,7 +11,9 @@ How to read: **Means** is the one-line definition. **Why here** is the reason it
 | **Prototype** | The first end-to-end working version (voice viva, scoring, dashboard). | Mayank's priority: get it working first; cost, scale and evidence work come after. |
 | **CORE / VOICE** | The two Claude Code work streams (backend/scoring vs voice). | The plan needed ~11.5 days of work in 10 days, so two sessions run in parallel on separate branches. |
 | **Planner** | A separate Claude chat that owns `PLAN.md` and `SPEC.md`. | Keeps planning apart from implementation; Claude Code only proposes changes to those two files. |
-| **Friend A / B / C** | Teammate slots in the plan: A = Parth (dashboard), B = Tejas (evidence), C = Bhavesh (student pages + voice client). | The plan named roles before the team was confirmed; this maps them to people. |
+| **Friend A / B / C** | Old plan slots: A = Parth, B = Tejas, C = Bhavesh. Now referred to by name. | `docs/PLAN.md` still uses the slots; `docs/TEAM_PLAN.md` is the current assignment. |
+| **Free-tier AI tools** | What Parth and Bhavesh use (free plans plus Antigravity); Tejas has Pro tools. | They drift on long open tasks, so their work is split into small cards on typed hooks, with mechanical gates (`npm run check`, `scripts/check_paths.py`). |
+| **Rails** | The 8 rules in `TEAM_PLAN.md` section 5 that keep AI-written code honest: contract first, one card per session, diffs only, no new dependencies, run the checks, prove it, list assumptions, review fixes. | Review time is limited; most mistakes should fail a machine check before they reach a person. |
 
 ## 2. Human blockers (things only Mayank or the team can clear)
 | ID | Means | Why here |
@@ -47,9 +49,9 @@ How to read: **Means** is the one-line definition. **Why here** is the reason it
 | **T2a** (done) | API contract: routes, schemas, mock server, `openapi.json`. | Unblocks the frontend before the backend exists. |
 | **T2b** (done) | Stateless engine and persistence: rebuild a viva from stored turns, server clock, rejoin. | A crash or restart must never lose or corrupt a viva. |
 | **T3 / T3b** (done) | Voice spike: measured STT/LLM/TTS stacks, WER, latency; closed the missing legs with real models. | Picked the voice stack with numbers and showed Plan B is not needed. |
-| **T4** (todo, VOICE) | Voice integration: WebSocket, VAD, STT, engine, TTS, audio saved, timer, hard stop. | The core of the product; also the schedule's critical path. |
+| **T4** (in progress, VOICE) | Voice integration: WebSocket, VAD, STT, engine, TTS, audio saved, timer, hard stop. V1 (stub server) and V2 (whisper.cpp + Piper) are merged; V3 (hands-free VAD) and reply streaming are next. | The core of the product; also the schedule's critical path. |
 | **T5** (done) | Scoring worker: queue, retries, 3 runs → median, evidence, low-confidence flags, consistency script. | Auditable scores: every mark has a reason and cites transcript turns. |
-| **T6** (todo, Parth + Bhavesh) | Dashboard and student pages. | Faculty must review, override and replay; students need a usable way to take the viva. |
+| **T6** (todo, Parth + Bhavesh, on Claude's CL-4/CL-5 foundation) | Dashboard and student pages. | Faculty must review, override and replay; students need a usable way to take the viva. |
 | **T7** (todo, VOICE) | Load harness: 10–150 simulated sessions, stub vs live labelled. | Scalability proof is 15% of the judging; stubs prove our system, small live runs prove the vendors. |
 | **T8** (todo) | Evidence runs: follow-up quality, scoring accuracy vs humans, WER on ≥ 20 clips, robustness, fairness probes. | The Test Report is mandatory; submissions without one are not evaluated. |
 | **T9** (todo, CORE) | Cost and capacity: ₹ per viva and per 350, from telemetry × priced rows. | Cost efficiency is judged; every cost claim needs a source. |
@@ -57,6 +59,9 @@ How to read: **Means** is the one-line definition. **Why here** is the reason it
 | **T11** (todo) | Hosting for the finals. | Needed for the live test (B8). |
 | **P0** | The team-plan branch (`task/P0-team-plan`). | Holds this glossary and `TEAM_PLAN.md`. |
 | **PA / BH / TJ / CL** | Card IDs: Parth, Bhavesh, Tejas, Claude (in `TEAM_PLAN.md`). | Each card is one small PR with a "Done when" line. |
+| **CL-4** | Frontend foundation: Vite/React/TS scaffold, typed API client, `useFacultyApi`, `useStudentSession`, shared components, `npm run check`. | Claude builds it so teammates write screens on typed hooks and cannot invent endpoints or fields. |
+| **CL-5** | Browser voice SDK: audio capture, WebSocket client, playback, `useVoiceSession`, `checkMicrophone`. | Real-time audio code is the hardest to get right with free AI tools; Bhavesh builds the screen on top of it. |
+| **check_paths / ownership.json** | A script and map that list files a branch changed outside its owner's paths. | Stops AI tools from editing files nobody asked them to. |
 | **V1 / V2 / V3** | Voice sub-milestones: scripted bot, browser push-to-talk, hands-free. | T4 is split so something works early. |
 
 ## 5. Decisions (`docs/DECISIONS.md`)
@@ -74,7 +79,7 @@ How to read: **Means** is the one-line definition. **Why here** is the reason it
 | **D10** | Student login = ID + one-time access code. | ID alone allows impersonation. |
 | **D11** | Two parallel Claude streams (CORE, VOICE). | One worker cannot fit the plan in 10 days. |
 | **D13** | The SQLAlchemy models are the schema; `schema.sql` is generated. | One source of truth, drift caught by a test. |
-| **D14** | API conventions frozen: ms durations, UTC `Z` timestamps, signed audio URL, bank locked after first join. | Friend A builds against stable rules. |
+| **D14** | API conventions frozen: ms durations, UTC `Z` timestamps, signed audio URL, bank locked after first join. | The frontend team builds against stable rules. |
 | **D15** | Zero-spend policy: free tiers, local models, never pay-as-you-go. | No budget; protects Mayank from accidental billing. |
 | **D16** | Engine runtime: one answer at a time per session, state rebuilt from turns, growing delay for wrong codes, lazy session end. | Restart-safe and hard to abuse. |
 | **D17** | PostgreSQL via Homebrew; psycopg v3 driver. | Concurrency claims need the real target database. |

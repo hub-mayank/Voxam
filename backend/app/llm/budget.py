@@ -1,7 +1,7 @@
 """Call budgets for metered (free-tier or quota-limited) providers. Zero-spend policy D15/D18.
 
 One usage file shared by every clone, worktree and process: ~/.cache/ai-viva/llm_budget.json (override: LLM_BUDGET_FILE). It holds, per
-"provider|model", the timestamps of the calls made in the last 24 hours (a rolling window) and the time of the last reserved slot.
+"provider|model", the timestamps of the calls made in the last 24 hours (a rolling window) (slots already reserved included).
 Every ATTEMPT counts (a retry is a call). Mock, stub and local providers (Ollama) never call count_call().
 
 count_call(provider, model) refuses, with CallCapExceeded, when
@@ -14,7 +14,8 @@ count_call(provider, model) refuses, with CallCapExceeded, when
     chars / 4 plus the largest reply it allows) and afterwards `record_tokens` swaps the reservation for what the call really used (the
     provider's usage numbers, else chars / 4 of prompt and reply). Both windows are rolling. A call that fails before any reply releases
     its reservation (the request still counts).
-Otherwise it reserves the next slot (at least 60/rpm seconds after the previous call, across processes), sleeps until it, and returns
+Otherwise it reserves the next slot (no more than floor(margin x rpm) calls in any 60 s, across processes: a burst of a few calls
+is not delayed), sleeps until it, and returns
 the model's call count. The fallback chain treats CallCapExceeded as "this provider is out for now" and moves to the next one."""
 import fcntl
 import json
@@ -136,12 +137,15 @@ def count_call(provider: str = "unknown", model: str = "unknown", *, est_tokens:
                 raise CallCapExceeded(f"{key}: a call of about {est_tokens} tokens can never fit under {tpm} tokens/min (tpm {lim.tpm} x margin {margin()})")
             token_slot = now + wait
         slot, why = max(now, token_slot), f"{tpm} tokens/min"
-        if lim is not None and lim.rpm and data["last"].get(key, 0) + 60.0 / lim.rpm > slot:
-            slot, why = data["last"][key] + 60.0 / lim.rpm, f"{lim.rpm} requests/min"
+        if lim is not None and lim.rpm:
+            # at most floor(margin x rpm) calls in any 60 s: a short burst (classify then phrase) goes straight through,
+            # the next call waits until the oldest call in the minute has aged out
+            per_minute = max(1, math.floor(margin() * lim.rpm))
+            recent = sorted(t for t in calls.get(key, []) if t > slot - MINUTE_S)
+            if len(recent) >= per_minute and recent[-per_minute] + MINUTE_S > slot:
+                slot, why = recent[-per_minute] + MINUTE_S, f"{lim.rpm} requests/min"
         if slot - now > max_wait():
             raise CallCapExceeded(f"{key}: staying under {why} needs a {slot - now:.1f} s wait (limit {max_wait():.0f} s)")
-        if lim is not None and lim.rpm:
-            data["last"][key] = slot
         calls.setdefault(key, []).append(slot)
         if est_tokens and (tpd is not None or tpm is not None):
             tokens.setdefault(key, []).append([slot, est_tokens])

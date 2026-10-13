@@ -81,30 +81,31 @@ def test_the_window_rolls_so_old_calls_stop_counting_after_24_hours(clock):
     clock.t += 24 * 3600 - 200
     with pytest.raises(CallCapExceeded):
         call(clock)
-    clock.t += 1000  # the nine early calls (spaced 12 s apart) are now older than 24 h
+    clock.t += 1000  # the early calls are now older than 24 h
     assert call(clock) == 1
 
 
-def test_calls_are_spaced_to_stay_under_the_per_minute_limit(clock):
+def test_a_short_burst_goes_straight_through_then_calls_wait_for_the_minute_window(clock):
     start = clock.t
+    for _ in range(4):  # floor(0.9 x 5 requests/min) = 4
+        call(clock)
+    assert clock.slept == [], "the first four calls are not delayed"
     call(clock)
-    assert clock.slept == [], "the first call goes straight through"
-    call(clock), call(clock), call(clock)
-    assert clock.slept == [12.0, 12.0, 12.0], "5 requests/min = one slot every 12 s"
-    assert clock.t - start == pytest.approx(36)
+    assert clock.slept == [60.0] and clock.t - start == pytest.approx(60), "the fifth waits until the first has aged out of the minute"
     clock.t += 100
     call(clock)
-    assert clock.slept == [12.0, 12.0, 12.0], "after a quiet period no wait is needed"
+    assert clock.slept == [60.0], "after a quiet period no wait is needed"
 
 
 def test_a_wait_longer_than_the_limit_refuses_instead_of_blocking_the_caller(clock, monkeypatch):
     monkeypatch.setenv("FREE_TIER_MAX_WAIT_S", "5")
-    call(clock)
-    with pytest.raises(CallCapExceeded, match="requests/min needs a"):
+    for _ in range(4):
         call(clock)
-    assert clock.slept == [] and usage(clock)["p|m"] == 1, "a refused call is not counted and reserves nothing"
-    clock.t += 12
-    assert call(clock) == 2
+    with pytest.raises(CallCapExceeded, match="requests/min needs a 60.0 s wait"):
+        call(clock)
+    assert clock.slept == [] and usage(clock)["p|m"] == 4, "a refused call is not counted and reserves nothing"
+    clock.t += 60
+    assert call(clock) == 5
 
 
 def test_usage_is_read_only_and_counts_the_last_24_hours(clock):

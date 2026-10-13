@@ -60,7 +60,7 @@ a git worktree uses the main checkout's `.env`). Nothing prints a key; `python -
 
 - Zero-spend (D15): free tiers, free credits behind a hard spending limit, local models. Never a pay-as-you-go plan.
 - Every provider attempt is counted per (provider, model) in a rolling 24 h window against the free-tier limits in `config/free_tier_limits.json`
-  (re-verify them before an evidence run): refused at 90% of the daily limit (`FREE_TIER_MARGIN`) and spaced to stay under the per-minute limit.
+  (re-verify them before an evidence run): refused at 90% of the daily limit (`FREE_TIER_MARGIN`) and kept under the per-minute limit (a short burst is not delayed; the next call waits for the minute window).
   A refused provider is skipped and the next one in the chain serves. `LLM_DAILY_CALL_CAP` (default 30) is the global ceiling and the cap for
   models not in the file. Token limits (`tpm`, `tpd`) are enforced the same way. Mock and Ollama are never counted.
 - Tests that call a real provider are marked `live` and skipped unless you run `python -m pytest --live`.

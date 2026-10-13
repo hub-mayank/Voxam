@@ -68,8 +68,9 @@ S: state{thinking} ; endpoint{ptt} ; transcript ; ai_turn ; state{speaking} ; au
 - Max answer length 90 s (`max_answer_ms` in `ready`); the server cuts at the cap.
 
 ## 6. Timing and recording
-- The server records the **student's audio stream** to one WAV per session (what arrives in binary frames; in push-to-talk only the pressed periods). It is saved incrementally, so a crash keeps what was received.
-- For every answer the server stores `t_start_ms` / `t_end_ms` = offsets into that WAV. The dashboard seeks the recording by them (evidence replay). AI speech is not in this WAV (regenerated from text if needed).
+- The server records **both sides** into one stereo WAV per session, 16 kHz, 16-bit: **left channel = the student** (what arrives in binary frames), **right channel = the AI's voice** (what the server sent, resampled to 16 kHz). Both channels sit on one wall-clock timeline that starts at the session's `started_at`, so silences and gaps are real silence and a replay sounds like the conversation.
+- It is written incrementally (at most ~1 s behind), so a crash keeps what was received. A reconnect continues the same file.
+- For every answer the server stores `t_start_ms` / `t_end_ms` = milliseconds since `started_at`, i.e. offsets into that WAV. The dashboard seeks the recording by them (evidence replay). If the AI is interrupted, its channel keeps what was sent (the student may have heard less).
 - Student `transcript.seq` is the HTTP `client_seq`: the server assigns it, so a reconnect can never duplicate an answer.
 - `latency_ms` in `ai_turn` = student stopped speaking → first audio byte sent (the metric in the spike's end-to-end tests).
 
@@ -125,3 +126,4 @@ export type ServerMsg =
 
 ## Changelog
 - v1 (2026-10-13): first version.
+- v1 (2026-10-13, same day): recording is stereo, student left and AI right, on one timeline (section 6). No client-visible change.

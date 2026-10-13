@@ -23,7 +23,7 @@ python -m uvicorn app.api.main:app --port 8000
 Everything seeded is fake and labelled DEMO (viva `demo-dsa`, students `DEMO001`..`DEMO006`, scores from a mock model). It shows every dashboard state: scored, low-confidence (needs review), overridden, in progress, joined-not-started. To start over delete `backend/viva_dev.db*` and reseed. The real backend refuses to start without `AUDIO_SIGNING_SECRET` (and `ACCESS_CODE_PEPPER` unless `REQUIRE_ACCESS_CODE=false`).
 
 Environment: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `CONTRACT_STUB`, `DATABASE_URL` (default local SQLite), `ACCESS_CODE_PEPPER`, `AUDIO_SIGNING_SECRET`, `LLM_CHAIN` (default `mock`; the interviewer's providers), `REQUIRE_ACCESS_CODE` (default true; the code is required, D10), `CODE_DELAY_CAP_SECONDS` (60) and `IP_FAILURES_PER_MINUTE` (30) for wrong access codes, `TRUST_FORWARDED_FOR`, `ANSWER_LEASE_SECONDS` (60).
-Not built yet: the voice WebSocket (task T4). Build the text flow; voice will reuse the same session, token, timer and `turn.idx`.
+Voice is a WebSocket on top of the same session, token, timer and `turn.idx`: the contract is `docs/VOICE_PROTOCOL.md`; the server (task T4) is not built yet, so build the text flow first and develop voice against `VOICE_PROVIDER=stub` once it lands.
 
 ## Conventions
 - JSON everywhere except uploads (`multipart/form-data`, field `file`), the audio and the CSV export.

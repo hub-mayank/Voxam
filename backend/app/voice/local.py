@@ -3,6 +3,7 @@ Piper is GPL-3.0: we never import it, we only run its executable (D19). Nothing 
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -117,6 +118,8 @@ class _PiperProc:
 
 class PiperTTS:
     """Piper voice (default en_GB alba) through persistent separate processes, a small pool (PIPER_PROCS)."""
+    RATE = 22_050  # every Piper medium voice; only used for the silence above
+
     def __init__(self, cfg: VoiceConfig):
         self.name = f"piper-{cfg.piper_model.stem}"
         if shutil.which(cfg.piper_bin) is None and not Path(cfg.piper_bin).exists():
@@ -126,6 +129,8 @@ class PiperTTS:
         self._next, self._guard = 0, threading.Lock()
 
     def synthesize(self, sentence: str):
+        if not re.search(r"\w", sentence):  # "..." has nothing to say; Piper exits on it, so give a short pause instead
+            return bytes(2 * int(0.25 * self.RATE)), self.RATE
         with self._guard:
             free = next((p for p in self.pool if not p.lock.locked()), None)
             if free is None:

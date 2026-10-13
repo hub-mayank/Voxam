@@ -156,3 +156,13 @@ def test_real_round_trip_piper_speaks_whisper_hears_it():
         assert len(heard) >= 4 and conf and conf > 0.5, (text, conf)
     finally:
         tts.close()
+
+
+def test_a_sentence_with_nothing_to_say_is_a_pause_not_a_crash(fakes):
+    tts = PiperTTS(fakes)
+    try:
+        pcm, rate = tts.synthesize("...")
+        assert rate == 22050 and 0.2 < len(pcm) / 2 / rate < 0.3
+        assert tts.pool[0].proc is None, "Piper was not even started for it"
+    finally:
+        tts.close()

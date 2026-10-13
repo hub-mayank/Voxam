@@ -335,7 +335,12 @@ class VoiceSession:
         """Synthesize `text` sentence by sentence and send each chunk; stops at once after a barge-in."""
         sentences = split_sentences(text)
         for i, sentence in enumerate(sentences):
-            pcm, rate = await asyncio.to_thread(self.tts.synthesize, sentence)
+            try:
+                pcm, rate = await asyncio.to_thread(self.tts.synthesize, sentence)
+            except Exception as e:  # the text still reaches the student; only this sentence is silent
+                log.error("tts failed for one sentence: %s", e)
+                await self.error("provider_unavailable", "Speech synthesis failed for part of this turn.", True)
+                pcm, rate = bytes(2 * 22_050 // 4), 22_050
             if on_first and i == 0:
                 await on_first()
             if self.interrupted.is_set():

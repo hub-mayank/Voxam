@@ -55,7 +55,7 @@ Parth and Bhavesh work with **free-tier AI tools** (plus Antigravity); Tejas has
 1. **Contract first.** Use only the types in `frontend/src/api/schema.ts` and the hooks from `src/api` and `src/student/{session,voice}`. If a field or endpoint is not there, it does not exist: stop and ask. `tsc` failing means the AI invented something.
 2. **One card per AI session.** Paste the card text and the named files, nothing else. Do not ask for "the whole dashboard".
 3. **Diffs, not rewrites.** If the tool wants to change files that are not in the card, refuse and re-prompt. `check_paths.py` will catch it anyway.
-4. **No new dependencies.** Allowed: `react`, `react-dom`, `react-router-dom`, `typescript`, `vite`, `vitest`, `eslint`. Anything else needs Mayank's yes.
+4. **No new dependencies.** The foundation already installs everything needed (`react`, `react-dom`, `react-router-dom`, `typescript`, `vite`, `vitest`, `jsdom`, `@testing-library/react`, `eslint`, `typescript-eslint`, `openapi-typescript`). `package.json` changes only through Claude; anything else needs Mayank's yes.
 5. **Run before you push:** `cd frontend && npm run check` (types + lint + tests) and `python scripts/check_paths.py <name>`. Paste both outputs in the PR.
 6. **Prove it:** a screenshot from the real seeded backend (`scripts/run_local.sh`), not only the mock.
 7. **Ask the AI to list its assumptions** ("which file and line did you rely on?") and put the answer in the PR.

@@ -36,3 +36,10 @@ Every tool, library and model used. Add a line before adding a dependency.
 | soundfile 0.14.0, numpy 2.5.3 | audio I/O and arrays | BSD-3-Clause | https://pypi.org/project/soundfile/ |
 | websockets 17.2 | WebSocket support under uvicorn (T4 adds it to requirements) | BSD-3-Clause | https://github.com/python-websockets/websockets |
 | Pipecat 1.12.0, LiveKit Agents 1.8.5 / livekit 1.1.20 | voice frameworks evaluated and proved, not used (D19) | BSD-2-Clause / Apache-2.0 | https://github.com/pipecat-ai/pipecat, https://github.com/livekit/agents |
+| React, React DOM | frontend UI library | MIT | https://react.dev |
+| React Router | frontend routing | MIT | https://reactrouter.com |
+| Vite, @vitejs/plugin-react | frontend dev server and build | MIT | https://vite.dev |
+| TypeScript | frontend language and type checker | Apache-2.0 | https://www.typescriptlang.org |
+| Vitest, jsdom, @testing-library/react | frontend tests | MIT | https://vitest.dev |
+| ESLint, typescript-eslint | frontend lint | MIT / MIT-compatible (BSD-2-Clause for typescript-eslint packages: MIT) | https://eslint.org |
+| openapi-typescript | generates the typed API client from `docs/openapi.json` (dev only) | MIT | https://openapi-ts.dev |

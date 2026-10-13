@@ -1,0 +1,20 @@
+{
+  "provider": "stub",
+  "model": "n/a (arithmetic on config/free_tier_limits.json)",
+  "date": "2026-10-13",
+  "git_sha": "d2e614fc57d2e45311207acfe4b4587838906eb3",
+  "n": 13,
+  "n_unit": "models",
+  "assumptions": {
+    "tokens_per_interview_call": 267,
+    "tokens_per_score_call": 3300,
+    "answers_per_viva": 11.3,
+    "llm_calls_per_answer": 1.41,
+    "scoring_runs": 3,
+    "students": 350,
+    "viva_seconds": 900,
+    "margin": 0.9
+  },
+  "note": "interview tokens per call: measured: results/groq_interview_tokens.csv (118 Groq calls); scoring tokens per call are an assumption until a live scoring run measures them; limits were copied from the providers' consoles on 2026-10-08",
+  "tokens_per_call_source": "measured: results/groq_interview_tokens.csv (118 Groq calls)"
+}

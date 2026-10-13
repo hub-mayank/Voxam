@@ -1,0 +1,15 @@
+{
+  "provider": "live",
+  "model": [
+    "openai/gpt-oss-20b"
+  ],
+  "date": "2026-10-13",
+  "git_sha": "825495a90ba965d616a2d248a8ce6142d326e7f5",
+  "n": 118,
+  "n_unit": "calls",
+  "source_logs": [
+    "telemetry.jsonl",
+    "telemetry.jsonl"
+  ],
+  "note": "tokens as reported by the provider's usage field for live-interview calls (classify, phrase) of the voice end-to-end runs"
+}

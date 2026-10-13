@@ -1,0 +1,10 @@
+LOCAL01  BBTG-MJY3  Local Student 01
+LOCAL02  YM26-8VYD  Local Student 02
+LOCAL03  WS4K-9Z7T  Local Student 03
+LOCAL04  6WFQ-6TFY  Local Student 04
+LOCAL05  U4HX-S8M7  Local Student 05
+LOCAL06  VDWH-YHQM  Local Student 06
+LOCAL07  G93Z-GRM2  Local Student 07
+LOCAL08  Y77H-P4TR  Local Student 08
+LOCAL09  9F64-TDVH  Local Student 09
+LOCAL10  UZVS-TBVK  Local Student 10

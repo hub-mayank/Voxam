@@ -8,7 +8,7 @@ from .llm.budget import CallCapExceeded
 from .llm.errors import ProviderError
 
 PROMPT_DIR = Path(__file__).parent / "prompts"
-SCORER_PROMPT_VERSION = "scorer-v2"
+SCORER_PROMPT_VERSION = "scorer-v3"
 
 
 def load_prompt(version: str) -> str:

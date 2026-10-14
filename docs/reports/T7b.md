@@ -1,0 +1,11 @@
+# T7b Release the connection while the model answers: 👍 done   (2026-10-14, VOICE)
+- Changed: `StudentService._under_lease` commits (which also ends the read transaction) before `iv.respond`, and reads the answer text first; the lease-wait loop rolls back before it sleeps. No database connection is held during an LLM call any more.
+- Evidence:
+  - New test `test_no_database_connection_is_held_while_the_model_answers` fails on `main` (a transaction was open during the model call) and passes after the change.
+  - `python -m pytest -q --ignore=backend/tests/test_voice_spike.py` -> **`504 passed, 2 skipped`**; `python scripts/check_secrets.py` -> clean.
+  - `python scripts/load_test.py --scenario free_chain_after_release --llm-rpm 107 --levels 50 100 150` -> `results/load/free_chain_107rpm_release_during_llm.csv` (`provider=stub`, sha `2dfe819b`, clean tree): server errors `{}` and DB connections at most 31 (150 sessions: 23). The same scenario before the change (`results/load/free_chain_107rpm.csv`) had 61 connections and 3 pool timeouts at 150.
+- Not verified / not run: real Groq/whisper/Piper under load (same limits as T7). The 100- and 150-session rows still drop sessions (13 and 14 `answer_timeout`, the STT/TTS queue and the rpm window, not the pool).
+- Risks found: none new. The knee did not move: 50 sessions still p95 5.5 s.
+- Suggestions: the remaining ceiling is STT + TTS capacity on one machine. Two machines behind one database is the cheapest real fix (workers are stateless); worth one measured run if time allows.
+- Questions for Mayank: none.
+- Next task proposed: T1b live baseline (Groq approved, within the cap).

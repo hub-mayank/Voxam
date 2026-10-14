@@ -90,3 +90,31 @@ def test_real_stt_runs_no_more_processes_than_its_worker_cap():
     from app.voice.config import VoiceConfig
     assert VoiceConfig.from_env({"STT_WORKERS": "3"}).stt_workers == 3
     assert 1 <= VoiceConfig.from_env({}).stt_workers <= 8
+
+
+def test_tts_processes_share_the_cores_so_a_second_one_adds_little(monkeypatch):
+    """Real Piper measurement (results/load/piper_procs.csv): more processes do not add throughput, and the cap is honoured."""
+    import threading
+    import time as t
+    from app.loadmodel import ModelledTTS
+
+    tts = ModelledTTS(procs=2)
+    assert tts.points[0][0] == 1 and tts.ref_words > 5
+    peak, now, lock = [0], [0], threading.Lock()
+    real_sleep = t.sleep
+
+    def watched(seconds):
+        with lock:
+            now[0] += 1
+            peak[0] = max(peak[0], now[0])
+        real_sleep(0.01)
+        with lock:
+            now[0] -= 1
+
+    monkeypatch.setattr("app.loadmodel.time.sleep", watched)
+    jobs = [threading.Thread(target=tts.synthesize, args=("one short sentence here",)) for _ in range(6)]
+    [j.start() for j in jobs]
+    [j.join() for j in jobs]
+    assert peak[0] <= 2
+    best = max(tts.points, key=lambda p: p[0] / p[1])
+    assert best[0] / best[1] < 2 * tts.points[0][0] / tts.points[0][1]  # two processes are less than twice one

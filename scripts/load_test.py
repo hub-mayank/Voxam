@@ -162,8 +162,10 @@ class Server:
         if self.args.storm:
             env["LOAD_LLM_STORM"] = self.args.storm
         log = open(self.log_path, "w")
-        self.proc = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(self.port), "--log-level", "warning"],
-                                     cwd=ROOT / "backend", env=env, stdout=log, stderr=subprocess.STDOUT)
+        cmd = [sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(self.port), "--log-level", "warning"]
+        if self.args.workers > 1:
+            cmd += ["--workers", str(self.args.workers)]
+        self.proc = subprocess.Popen(cmd, cwd=ROOT / "backend", env=env, stdout=log, stderr=subprocess.STDOUT)
         for _ in range(120):
             try:
                 if httpx.get(f"http://localhost:{self.port}/health", timeout=1).status_code == 200:
@@ -268,8 +270,9 @@ def main():
     ap.add_argument("--llm-rpm", type=float, default=27, help="the LLM's requests per minute for the whole server (0 = unlimited)")
     ap.add_argument("--storm", default="", help="start_s:duration_s:failure_share, e.g. 20:30:0.8 (429s)")
     ap.add_argument("--stt-model", default="faster-whisper-base-int8")
-    ap.add_argument("--stt-workers", type=int, default=0, help="0 = the measured plateau (8)")
-    ap.add_argument("--tts-procs", type=int, default=1)
+    ap.add_argument("--stt-workers", type=int, default=0, help="0 = the measured plateau (8); per server process")
+    ap.add_argument("--workers", type=int, default=1, help="uvicorn worker processes (each has its own STT/TTS/LLM model and rpm window)")
+    ap.add_argument("--tts-procs", type=int, default=0, help="0 = the process count with the best measured Piper throughput; per server process")
     ap.add_argument("--scenario", default="baseline")
     ap.add_argument("--db", default="postgres", choices=["postgres", "sqlite"])
     ap.add_argument("--port", type=int, default=8020)
@@ -310,8 +313,8 @@ def main():
     first_fail = next((r for r in rows if not r["pass"]), None)
     write_meta(out, provider="stub", model="modelled stt/tts/llm (app/loadmodel.py) behind the real server", n=sum(r["sessions_ok"] + r["sessions_dropped"] for r in rows),
                n_unit="sessions", database=args.db, levels=args.levels, scenario=args.scenario, llm_rpm=args.llm_rpm, storm=args.storm, burst=args.burst,
-               stt_model=args.stt_model, stt_workers=args.stt_workers or "measured plateau", tts_procs=args.tts_procs,
-               breaking_level=first_fail["level"] if first_fail else None, server_errors=server_errors, server="one uvicorn process, harness on the same machine",
+               stt_model=args.stt_model, stt_workers=args.stt_workers or "measured plateau", tts_procs=args.tts_procs or "measured best",
+               breaking_level=first_fail["level"] if first_fail else None, server_errors=server_errors, server=f"{args.workers} uvicorn process(es), harness on the same machine",
                note="modelled providers: proves orchestration (API, WebSocket, engine, database, recorder), not vendor capacity (D6)")
     print("breaking point:", f"level {first_fail['level']} ({first_fail['error_kinds']}; p95 {first_fail['latency_server_p95_ms']} ms)" if first_fail else "none up to level " + str(rows[-1]["level"]))
 

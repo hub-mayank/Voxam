@@ -1,0 +1,11 @@
+{
+  "provider": "live",
+  "model": "piper-en_GB-alba-medium (real Piper process pool)",
+  "date": "2026-10-14",
+  "git_sha": "8843dd4d685b4fb906ed6a78ab118bedcb7ee308+dirty",
+  "n": 288,
+  "n_unit": "sentences",
+  "threads": 8,
+  "per_thread": 6,
+  "note": "TTS only, no STT running at the same time: the cores are not shared with whisper.cpp here"
+}

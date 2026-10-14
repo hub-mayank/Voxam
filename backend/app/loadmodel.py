@@ -2,7 +2,8 @@
 recognition, the LLM and speech synthesis are replaced by models of their *measured* behaviour, so 150 sessions can be driven on one
 machine without 150 real model runs. Every number a model uses is read from a file in results/ (empirical samples, never typed in):
   STT  results/voice_spike/stt_concurrency.csv   decode time against concurrent decodes, and a worker cap (throughput plateaus)
-  TTS  results/voice_spike/tts_piper-en_GB-alba-medium.csv   synthesis time per sentence, and a process cap (PIPER_PROCS)
+  TTS  results/load/piper_procs.csv   real Piper: time per sentence against processes running at once (they share the cores, so more
+       processes do not add throughput), and a process cap (PIPER_PROCS)
   LLM  results/groq_interview_tokens.csv   per-call latency of classify and phrase (second run: sliding minute window), a per-minute
        request limit shared by all sessions (LOAD_LLM_RPM, 0 = no limit) and an optional 429 storm window.
 These prove OUR orchestration under load, not vendor behaviour (D6): results are labelled provider=stub."""
@@ -25,6 +26,18 @@ def _rows(path: Path) -> list:
         return list(csv.DictReader(f))
 
 
+def _interpolate(points: list, concurrent: int) -> float:
+    """Linear between measured points; beyond the last one it keeps the last slope (work still queues)."""
+    c = max(1, concurrent)
+    if c <= points[0][0]:
+        return points[0][1]
+    for (c0, t0), (c1, t1) in zip(points, points[1:]):
+        if c <= c1:
+            return t0 + (t1 - t0) * (c - c0) / (c1 - c0)
+    (c0, t0), (c1, t1) = points[-2], points[-1]
+    return t1 + (t1 - t0) / (c1 - c0) * (c - c1)
+
+
 class SttCurve:
     """decode_p50_s against concurrent decodes for one engine, linearly interpolated; beyond the last measured point it keeps growing
     with the last slope (work still queues)."""
@@ -38,15 +51,7 @@ class SttCurve:
         self.plateau = max(self.points, key=lambda p: int(p[0]) / p[1])[0]  # concurrency with the best throughput = sensible worker cap
 
     def decode_s(self, concurrent: int) -> float:
-        c = max(1, concurrent)
-        pts = self.points
-        if c <= pts[0][0]:
-            return pts[0][1]
-        for (c0, t0), (c1, t1) in zip(pts, pts[1:]):
-            if c <= c1:
-                return t0 + (t1 - t0) * (c - c0) / (c1 - c0)
-        (c0, t0), (c1, t1) = pts[-2], pts[-1]
-        return t1 + (t1 - t0) / (c1 - c0) * (c - c1)
+        return _interpolate(self.points, concurrent)
 
 
 class ModelledSTT:
@@ -83,21 +88,31 @@ class ModelledSTT:
 
 
 class ModelledTTS:
-    """Synthesis time per sentence sampled from the measured Piper runs; `procs` sentences at a time (PIPER_PROCS)."""
+    """Queueing model like the STT one: at most `procs` sentences at a time, each taking the measured time for the number running
+    now (Piper processes share the cores, so two are barely faster than one), scaled by sentence length."""
     name = "modelled-tts"
     rate = 22_050
 
-    def __init__(self, procs: int = None, path: Path = RESULTS / "voice_spike" / "tts_piper-en_GB-alba-medium.csv", rng=None):
+    def __init__(self, procs: int = None, path: Path = RESULTS / "load" / "piper_procs.csv"):
         rows = _rows(path)
-        self.per_word = sorted(float(r["total_synth_s"]) / max(1, int(r["words"])) for r in rows)
-        self.sem = threading.BoundedSemaphore(procs or int(os.environ.get("LOAD_TTS_PROCS", 1)))
-        self.rng = rng or random.Random(11)
+        self.points = sorted((int(r["procs"]), int(r["procs"]) / float(r["sentences_per_s"])) for r in rows)
+        self.ref_words = float(rows[0]["mean_words"])
+        best = max(self.points, key=lambda p: p[0] / p[1])[0]  # processes with the best measured throughput
+        self.sem = threading.BoundedSemaphore(procs or int(os.environ.get("LOAD_TTS_PROCS", 0)) or best)
+        self.lock, self.active = threading.Lock(), 0
 
     def synthesize(self, sentence: str):
         from .voice import audio
         words = max(1, len(sentence.split()))
         with self.sem:
-            time.sleep(self.rng.choice(self.per_word) * words)
+            with self.lock:
+                self.active += 1
+                running = self.active
+            try:
+                time.sleep(_interpolate(self.points, running) * words / self.ref_words)
+            finally:
+                with self.lock:
+                    self.active -= 1
         return audio.tone(max(0.6, 0.055 * words), self.rate), self.rate
 
 

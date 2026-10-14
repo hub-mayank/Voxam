@@ -1,0 +1,30 @@
+{
+  "provider": "live",
+  "model": "derived: measured groq gpt-oss-20b tokens x docs/pricing.csv",
+  "date": "2026-10-15",
+  "git_sha": "640005e1238b9b6bdcc34006f34a8893bfd40fa7",
+  "n": 196,
+  "n_unit": "live calls the token means come from",
+  "answers_per_viva": 11,
+  "scorer_runs": 3,
+  "fx_inr_per_usd": 95.319179,
+  "mean_tokens": {
+    "classify": [
+      259.7,
+      31.2
+    ],
+    "phrase": [
+      161.6,
+      58.6
+    ],
+    "score": [
+      1223.4,
+      920.8
+    ]
+  },
+  "calls_per_answer": {
+    "classify": 0.975,
+    "phrase": 0.5
+  },
+  "note": "arithmetic over measured token counts; other models are priced on gpt-oss-20b's token counts; local providers cost nothing marginal (D15) but hardware and electricity are not included; answers per viva is an assumption"
+}

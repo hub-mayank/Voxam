@@ -1,0 +1,10 @@
+{
+  "provider": "live",
+  "model": "derived: measured tokens, limits and capacities",
+  "date": "2026-10-15",
+  "git_sha": "640005e1238b9b6bdcc34006f34a8893bfd40fa7",
+  "n": 11,
+  "n_unit": "quantities",
+  "concurrent": 150,
+  "note": "arithmetic only; students per answer interval and answer length are assumptions; no machine was run at this load with real models"
+}

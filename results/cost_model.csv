@@ -1,0 +1,8 @@
+scenario,interview_usd,scoring_usd,usd_per_viva,inr_per_viva,inr_per_350
+all local (Ollama + whisper.cpp + Piper),0.0,0.0,0.0,0.0,0.0
+groq gpt-oss-20b interview + groq gpt-oss-20b scorer,0.00047,0.0011,0.00158,0.15,52.6
+groq gpt-oss-20b interview + groq gpt-oss-120b scorer,0.00047,0.00221,0.00268,0.256,89.4
+groq gpt-oss-20b interview + gemini 2.5 flash-lite scorer,0.00047,0.00147,0.00194,0.185,64.9
+groq gpt-oss-20b interview + gemini 3.1 flash-lite scorer,0.00047,0.00506,0.00553,0.527,184.6
+gemini 2.5 flash-lite interview + gemini 2.5 flash-lite scorer,0.00063,0.00147,0.0021,0.2,70.1
+"optional: groq whisper-large-v3-turbo instead of local STT (15 min of audio, added to any row)",0.01,0.0,0.01,0.953,333.6

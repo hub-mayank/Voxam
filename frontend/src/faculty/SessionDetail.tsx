@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import type { SessionDetail as SessionDetailData } from '../api/types'
@@ -7,6 +7,7 @@ import Badge from '../shared/Badge'
 import Button from '../shared/Button'
 import ErrorBanner from '../shared/ErrorBanner'
 import Page from '../shared/Page'
+import AudioPlayer, { type AudioPlayerHandle } from './AudioPlayer'
 
 function SessionDetail() {
   const { sid } = useParams<{ sid: string }>()
@@ -15,6 +16,7 @@ function SessionDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const audioPlayer = useRef<AudioPlayerHandle>(null)
 
   useEffect(() => {
     if (!api || !sid) return
@@ -131,12 +133,18 @@ function SessionDetail() {
         </section>
       )}
 
+      <AudioPlayer ref={audioPlayer} audio={detail.audio} onRetry={() => setAttempt((previous) => previous + 1)} />
       <section aria-labelledby="transcript-heading">
         <h2 id="transcript-heading">Transcript</h2>
         {turns.length === 0 ? <p>No transcript turns available.</p> : turns.map((turn) => (
           <article key={turn.idx} id={turnId(turn.idx)} className="card" tabIndex={-1}>
             <h3>Turn {turn.idx} — {turn.role}</h3>
             <p style={{ whiteSpace: 'pre-wrap' }}>{turn.text}</p>
+            {detail.audio.available && detail.audio.url && turn.t_start_ms != null && (
+              <Button onClick={() => {
+                if (turn.t_start_ms != null) audioPlayer.current?.playFrom(turn.t_start_ms)
+              }}>Play turn {turn.idx}</Button>
+            )}
           </article>
         ))}
       </section>

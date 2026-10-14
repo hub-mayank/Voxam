@@ -36,6 +36,23 @@ describe('Audio replay', () => {
     expect(retry).toHaveBeenCalledOnce()
   })
 
+  it('preserves an offset of zero while waiting for metadata', () => {
+    const ref = createRef<AudioPlayerHandle>()
+    const { container } = render(<AudioPlayer ref={ref} audio={{ available: true, url: '/recording' }} onRetry={() => {}} />)
+    const player = container.querySelector('audio')!
+    player.load = vi.fn()
+    player.play = vi.fn().mockResolvedValue(undefined)
+
+    act(() => ref.current?.playFrom(0))
+    expect(player.load).toHaveBeenCalledOnce()
+    expect(player.play).not.toHaveBeenCalled()
+
+    Object.defineProperty(player, 'readyState', { value: 1 })
+    fireEvent.loadedMetadata(player)
+    expect(player.currentTime).toBe(0)
+    expect(player.play).toHaveBeenCalledOnce()
+  })
+
   it('explains absent audio', () => {
     const { container } = render(<AudioPlayer audio={{ available: false }} onRetry={() => {}} />)
     expect(container.querySelector('audio')).toBeNull()

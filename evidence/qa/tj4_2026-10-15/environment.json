@@ -1,0 +1,45 @@
+{
+  "observed_date_IST": "2026-10-15",
+  "tested_git_sha": "49b92a7aa9e474bfac09ebaafcb701cb732da3ec",
+  "macos_version": "26.6.2",
+  "architecture": "arm64",
+  "python": "Python 3.14.6",
+  "node": "v24.11.1",
+  "npm": "11.6.2",
+  "isolation": "Fresh GitHub clone and new backend venv on existing Mac; no copied .env, model files or node_modules",
+  "backend_setup": {
+    "requirements": "backend/requirements.txt only",
+    "install_exit": 0,
+    "hooks_install_exit": 0,
+    "packages": "backend-packages.txt"
+  },
+  "backend_test": {
+    "command": "backend/.venv/bin/python -m pytest -q",
+    "cwd": "clone root",
+    "exit": 2,
+    "log": "pytest.txt",
+    "issue": "https://github.com/hub-mayank/ai-viva/issues/33"
+  },
+  "frontend_start": {
+    "command": "npm run dev",
+    "cwd": "frontend",
+    "exit": 127,
+    "log": "frontend-start.txt",
+    "issue": "https://github.com/hub-mayank/ai-viva/issues/34"
+  },
+  "scope": "README quick start and frontend command; no optional spike dependencies installed to hide the collection failure",
+  "not_run": [
+    "second physical clean machine",
+    "Friday 2026-10-16 repeat",
+    "browser UI flow",
+    "microphone capture",
+    "real STT/TTS/LLM",
+    "volunteer evidence"
+  ],
+  "local_profile": {
+    "log": "local-profile.json",
+    "result": "sandbox bind blocked; escalation did not execute because approval review timed out",
+    "health_and_docs": "not reached",
+    "cleanup": "started process group stopped"
+  }
+}

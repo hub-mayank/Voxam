@@ -1,0 +1,23 @@
+{
+  "command": "LLM_CHAIN=mock SCORER_LLM_CHAIN=mock VOICE_PROVIDER=stub PORT=8019 TELEMETRY_FILE=/private/tmp/ai-viva-tj4-local-telemetry.jsonl scripts/run_local.sh",
+  "cwd": "/private/tmp/ai-viva-tj4-20261015",
+  "mode": "mock LLM / stub voice",
+  "health_status": null,
+  "docs_status": null,
+  "startup_success": false,
+  "stopped_process_group": true,
+  "limitations": [
+    "Existing Mac, not a pristine second machine",
+    "No real STT, TTS, LLM, browser, microphone, or volunteer evidence"
+  ],
+  "exit_code_before_ready": 1,
+  "elapsed_seconds": 2.04,
+  "sanitized_errors": [
+    "API failed to start; see /private/tmp/ai-viva-tj4-20261015/.local/api.log",
+    "ERROR:    [Errno 1] error while attempting to bind on address ('127.0.0.1', 8019): [errno 1] operation not permitted"
+  ],
+  "escalation_attempt": {
+    "executed": false,
+    "reason": "Automatic permission approval review did not finish before its deadline; this was a review timeout, not a finding that the action was unsafe."
+  }
+}

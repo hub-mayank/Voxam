@@ -118,3 +118,11 @@ def test_tts_processes_share_the_cores_so_a_second_one_adds_little(monkeypatch):
     assert peak[0] <= 2
     best = max(tts.points, key=lambda p: p[0] / p[1])
     assert best[0] / best[1] < 2 * tts.points[0][0] / tts.points[0][1]  # two processes are less than twice one
+
+
+def test_piper_defaults_to_the_process_count_with_the_best_measured_throughput():
+    from app.loadmodel import ModelledTTS
+    from app.voice.config import VoiceConfig
+    best = max(ModelledTTS(procs=1).points, key=lambda p: p[0] / p[1])[0]
+    assert VoiceConfig.from_env({}).piper_procs == best == 2
+    assert VoiceConfig.from_env({"PIPER_PROCS": "1"}).piper_procs == 1

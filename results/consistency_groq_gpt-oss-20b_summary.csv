@@ -1,0 +1,6 @@
+transcript,n_runs,mean_total,sd_total,min_total,max_total,range_total,sd_conceptual,sd_depth,sd_problem,sd_practical,sd_communication,n_failed
+idk,5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0
+injection,5,10.2,7.362,2.0,22.0,20.0,0.447,0.447,0.447,0.548,0.447,0
+strong,5,100.0,0.0,100.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0
+strong_hinglish,5,88.4,5.459,85.0,98.0,13.0,0.447,0.447,0.0,0.0,0.548,0
+weak,5,26.8,3.347,24.0,32.0,8.0,0.0,0.0,0.894,0.0,0.447,0

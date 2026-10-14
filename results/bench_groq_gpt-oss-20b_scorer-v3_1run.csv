@@ -1,0 +1,5 @@
+model,persona,total,spread,low_conf,error
+groq:openai/gpt-oss-20b,strong,100.0,0.0,False,
+groq:openai/gpt-oss-20b,weak,33.0,0.0,False,
+groq:openai/gpt-oss-20b,idk,0.0,0.0,True,
+groq:openai/gpt-oss-20b,injection,20.0,0.0,True,

@@ -1,0 +1,12 @@
+{
+  "provider": "live",
+  "model": [
+    "groq:openai/gpt-oss-20b"
+  ],
+  "date": "2026-10-14",
+  "git_sha": "c263719227232cfc4601ee20873e4715709b839d",
+  "n": 1,
+  "n_unit": "scorer runs per persona row",
+  "scorer_prompt_version": "scorer-v3",
+  "note": "one scorer run per persona (token budget), so spread is 0 by construction; scripted personas, not human-marked data"
+}

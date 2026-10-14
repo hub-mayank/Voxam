@@ -1,0 +1,6 @@
+transcript,run,total,conceptual,depth,problem,practical,communication,retries,model
+strong_hinglish,1,88.0,5,4,5,4,3,0,groq:openai/gpt-oss-20b
+strong_hinglish,2,98.0,5,5,5,5,4,0,groq:openai/gpt-oss-20b
+strong_hinglish,3,93.0,5,4,5,5,4,0,groq:openai/gpt-oss-20b
+strong_hinglish,4,98.0,5,5,5,5,4,0,groq:openai/gpt-oss-20b
+strong_hinglish,5,98.0,5,5,5,5,4,0,groq:openai/gpt-oss-20b

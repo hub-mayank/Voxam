@@ -18,7 +18,7 @@ from app.config import load_config  # noqa: E402
 from app.envfile import load_env  # noqa: E402
 from app.llm.factory import make_llm  # noqa: E402
 from app.results_meta import write_meta  # noqa: E402
-from app.scorer import SCORER_PROMPT_VERSION, build_transcript, score_once, total_of  # noqa: E402
+from app.scorer import SCORER_PROMPT_VERSION, ScoreError, build_transcript, score_once, total_of  # noqa: E402
 
 
 def summarise(rows: list, keys: list) -> list:
@@ -50,14 +50,21 @@ def main():
     keys = [d["key"] for d in cfg.rubric["dimensions"]]
     llm = make_llm(a.llm)
     paths = [Path(p) for p in a.transcripts] or sorted((ROOT / "backend" / "tests" / "personas").glob("*.jsonl"))
-    rows = []
+    rows, failed = [], []
     for path in paths:
         events = [json.loads(line) for line in open(path) if line.strip()]
         transcript = build_transcript(events)
         for run in range(1, a.runs + 1):
-            raw, errors = score_once(llm, cfg, transcript)
+            try:
+                raw, errors = score_once(llm, cfg, transcript)
+            except ScoreError as e:  # a model that cannot produce a valid score is a result, not a reason to lose the other runs
+                failed.append({"transcript": path.stem, "run": run, "error": str(e)[:200]})
+                print(f"{path.stem} run {run}: FAILED {str(e)[:120]}", flush=True)
+                continue
             rows.append({"transcript": path.stem, "run": run, "total": total_of(raw["dimensions"], cfg),
                          **{k: raw["dimensions"][k]["score"] for k in keys}, "retries": len(errors), "model": llm.name})
+    if not rows:
+        sys.exit(f"every run failed validation: {failed[:3]}")
     tag = a.tag or a.llm.replace("/", "_").replace(":", "_").replace(",", "+")
     out = ROOT / "results" / f"consistency_{tag}.csv"
     summary = ROOT / "results" / f"consistency_{tag}_summary.csv"
@@ -67,6 +74,8 @@ def main():
         w.writeheader()
         w.writerows(rows)
     stats = summarise(rows, keys)
+    for st in stats:
+        st["n_failed"] = sum(f["transcript"] == st["transcript"] for f in failed)
     with open(summary, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(stats[0]))
         w.writeheader()
@@ -75,7 +84,7 @@ def main():
     note = {"mock": "mock scorer is deterministic: variance 0 by construction; proves plumbing, not scorer consistency"}.get(provider, "")
     for path in (out, summary):
         write_meta(path, provider=provider, model=llm.name, n=len(rows), n_unit="scorer runs", runs_per_transcript=a.runs,
-                   transcripts=[p.stem for p in paths], scorer_prompt_version=SCORER_PROMPT_VERSION, note=note)
+                   transcripts=[p.stem for p in paths], failed_runs=failed, scorer_prompt_version=SCORER_PROMPT_VERSION, note=note)
     for s in stats:
         print(f"{s['transcript']:16} n={s['n_runs']} mean={s['mean_total']:6} sd={s['sd_total']} range={s['range_total']}")
     print(f"wrote {out.relative_to(ROOT)} and {summary.relative_to(ROOT)} (provider={provider})")

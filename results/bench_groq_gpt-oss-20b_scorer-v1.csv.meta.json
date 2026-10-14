@@ -1,0 +1,10 @@
+{
+  "provider": "live",
+  "model": [
+    "groq:openai/gpt-oss-20b"
+  ],
+  "date": "2026-10-14",
+  "git_sha": "870264d2a031a3f4b29970a891dd17fafd510e0e",
+  "n": 3,
+  "n_unit": "scorer runs per persona row"
+}

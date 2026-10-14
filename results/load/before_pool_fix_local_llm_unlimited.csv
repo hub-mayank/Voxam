@@ -1,0 +1,6 @@
+level,provider,scenario,llm_rpm,answers_per_session,cadence_s,burst,sessions_ok,sessions_dropped,turns,answers_per_s,latency_server_p50_ms,latency_server_p95_ms,latency_server_max_ms,latency_client_p50_ms,latency_client_p95_ms,operations,errors,error_rate,error_kinds,llm_degraded_turns,server_cpu_mean_pct,server_cpu_max_pct,server_rss_max_mb,db_connections_max,duration_s,pass
+10,stub,local_llm,0.0,4,20.0,False,10,0,40,0.54,1343,3026,3251,0.3,2439.5,80,0,0.0,{},0,5.1,24.7,194,8,74,True
+25,stub,local_llm,0.0,4,20.0,False,25,0,100,1.49,3003,5392,6907,0.1,2475.5,200,0,0.0,{},0,10.7,24.9,178,11,67,False
+50,stub,local_llm,0.0,4,20.0,False,50,0,200,2.67,3705,7717,8782,0.2,7769.5,400,0,0.0,{},0,16.6,62.5,129,13,75,False
+100,stub,local_llm,0.0,4,20.0,False,60,40,240,2.26,5875,9997,12363,0.1,10440.7,520,40,0.0769,"{""join_internal_error"": 40}",0,13.6,51.2,113,16,106,False
+150,stub,local_llm,0.0,4,20.0,False,0,150,0,0.0,,,,,,150,150,1.0,"{""http_ReadTimeout"": 110, ""join_internal_error"": 40}",0,0.3,8.9,138,16,61,False

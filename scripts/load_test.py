@@ -44,7 +44,7 @@ def pct(values, p):
 
 class Stats:
     def __init__(self):
-        self.server_ms, self.client_ms, self.errors = [], [], {}
+        self.server_ms, self.client_ms, self.stt_ms, self.errors = [], [], [], {}
         self.sessions_ok = self.sessions_dropped = self.turns = self.operations = 0
 
     def error(self, kind: str):
@@ -120,7 +120,9 @@ async def bot(i, args, base, ws_base, viva, student, code, stats: Stats, barrier
                 first_audio = None
                 try:
                     while True:
-                        m = await until({"audio", "ai_turn", "ended"}, args.timeout)
+                        m = await until({"audio", "ai_turn", "ended", "transcript"}, args.timeout)
+                        if m["type"] == "transcript":
+                            stats.stt_ms.append(m["stt_ms"])
                         if m["type"] == "audio" and first_audio is None:
                             first_audio = (time.perf_counter() - t_stop) * 1000
                         if m["type"] == "ai_turn":
@@ -243,6 +245,7 @@ async def run_level(args, server, db, level):
         "turns": stats.turns, "answers_per_s": round(stats.turns / duration, 2), "latency_server_p50_ms": pct(stats.server_ms, 0.5),
         "latency_server_p95_ms": pct(stats.server_ms, 0.95), "latency_server_max_ms": pct(stats.server_ms, 1.0),
         "latency_client_p50_ms": pct(stats.client_ms, 0.5), "latency_client_p95_ms": pct(stats.client_ms, 0.95),
+        "stt_p50_ms": pct(stats.stt_ms, 0.5), "stt_p95_ms": pct(stats.stt_ms, 0.95),
         "operations": stats.operations, "errors": nerr, "error_rate": round(err_rate, 4), "error_kinds": json.dumps(stats.errors, sort_keys=True),
         "llm_degraded_turns": int(degraded) if degraded.isdigit() else "", "server_cpu_mean_pct": round(statistics.mean(s[0] for s in samples), 1) if samples else "",
         "server_cpu_max_pct": max((s[0] for s in samples), default=""), "server_rss_max_mb": round(max((s[1] for s in samples), default=0)),
@@ -256,8 +259,8 @@ async def run_level(args, server, db, level):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--levels", nargs="+", type=int, default=[10, 25, 50, 100, 150])
-    ap.add_argument("--answers", type=int, default=4)
-    ap.add_argument("--cadence", type=float, default=20.0, help="seconds between one student's answers")
+    ap.add_argument("--answers", type=int, default=3)
+    ap.add_argument("--cadence", type=float, default=15.0, help="seconds between one student's answers")
     ap.add_argument("--answer-seconds", type=float, default=4.0)
     ap.add_argument("--frame-ms", type=int, default=60)
     ap.add_argument("--timeout", type=float, default=60.0, help="seconds to wait for a reply before the session counts as dropped")
@@ -287,7 +290,7 @@ def main():
             row = asyncio.run(run_level(args, server, db_name, level))
             rows.append(row)
             print(f"  ok={row['sessions_ok']} dropped={row['sessions_dropped']} turns={row['turns']} server p50/p95={row['latency_server_p50_ms']}/"
-                  f"{row['latency_server_p95_ms']} ms errors={row['errors']} {row['error_kinds']} cpu max={row['server_cpu_max_pct']}% "
+                  f"{row['latency_server_p95_ms']} ms (stt p50/p95 {row['stt_p50_ms']}/{row['stt_p95_ms']}) errors={row['errors']} {row['error_kinds']} cpu max={row['server_cpu_max_pct']}% "
                   f"rss={row['server_rss_max_mb']} MB db conns={row['db_connections_max']} -> {'PASS' if row['pass'] else 'FAIL'}", flush=True)
     finally:
         server.stop()

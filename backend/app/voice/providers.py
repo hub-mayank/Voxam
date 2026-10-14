@@ -65,6 +65,9 @@ _LOCAL = {}  # one set of local providers per process: Piper keeps model process
 def make_providers(cfg: VoiceConfig):
     if cfg.provider == "stub":
         return StubSTT(cfg.stt_ms), StubTTS()
+    if cfg.provider == "modelled":  # load tests: measured latency and capacity models instead of real speech models (app/loadmodel.py)
+        from ..loadmodel import shared
+        return shared("stt"), shared("tts")
     if cfg.provider == "local":
         from .local import CachedTTS, PiperTTS, WhisperCppSTT
         key = (str(cfg.models_dir), cfg.whisper_size, cfg.whisper_lang, str(cfg.piper_model), cfg.piper_procs, str(cfg.tts_cache))
@@ -74,4 +77,4 @@ def make_providers(cfg: VoiceConfig):
             tts.inner.synthesize("Ready.")  # starts the Piper process(es) and loads the voice
             _LOCAL[key] = (stt, tts)
         return _LOCAL[key]
-    raise RuntimeError(f"unknown VOICE_PROVIDER={cfg.provider!r}; use stub or local")
+    raise RuntimeError(f"unknown VOICE_PROVIDER={cfg.provider!r}; use stub, local or modelled")

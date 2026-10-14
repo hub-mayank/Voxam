@@ -9,6 +9,8 @@ import Button from '../shared/Button'
 import ErrorBanner from '../shared/ErrorBanner'
 import Page from '../shared/Page'
 import Table, { type Column } from '../shared/Table'
+import BankUpload from './BankUpload'
+import RosterUpload from './RosterUpload'
 
 // Request up to 20 sessions per page.
 const PAGE_SIZE = 20
@@ -92,6 +94,14 @@ function SessionList() {
 
   return (
     <Page title="Sessions">
+      <details>
+        <summary>Manage question bank</summary>
+        <BankUpload key={vivaId} vivaId={vivaId} />
+      </details>
+      <details>
+        <summary>Manage student roster</summary>
+        <RosterUpload key={vivaId} vivaId={vivaId} />
+      </details>
       <label className="field" htmlFor="session-status">
         Status
         <select id="session-status" value={filters.status ?? ''} onChange={(event) => {

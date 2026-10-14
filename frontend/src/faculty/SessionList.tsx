@@ -11,6 +11,7 @@ import Page from '../shared/Page'
 import Table, { type Column } from '../shared/Table'
 import BankUpload from './BankUpload'
 import RosterUpload from './RosterUpload'
+import ExportRelease from './ExportRelease'
 
 // Request up to 20 sessions per page.
 const PAGE_SIZE = 20
@@ -101,6 +102,10 @@ function SessionList() {
       <details>
         <summary>Manage student roster</summary>
         <RosterUpload key={vivaId} vivaId={vivaId} />
+      </details>
+      <details>
+        <summary>Export and release results</summary>
+        <ExportRelease key={vivaId} vivaId={vivaId} />
       </details>
       <label className="field" htmlFor="session-status">
         Status

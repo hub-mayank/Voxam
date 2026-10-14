@@ -8,6 +8,7 @@ import Button from '../shared/Button'
 import ErrorBanner from '../shared/ErrorBanner'
 import Page from '../shared/Page'
 import AudioPlayer, { type AudioPlayerHandle } from './AudioPlayer'
+import ReviewActions from './ReviewActions'
 
 function SessionDetail() {
   const { sid } = useParams<{ sid: string }>()
@@ -133,6 +134,7 @@ function SessionDetail() {
         </section>
       )}
 
+      <ReviewActions key={detail.session_id} detail={detail} onReload={setDetail} />
       <AudioPlayer ref={audioPlayer} audio={detail.audio} onRetry={() => setAttempt((previous) => previous + 1)} />
       <section aria-labelledby="transcript-heading">
         <h2 id="transcript-heading">Transcript</h2>

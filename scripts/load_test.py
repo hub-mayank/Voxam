@@ -147,6 +147,7 @@ class Server:
     def __init__(self, args, db_url):
         self.args, self.db_url, self.proc, self.port = args, db_url, None, args.port
         self.audio_dir = tempfile.mkdtemp(prefix="load_audio_")
+        self.log_path = Path(tempfile.mkdtemp(prefix="load_log_")) / "server.log"
 
     def start(self):
         env = {**os.environ, "AI_VIVA_NO_DOTENV": "1", "FACULTY_TOKENS": f"load:{FACULTY}", "ACCESS_CODE_PEPPER": "load-pepper-0123456789",
@@ -158,8 +159,9 @@ class Server:
             env["LOAD_STT_WORKERS"] = str(self.args.stt_workers)
         if self.args.storm:
             env["LOAD_LLM_STORM"] = self.args.storm
+        log = open(self.log_path, "w")
         self.proc = subprocess.Popen([sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(self.port), "--log-level", "warning"],
-                                     cwd=ROOT / "backend", env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                     cwd=ROOT / "backend", env=env, stdout=log, stderr=subprocess.STDOUT)
         for _ in range(120):
             try:
                 if httpx.get(f"http://localhost:{self.port}/health", timeout=1).status_code == 200:
@@ -171,7 +173,20 @@ class Server:
     def stop(self):
         if self.proc:
             self.proc.terminate()
-            self.proc.wait(timeout=20)
+            try:
+                self.proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:  # open connections keep a graceful shutdown waiting
+                self.proc.kill()
+                self.proc.wait(timeout=10)
+
+    def error_summary(self, top: int = 5) -> dict:
+        """The server's own failures: exception class (last line of each traceback) -> count, from its log."""
+        counts = {}
+        for line in self.log_path.read_text(errors="replace").splitlines():
+            if line and not line.startswith((" ", "\t", "Traceback", "During handling", "The above")) and ("Error" in line or "Exception" in line or "Timeout" in line):
+                key = line.split(":")[0][:80] + (": " + line.split(":", 1)[1].strip()[:90] if ":" in line else "")
+                counts[key] = counts.get(key, 0) + 1
+        return dict(sorted(counts.items(), key=lambda kv: -kv[1])[:top])
 
 
 def psql(db, sql):
@@ -264,7 +279,7 @@ def main():
         subprocess.run(["createdb", db_name], check=True)
         db_url = f"postgresql+psycopg://{os.environ.get('USER', 'postgres')}@localhost/{db_name}"
     server = Server(args, db_url)
-    rows = []
+    rows, server_errors = [], {}
     try:
         server.start()
         for level in args.levels:
@@ -276,8 +291,13 @@ def main():
                   f"rss={row['server_rss_max_mb']} MB db conns={row['db_connections_max']} -> {'PASS' if row['pass'] else 'FAIL'}", flush=True)
     finally:
         server.stop()
+        server_errors = server.error_summary()
         if db_name:
             subprocess.run(["dropdb", "--if-exists", db_name])
+    if server_errors:
+        print("server log, most common failures:")
+        for k, v in server_errors.items():
+            print(f"  {v:5d}  {k}")
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="") as f:
@@ -288,7 +308,7 @@ def main():
     write_meta(out, provider="stub", model="modelled stt/tts/llm (app/loadmodel.py) behind the real server", n=sum(r["sessions_ok"] + r["sessions_dropped"] for r in rows),
                n_unit="sessions", database=args.db, levels=args.levels, scenario=args.scenario, llm_rpm=args.llm_rpm, storm=args.storm, burst=args.burst,
                stt_model=args.stt_model, stt_workers=args.stt_workers or "measured plateau", tts_procs=args.tts_procs,
-               breaking_level=first_fail["level"] if first_fail else None, server="one uvicorn process, harness on the same machine",
+               breaking_level=first_fail["level"] if first_fail else None, server_errors=server_errors, server="one uvicorn process, harness on the same machine",
                note="modelled providers: proves orchestration (API, WebSocket, engine, database, recorder), not vendor capacity (D6)")
     print("breaking point:", f"level {first_fail['level']} ({first_fail['error_kinds']}; p95 {first_fail['latency_server_p95_ms']} ms)" if first_fail else "none up to level " + str(rows[-1]["level"]))
 

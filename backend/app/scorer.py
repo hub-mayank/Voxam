@@ -8,7 +8,7 @@ from .llm.budget import CallCapExceeded
 from .llm.errors import ProviderError
 
 PROMPT_DIR = Path(__file__).parent / "prompts"
-SCORER_PROMPT_VERSION = "scorer-v1"
+SCORER_PROMPT_VERSION = "scorer-v2"
 
 
 def load_prompt(version: str) -> str:
@@ -81,11 +81,19 @@ def total_of(dims, cfg: VivaConfig) -> float:
     return round(sum(w[k] * dims[k]["score"] / 5 for k in w), 2)
 
 
+def tidy(raw):
+    """Live models sometimes pad "feedback" with empty strings (seen on gpt-oss-20b). Blank entries carry no content, so drop them
+    before validation; anything else that is wrong is still rejected."""
+    if isinstance(raw, dict) and isinstance(raw.get("feedback"), list):
+        raw["feedback"] = [f for f in raw["feedback"] if not (isinstance(f, str) and not f.strip())]
+    return raw
+
+
 def score_once(llm, cfg, transcript, max_retries=2):
     system, user, errors = _system(cfg), _user(transcript), []
     for _ in range(max_retries + 1):
         try:
-            raw = llm.complete_json(system, user, max_tokens=3000, kind="score")
+            raw = tidy(llm.complete_json(system, user, max_tokens=3000, kind="score"))
             validate(raw, cfg, transcript)
             return raw, errors
         except (ProviderError, CallCapExceeded) as e:  # the llm layer already retried and fell back

@@ -34,7 +34,7 @@ def test_total_math():
 
 def test_audit_fields_present():
     r = score("strong")
-    assert r["scorer_prompt_version"] == "scorer-v1" and r["rubric_version"] == "rubric-v1"
+    assert r["scorer_prompt_version"] == "scorer-v2" and r["rubric_version"] == "rubric-v1"
     assert r["model"] == "mock" and r["runs"] == 3 and len(r["run_totals"]) == 3
     assert all(d["evidence"] for d in r["dimensions"].values())
     assert set(r["evidence_timestamps"]) >= {i for d in r["dimensions"].values() for i in d["evidence"]}
@@ -102,7 +102,8 @@ def test_provider_failure_raises_not_silent():
 import hashlib
 from app.scorer import INJECTION, PROMPT_DIR, RULES, SCORER_PROMPT_VERSION, confidence_flags
 
-PROMPT_PINS = {"scorer-v1": "50dee8ec8fc3b4eb18e377847539ae56ac841067b59759cda673f47d24d3ff36"}  # a changed prompt needs a new version
+PROMPT_PINS = {"scorer-v1": "50dee8ec8fc3b4eb18e377847539ae56ac841067b59759cda673f47d24d3ff36",
+               "scorer-v2": "6c79d3faa3de275cc6f58e0bd08442392baffaed33e4e6f28cb5456f3fc36e78"}  # a changed prompt needs a new version
 
 
 def test_every_prompt_file_is_pinned_so_a_change_needs_a_version_bump():
@@ -239,3 +240,11 @@ def test_consistency_summary_computes_the_sample_standard_deviation_per_transcri
 def test_consistency_refuses_a_real_model_without_the_live_flag():
     r = subprocess.run([sys.executable, str(ROOT / "scripts" / "consistency.py"), "--llm", "gemini"], capture_output=True, text=True)
     assert r.returncode != 0 and "--live" in r.stderr
+
+
+def test_blank_feedback_entries_are_dropped_but_other_malformed_feedback_is_still_rejected():
+    from app.scorer import tidy
+    raw = {"dimensions": {}, "feedback": [{"text": "a", "evidence": [1]}, "", "  ", {"text": "b", "evidence": [1]}, {"text": "c", "evidence": [1]}]}
+    assert len(tidy(raw)["feedback"]) == 3
+    assert tidy({"feedback": ["not blank", {"text": "x"}]})["feedback"] == ["not blank", {"text": "x"}]
+    assert tidy("not a dict") == "not a dict"

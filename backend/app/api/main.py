@@ -1,4 +1,8 @@
+import asyncio
 import json
+import os
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
@@ -41,6 +45,16 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """STT, TTS and the engine's blocking calls all run through asyncio.to_thread. Its default pool is min(32, cores + 4) threads
+    (12 here), and answers waiting in the STT queue sit in those threads, so the whole voice server was limited to a dozen blocking
+    calls at once (found by the T7 load test). Waiting for a model or a provider costs a thread, not CPU."""
+    asyncio.get_running_loop().set_default_executor(
+        ThreadPoolExecutor(int(os.environ.get("EXECUTOR_THREADS", 64)), thread_name_prefix="blocking"))
+    yield
+
+
 def create_app(settings: Settings = None, llm_factory=None, now=None, engine=None) -> FastAPI:
     """llm_factory(spec) -> an LLM for one request; now() -> aware UTC time. Both are injectable for tests and the demo seed."""
     if settings is None:
@@ -48,7 +62,7 @@ def create_app(settings: Settings = None, llm_factory=None, now=None, engine=Non
         settings = Settings.from_env()
     settings.check()
     app = FastAPI(title="Voxam API", version="1.0.0", description=DESCRIPTION, openapi_tags=TAGS,
-                  generate_unique_id_function=lambda route: route.name)
+                  generate_unique_id_function=lambda route: route.name, lifespan=lifespan)
     app.state.settings = settings
     app.state.now = now or utc_now
     app.state.llm_factory = llm_factory or make_llm

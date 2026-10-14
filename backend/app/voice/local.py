@@ -33,6 +33,7 @@ class WhisperCppSTT:
         self.cfg = cfg
         self.model = cfg.models_dir / "whisper.cpp" / f"ggml-{cfg.whisper_size}-q5_1.bin"
         self.name = f"whisper.cpp-{cfg.whisper_size}-q5_1"
+        self.slots = threading.BoundedSemaphore(cfg.stt_workers)  # more processes than cores only makes every answer slower
         if shutil.which(cfg.whisper_cli) is None and not Path(cfg.whisper_cli).exists():
             raise ProviderUnavailable(f"{cfg.whisper_cli!r} not found: brew install whisper-cpp (or set WHISPER_CLI)")
         _need(self.model, "whisper.cpp model", "Run spikes/voice/fetch_models.py or set VOICE_MODELS_DIR.")
@@ -44,7 +45,8 @@ class WhisperCppSTT:
                 w.setnchannels(1), w.setsampwidth(2), w.setframerate(16000), w.writeframes(pcm16k)
             cmd = [self.cfg.whisper_cli, "-m", str(self.model), "-f", str(wav), "-l", self.cfg.whisper_lang, "-nt",
                    "-t", str(self.cfg.whisper_threads), "-ojf", "-of", str(base)]
-            done = subprocess.run(cmd, capture_output=True, text=True, timeout=CLI_TIMEOUT_S)
+            with self.slots:
+                done = subprocess.run(cmd, capture_output=True, text=True, timeout=CLI_TIMEOUT_S)
             out = base.with_suffix(".json")
             if done.returncode != 0 or not out.exists():
                 raise ProviderUnavailable(f"whisper-cli failed (rc={done.returncode}): {done.stderr.strip()[-200:]}")

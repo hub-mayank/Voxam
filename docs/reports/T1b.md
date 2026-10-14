@@ -8,7 +8,7 @@ First live scorer evidence. Model: Groq `openai/gpt-oss-20b` (free tier, inside 
   - `results/consistency_groq_gpt-oss-20b.csv` + `_summary.csv` (v2, 5 transcripts x 5 runs, 0 failed runs): strong 100 (sd 0), weak 26.8 (sd 3.3), idk 0, injection 10.2 (sd 7.4, range 20), **strong_hinglish 88.4 (sd 5.5)**.
   - **Fairness finding:** under v2 the Hinglish version of the strong answer lost 1 point on Conceptual and Depth in 4 of 5 runs, which the prompt forbids. Under v3 (`results/consistency_groq_gpt-oss-20b_hinglish_v3.csv`) it is 95.0 (sd 4.5): Conceptual 5 in 5 of 5 runs, Depth 5 in 3 of 5. **Better, not fixed.**
   - `results/bench_groq_gpt-oss-20b_scorer-v3_1run.csv` (v3, 1 run per persona): strong 100, weak 33, idk 0, injection 20: heuristic PASS.
-  - `python -m pytest -q --ignore=backend/tests/test_voice_spike.py` -> see the final line in the PR; `python scripts/check_secrets.py` -> clean.
+  - `python -m pytest -q --ignore=backend/tests/test_voice_spike.py` -> `528 passed, 2 skipped, 1 failed` with the full suite (jiwer and indic-transliteration now installed in the venv): the one failure is `test_voice_spike.py::test_the_real_llm_probe_replays_the_same_prompts`, `soundfile` not installed, also red on `main`. `python scripts/check_secrets.py` -> clean.
 - Not verified / not run:
   - v3 was run once per persona (and 5x on Hinglish), not 3-5x on all: the Groq 200k tokens/day cap (we used 157k of the 180k the budget allows) ended the day's runs. Re-run `consistency.py --runs 5` after the 24 h window rolls.
   - Accuracy against human marks (needs B7 marker + `scripts/compare.py`), Gemini as scorer, the 3-run median pipeline on a live model through the worker.

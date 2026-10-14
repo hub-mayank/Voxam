@@ -22,7 +22,7 @@ python ../scripts/check_paths.py <your-name>      # from frontend/: only your fi
 | A faculty API call | `const { api } = useFacultyApi()` then `api.listSessions(...)` etc. | `src/api/useFacultyApi.tsx`, `src/api/faculty.ts` |
 | Student login, answers, timer | `const session = useSession()` (`join`, `accept`, `start`, `submitAnswer`, `remainingMs`, `phase`, `error`) | `src/student/session/` |
 | Types of every request and response | `import type { SessionDetail } from '../api/types'` | `src/api/types.ts` (generated names in `schema.ts`) |
-| Voice: connect, hold-to-talk, transcript, AI text and audio, timer, errors, typing fallback | `import { useVoiceSession } from '../voice'` | `src/student/voice/` (try it by hand at `/student/voice-lab?sid=…&token=…`) |
+| Voice: connect, hold-to-talk, transcript, AI text and audio, timer, errors, typing fallback | `import { useVoiceSession } from '../voice'` | `src/student/voice/` (try it by hand: `/student/voice-lab` has a join form, student ID + access code → rules → start → talk) |
 | Mic check screen | `checkMicrophone()` from `../voice` (returns ok or a reason plus a sentence to show) | `src/student/voice/capture.ts` |
 | Page chrome, tables, badges, buttons, modal, error banner | `src/shared/*` | |
 

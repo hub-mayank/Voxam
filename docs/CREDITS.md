@@ -43,4 +43,4 @@ Every tool, library and model used. Add a line before adding a dependency.
 | Vitest, jsdom, @testing-library/react | frontend tests | MIT | https://vitest.dev |
 | ESLint, typescript-eslint | frontend lint | MIT / MIT-compatible (BSD-2-Clause for typescript-eslint packages: MIT) | https://eslint.org |
 | openapi-typescript | generates the typed API client from `docs/openapi.json` (dev only) | MIT | https://openapi-ts.dev |
-| OpenAI Codex | AI-assisted Web Development question-bank drafting and test implementation (TJ-2); faculty review required | OpenAI service terms | https://openai.com/codex/ |
+| OpenAI Codex | AI-assisted question-bank drafting (TJ-2; faculty review required), evidence-report tooling (TJ-7), and tests | OpenAI service terms | https://openai.com/codex/ |

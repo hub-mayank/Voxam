@@ -10,7 +10,7 @@ WHISPER_CLI      whisper.cpp binary (default whisper-cli on PATH: brew install w
 WHISPER_SIZE     base | small (default base); WHISPER_LANG en | hi | auto (default en: Hinglish is decoded as English, D19); WHISPER_THREADS (4)
 STT_WORKERS      whisper-cli processes running at once, the rest queue (default: CPU cores, at most 8; measured plateau, results/voice_spike)
 PIPER_BIN        the piper executable, run as a separate process (GPL isolation, D19); default `piper` on PATH, then <repo>/.venv/bin/piper
-PIPER_MODEL      voice file (default en_GB-alba-medium.onnx in the models folder); PIPER_PROCS persistent processes (default 1)
+PIPER_MODEL      voice file (default en_GB-alba-medium.onnx in the models folder); PIPER_PROCS persistent processes (default 2: the best measured throughput, results/load/piper_procs.csv)
 VOICE_VAD        silero | level: end-of-speech detector for hands-free mode (default silero with local speech, level with the stub)
 VOICE_HANGOVER_MS  quiet that ends an answer (default 600); VOICE_PREROLL_MS audio kept from before speech was detected (default 300)
 TTS_CACHE        rendered-audio cache folder (default <AUDIO_DIR>/tts_cache); fixed lines are rendered once and reused"""
@@ -38,7 +38,7 @@ class VoiceConfig:
     stt_workers: int = 4
     piper_bin: str = "piper"
     piper_model: Path = None
-    piper_procs: int = 1
+    piper_procs: int = 2
     tts_cache: Path = None
     vad: str = "level"
     hangover_ms: int = 600
@@ -61,5 +61,5 @@ class VoiceConfig:
                    stt_workers=max(1, int(env.get("STT_WORKERS", min(8, os.cpu_count() or 4)))),
                    piper_bin=piper, piper_model=Path(env["PIPER_MODEL"]) if env.get("PIPER_MODEL") else
                    models / "piper" / "en" / "en_GB" / "alba" / "medium" / "en_GB-alba-medium.onnx",
-                   piper_procs=max(1, int(env.get("PIPER_PROCS", 1))),
+                   piper_procs=max(1, int(env.get("PIPER_PROCS", 2))),
                    tts_cache=Path(env["TTS_CACHE"]).resolve() if env.get("TTS_CACHE") else audio_dir / "tts_cache")

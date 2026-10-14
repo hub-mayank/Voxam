@@ -43,6 +43,6 @@ Every tool, library and model used. Add a line before adding a dependency.
 | Vitest, jsdom, @testing-library/react | frontend tests | MIT | https://vitest.dev |
 | ESLint, typescript-eslint | frontend lint | MIT / MIT-compatible (BSD-2-Clause for typescript-eslint packages: MIT) | https://eslint.org |
 | openapi-typescript | generates the typed API client from `docs/openapi.json` (dev only) | MIT | https://openapi-ts.dev |
-| OpenAI Codex | AI-assisted question-bank drafting (TJ-2; faculty review required), evidence-report tooling (TJ-7), and tests | OpenAI service terms | https://openai.com/codex/ |
+| OpenAI Codex | AI-assisted question-bank drafting (TJ-2; faculty review required), WER/evidence-report tooling (TJ-6/TJ-7), consent/privacy documentation (TJ-1/TJ-8), and tests | OpenAI service terms | https://openai.com/codex/ |
 | Claude Code (Anthropic) | AI-assisted engineering: backend, voice server, load harness, tests, reports and docs, under Mayank's review (every change goes through a pull request) | Anthropic terms of service | https://www.anthropic.com/claude-code |
 | open.er-api.com | USD to INR exchange rate for `docs/pricing.csv` (retrieved 2026-10-14) | free endpoint, attribution requested | https://www.exchangerate-api.com/docs/free |

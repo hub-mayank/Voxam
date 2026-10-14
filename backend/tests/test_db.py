@@ -236,3 +236,37 @@ def test_the_postgres_pool_is_at_least_as_big_as_the_request_thread_pool(monkeyp
     monkeypatch.setenv("DB_MAX_OVERFLOW", "4")
     small = make_engine("postgresql+psycopg://u@localhost/none")
     assert small.pool.size() == 3 and small.pool._max_overflow == 4
+
+
+def test_the_request_database_session_is_closed_on_the_event_loop_not_in_a_worker_thread():
+    import inspect
+    from app.api.deps import get_db
+    assert inspect.isasyncgenfunction(get_db)
+
+
+def test_a_service_call_gives_its_connection_back_before_the_response_is_built():
+    """The deadlock found by the load test: the connection used to stay held until the response had been validated in a worker."""
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.orm import sessionmaker
+    from app.api.deps import ReleaseAfterCall
+
+    class Ops:
+        label = "ops"
+
+        def __init__(self, db):
+            self.db = db
+
+        def read(self):
+            return self.db.execute(text("select 1")).scalar()
+
+        def broken(self):
+            self.db.execute(text("select 1"))
+            raise ValueError("boom")
+
+    db = sessionmaker(create_engine("sqlite://"))()
+    ops = ReleaseAfterCall(Ops(db), db)
+    assert ops.read() == 1 and not db.in_transaction()
+    assert ops.label == "ops"
+    with pytest.raises(ValueError):
+        ops.broken()
+    assert not db.in_transaction()

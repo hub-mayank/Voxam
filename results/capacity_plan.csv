@@ -1,0 +1,12 @@
+quantity,value,source
+interview LLM calls per minute,165.9,150 students / 80 s per answer x measured calls per answer
+interview tokens per minute,44300,same arithmetic x measured tokens per call
+groq openai/gpt-oss-20b requests/min allowed (0.9 x rpm),27,config/free_tier_limits.json
+groq openai/gpt-oss-20b tokens/min allowed (0.9 x tpm),7200,config/free_tier_limits.json
+model keys needed for requests,7,each free model key has its own limits
+model keys needed for tokens,7,each free model key has its own limits
+scoring tokens if all end together,964887,150 x 3 runs x measured tokens
+days of one groq model's token cap (0.9 x 200000) to score them,5.4,tpd
+STT answers per second one machine decodes (measured plateau),4.57,stt_concurrency.csv best throughput; a 7 s answer is an assumption
+answers per second needed,1.88,150 / 80
+Piper sentences per second one machine makes (measured best),4.83,results/load/piper_procs.csv

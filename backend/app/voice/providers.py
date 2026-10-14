@@ -2,6 +2,7 @@
 `stub` needs no models: scripted transcripts and a quiet tone, so the frontend and the protocol tests run anywhere.
 `local` (whisper.cpp + Piper in a subprocess) arrives with V2."""
 import re
+import threading
 import time
 from typing import Protocol
 
@@ -59,7 +60,9 @@ class StubTTS:
         return audio.tone(seconds, self.rate), self.rate
 
 
-_LOCAL = {}  # one set of local providers per process: Piper keeps model processes alive between connections
+_LOCAL = {}
+_LOCAL_LOCK = threading.Lock()  # sessions starting together must not each start their own Piper processes
+# one set of local providers per process: Piper keeps model processes alive between connections
 
 
 def make_providers(cfg: VoiceConfig):
@@ -71,10 +74,11 @@ def make_providers(cfg: VoiceConfig):
     if cfg.provider == "local":
         from .local import CachedTTS, PiperTTS, WhisperCppSTT
         key = (str(cfg.models_dir), cfg.whisper_size, cfg.whisper_lang, str(cfg.piper_model), cfg.piper_procs, str(cfg.tts_cache))
-        if key not in _LOCAL:
-            stt, tts = WhisperCppSTT(cfg), CachedTTS(PiperTTS(cfg), cfg.tts_cache)
-            stt.transcribe(bytes(32000))  # one second of silence: loads the model into the page cache
-            tts.inner.synthesize("Ready.")  # starts the Piper process(es) and loads the voice
-            _LOCAL[key] = (stt, tts)
-        return _LOCAL[key]
+        with _LOCAL_LOCK:
+            if key not in _LOCAL:
+                stt, tts = WhisperCppSTT(cfg), CachedTTS(PiperTTS(cfg), cfg.tts_cache)
+                stt.transcribe(bytes(32000))  # one second of silence: loads the model into the page cache
+                tts.inner.synthesize("Ready.")  # starts the Piper process(es) and loads the voice
+                _LOCAL[key] = (stt, tts)
+            return _LOCAL[key]
     raise RuntimeError(f"unknown VOICE_PROVIDER={cfg.provider!r}; use stub, local or modelled")

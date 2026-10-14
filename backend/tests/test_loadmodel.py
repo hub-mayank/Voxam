@@ -62,3 +62,31 @@ def test_the_factory_hands_every_request_the_same_modelled_provider(monkeypatch)
     monkeypatch.setattr(loadmodel, "_SHARED", {})
     a, b = make_llm("modelled"), make_llm("modelled")
     assert a.providers[0] is b.providers[0], "one request budget for all students"
+
+
+def test_blocking_calls_run_in_a_pool_larger_than_the_default_twelve(monkeypatch):
+    """The knee found by the load test: queued STT answers sat in asyncio's small default pool and starved TTS and the engine."""
+    import asyncio
+    from fastapi.testclient import TestClient
+    from app.api.main import create_app
+    from app.api.settings import Settings
+
+    monkeypatch.setenv("EXECUTOR_THREADS", "40")
+
+    async def pool_size():
+        return asyncio.get_running_loop()._default_executor._max_workers
+
+    app = create_app(Settings(faculty_tokens={}, contract_stub=True))
+
+    @app.get("/_pool")
+    async def pool():
+        return {"threads": await pool_size()}
+
+    with TestClient(app) as client:
+        assert client.get("/_pool").json() == {"threads": 40}
+
+
+def test_real_stt_runs_no_more_processes_than_its_worker_cap():
+    from app.voice.config import VoiceConfig
+    assert VoiceConfig.from_env({"STT_WORKERS": "3"}).stt_workers == 3
+    assert 1 <= VoiceConfig.from_env({}).stt_workers <= 8

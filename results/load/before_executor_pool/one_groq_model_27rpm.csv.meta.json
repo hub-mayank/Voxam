@@ -1,0 +1,25 @@
+{
+  "provider": "stub",
+  "model": "modelled stt/tts/llm (app/loadmodel.py) behind the real server",
+  "date": "2026-10-14",
+  "git_sha": "7f46471125a13eb51e882fc714dce02abae65870",
+  "n": 85,
+  "n_unit": "sessions",
+  "database": "postgres",
+  "levels": [
+    10,
+    25,
+    50
+  ],
+  "scenario": "one_groq_model",
+  "llm_rpm": 27.0,
+  "storm": "",
+  "burst": false,
+  "stt_model": "faster-whisper-base-int8",
+  "stt_workers": "measured plateau",
+  "tts_procs": 1,
+  "breaking_level": 25,
+  "server_errors": {},
+  "server": "one uvicorn process, harness on the same machine",
+  "note": "modelled providers: proves orchestration (API, WebSocket, engine, database, recorder), not vendor capacity (D6)"
+}

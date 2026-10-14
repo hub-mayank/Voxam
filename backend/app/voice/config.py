@@ -8,6 +8,7 @@ Local providers (VOICE_PROVIDER=local):
 VOICE_MODELS_DIR models folder (default <repo>/spikes/voice/data/models: whisper.cpp/ggml-<size>-q5_1.bin and piper/en/en_GB/alba/medium/...)
 WHISPER_CLI      whisper.cpp binary (default whisper-cli on PATH: brew install whisper-cpp)
 WHISPER_SIZE     base | small (default base); WHISPER_LANG en | hi | auto (default en: Hinglish is decoded as English, D19); WHISPER_THREADS (4)
+STT_WORKERS      whisper-cli processes running at once, the rest queue (default: CPU cores, at most 8; measured plateau, results/voice_spike)
 PIPER_BIN        the piper executable, run as a separate process (GPL isolation, D19); default `piper` on PATH, then <repo>/.venv/bin/piper
 PIPER_MODEL      voice file (default en_GB-alba-medium.onnx in the models folder); PIPER_PROCS persistent processes (default 1)
 VOICE_VAD        silero | level: end-of-speech detector for hands-free mode (default silero with local speech, level with the stub)
@@ -34,6 +35,7 @@ class VoiceConfig:
     whisper_size: str = "base"
     whisper_lang: str = "en"
     whisper_threads: int = 4
+    stt_workers: int = 4
     piper_bin: str = "piper"
     piper_model: Path = None
     piper_procs: int = 1
@@ -56,6 +58,7 @@ class VoiceConfig:
                    stt_ms=int(env.get("VOICE_STT_MS", 300)), models_dir=models,
                    whisper_cli=env.get("WHISPER_CLI") or "whisper-cli", whisper_size=env.get("WHISPER_SIZE", "base"),
                    whisper_lang=env.get("WHISPER_LANG", "en"), whisper_threads=int(env.get("WHISPER_THREADS", 4)),
+                   stt_workers=max(1, int(env.get("STT_WORKERS", min(8, os.cpu_count() or 4)))),
                    piper_bin=piper, piper_model=Path(env["PIPER_MODEL"]) if env.get("PIPER_MODEL") else
                    models / "piper" / "en" / "en_GB" / "alba" / "medium" / "en_GB-alba-medium.onnx",
                    piper_procs=max(1, int(env.get("PIPER_PROCS", 1))),

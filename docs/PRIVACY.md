@@ -15,6 +15,8 @@ until MSOT answers** (`docs/MSOT_QUESTIONS.md`).
 | Access code | database, **only a keyed hash** (HMAC-SHA-256 with a server secret) | the code is shown once to faculty |
 | Session token | database, **only a hash** | |
 
+No proctoring or integrity signals are collected (the `integrity_events` table exists; nothing writes to it).
+
 Not stored: IP addresses (kept in memory for the wrong-code throttle only), passwords, payment data.
 
 ## Who can see it

@@ -4,9 +4,15 @@ Voxam is a fair, auditable 15-minute technical viva run by an AI interviewer (MS
 The code owns the clock and follow-up policy; the LLM only classifies answers and phrases replies.
 Scoring runs afterwards on the full transcript against a rubric, and every score cites transcript turns.
 
-Status: text-mode interviewer, scorer, provider adapters (Gemini, Ollama, mock) with retry/fallback, telemetry and a call
-cap are built. The HTTP API contract is frozen (`docs/openapi.json`) and implemented: a database-backed, restart-safe text
-viva with faculty review, the scoring worker (queue, retries, restart-safe) and the voice WebSocket server (stub and real whisper.cpp + Piper). Not built yet: the browser frontend (dashboard, student pages, voice client) and hands-free voice activity detection.
+Status (2026-10-15): the backend is complete and tested: the engine, the HTTP API (frozen contract in `docs/openapi.json`), the voice
+WebSocket (push-to-talk and hands-free, whisper.cpp + Piper), the scoring worker and provider adapters (Groq, Gemini, Ollama, mock)
+with a free-tier call budget. The React frontend has the voice client, a voice lab for trying a viva, and the faculty screens (login,
+vivas, sessions, detail with audio replay, review and override, bank and roster upload). The student viva screens and the faculty
+export and release screen are still being merged. What was measured, and what was not, is in `docs/DESIGN.md` section 6 and `results/`.
+
+Documents: `docs/DESIGN.md` (architecture and design), `docs/PRIVACY.md` (what is stored and who sees it), `docs/SPEC.md`,
+`docs/DECISIONS.md`, `docs/CREDITS.md`, task reports in `docs/reports/`. The test report is generated from `results/` by
+`python scripts/build_report.py` (every row cites its data file and sidecar; mock and stub results are labelled).
 
 ## Quick start
 Text mode runs fully offline with the mock LLM. It needs no Docker, database or API key.
@@ -84,6 +90,14 @@ a provider whose free-tier budget is used up delays the job instead of failing i
     python scripts/prove_job_claim.py --jobs 600 --workers 8     # competing OS processes claim scoring jobs: none twice
 The app uses `DATABASE_URL` (default: a local SQLite file); `postgresql://...` means the psycopg 3 driver.
 
+## Capacity settings (measured, see `docs/DESIGN.md`)
+    PIPER_PROCS=2        Piper processes; two are the best measured throughput (results/load/piper_procs.csv)
+    STT_WORKERS=8        whisper.cpp processes at once (default: CPU cores, at most 8); the rest queue
+    EXECUTOR_THREADS=64  threads for blocking calls (STT, TTS, engine) in the server
+    DB_POOL_SIZE / DB_MAX_OVERFLOW   PostgreSQL pool (defaults 10 and 50)
+Load harness: `python scripts/load_test.py --scenario local_llm --llm-rpm 0 --levels 10 25 50` (modelled providers behind the real
+server; see `docs/reports/T7.md` for what it does and does not prove).
+
 ## Other commands
     python scripts/check_secrets.py                  # scan the repo for API-key shapes
     python scripts/make_personas.py                  # regenerate the scripted persona fixtures
@@ -102,5 +116,6 @@ Results written under `results/` need a `.meta.json` sidecar (provider, model, d
     docker-compose.yml PostgreSQL for the later stages; not needed for local dev (SQLite)
     scripts/           benchmark, persona, secret-scan and comparison scripts
     docs/              SPEC, PLAN, DECISIONS, CREDITS, GLOSSARY, TEAM_PLAN, task reports in docs/reports/
-    frontend/          (planned, CL-4) React + Vite + TypeScript: faculty/ and student/ screens on a typed API client
+    frontend/          React + Vite + TypeScript: faculty/ and student/ screens and the voice client, on a typed API client
+                       (npm run gen:api regenerates the client from docs/openapi.json; npm run check)
     results/           raw evidence files

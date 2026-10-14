@@ -268,6 +268,7 @@ class StudentService:
                 return done
             if time.monotonic() > give_up:
                 raise ApiError(ErrorCode.provider_unavailable, "Still processing; retry the same request.", {"retry_after_ms": 3000})
+            self.db.rollback()  # do not keep a connection while waiting for the other worker
             self.sleep(POLL_SECONDS)
         try:
             return self._under_lease(sid, seq, body, stt_confidence, on_phrase_delta)
@@ -302,9 +303,10 @@ class StudentService:
                           question_id=iv.q["id"], t_start_ms=body.t_start_ms, t_end_ms=body.t_end_ms, client_seq=seq, created_at=now,
                           meta={"stt_confidence": round(float(stt_confidence), 3)} if stt_confidence is not None else None)
             db.add(mine)
-            db.commit()
+        text = mine.text  # read before the commit expires it
+        db.commit()  # also ends the read transaction: no connection is held while the model answers
         marker = len(iv.log)
-        iv.respond(mine.text, on_phrase_delta)
+        iv.respond(text, on_phrase_delta)
         quality, meta, event = harvest(iv.log[marker:])
         if llm.errors:
             meta["llm_errors"] = llm.errors

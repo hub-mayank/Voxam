@@ -1,0 +1,6 @@
+level,provider,scenario,llm_rpm,answers_per_session,cadence_s,burst,sessions_ok,sessions_dropped,turns,answers_per_s,latency_server_p50_ms,latency_server_p95_ms,latency_server_max_ms,latency_client_p50_ms,latency_client_p95_ms,stt_p50_ms,stt_p95_ms,operations,errors,error_rate,error_kinds,llm_degraded_turns,server_cpu_mean_pct,server_cpu_max_pct,server_rss_max_mb,db_connections_max,duration_s,pass
+10,stub,free_chain,107.0,3,15.0,False,10,0,30,0.82,1045,2735,2735,0.2,2018.0,411,798,70,0,0.0,{},0,6.5,23.1,109,11,36,True
+25,stub,free_chain,107.0,3,15.0,False,25,0,75,2.04,964,3442,4614,0.2,1995.1,518,1890,175,0,0.0,{},0,13.1,36.5,119,11,37,True
+50,stub,free_chain,107.0,3,15.0,False,50,0,150,3.12,2990,25679,28153,0.1,11029.8,795,5252,350,0,0.0,{},1,18.4,59.1,137,17,48,False
+100,stub,free_chain,107.0,3,15.0,False,94,6,294,3.15,12135,22798,47806,0.0,21836.2,2358,6692,694,6,0.0086,"{""answer_timeout"": 6}",30,16.5,129.4,163,41,93,False
+150,stub,free_chain,107.0,3,15.0,False,130,20,430,3.75,24962,55700,58924,2548.2,51147.9,6798,9877,1033,23,0.0223,"{""answer_timeout"": 20, ""ws_provider_unavailable"": 3}",40,21.3,134.5,164,61,115,False

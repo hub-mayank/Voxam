@@ -1,0 +1,29 @@
+{
+  "provider": "stub",
+  "model": "modelled stt/tts/llm (app/loadmodel.py) behind the real server",
+  "date": "2026-10-14",
+  "git_sha": "be0cdb514effccf34c868e931619873117576477",
+  "n": 335,
+  "n_unit": "sessions",
+  "database": "postgres",
+  "levels": [
+    10,
+    25,
+    50,
+    100,
+    150
+  ],
+  "scenario": "free_chain",
+  "llm_rpm": 107.0,
+  "storm": "",
+  "burst": false,
+  "stt_model": "faster-whisper-base-int8",
+  "stt_workers": "measured plateau",
+  "tts_procs": "measured best",
+  "breaking_level": 50,
+  "server_errors": {
+    "sqlalchemy.exc.TimeoutError: QueuePool limit of size 10 overflow 50 reached, connection timed out, timeout 30.00 (Backg": 3
+  },
+  "server": "1 uvicorn process(es), harness on the same machine",
+  "note": "modelled providers: proves orchestration (API, WebSocket, engine, database, recorder), not vendor capacity (D6)"
+}

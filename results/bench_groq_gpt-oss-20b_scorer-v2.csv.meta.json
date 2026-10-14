@@ -1,0 +1,13 @@
+{
+  "provider": "live",
+  "model": [
+    "groq:openai/gpt-oss-20b"
+  ],
+  "date": "2026-10-14",
+  "git_sha": "0174fa7a46fedca4cb245a5991af012084c97f7b",
+  "n": 3,
+  "n_unit": "scorer runs per persona row",
+  "scorer_prompt_version": "scorer-v2",
+  "personas": "strong,weak,idk,injection (backend/tests/personas, scripted transcripts)",
+  "note": "4 scripted personas x 3 scorer runs, one model; shows the pipeline works on a live model, not accuracy against human marks"
+}

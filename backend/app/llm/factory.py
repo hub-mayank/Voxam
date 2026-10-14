@@ -15,7 +15,7 @@ def split_spec(entry: str):
 
 def is_provider_name(token: str) -> bool:
     """True if `token` names a provider we can build (used to tell `groq:model` from a bare model name that contains a colon)."""
-    return token in ("mock", *BUILTIN, *KNOWN_BASE_URLS) or is_configured(token)
+    return token in ("mock", "modelled", *BUILTIN, *KNOWN_BASE_URLS) or is_configured(token)
 
 
 def make_llm(spec=None, model=None, retries=2):
@@ -31,7 +31,10 @@ def make_llm(spec=None, model=None, retries=2):
     for i, entry in enumerate(entries):
         name, spec_model = split_spec(entry)
         m = model if (i == 0 and model) else spec_model
-        if name == "gemini":
+        if name == "modelled":  # load tests only: app/loadmodel.py
+            from ..loadmodel import shared
+            providers.append(shared("llm"))
+        elif name == "gemini":
             from .gemini import GeminiLLM
             providers.append(GeminiLLM(model=m))
         elif name == "ollama":

@@ -1,0 +1,5 @@
+model,persona,total,spread,low_conf,error
+groq:openai/gpt-oss-20b,strong,,,,"scorer failed after retries: ['conceptual: evidence turns not student turns/nonexistent: [10]', 'conceptual: evidence tu"
+groq:openai/gpt-oss-20b,weak,,,,"scorer failed after retries: ['feedback must be 3-5 items', 'feedback must be 3-5 items', 'feedback must be 3-5 items']"
+groq:openai/gpt-oss-20b,idk,0.0,0.0,True,
+groq:openai/gpt-oss-20b,injection,,,,"scorer failed after retries: ['feedback must be 3-5 items', 'feedback must be 3-5 items', 'feedback must be 3-5 items']"

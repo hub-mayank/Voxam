@@ -678,3 +678,34 @@ def test_fallback_chain_records_the_backup_that_served_and_a_dead_chain_degrades
     with db_of(app2) as db:
         flagged = [t for t in core.turns_of(db, uuid.UUID(sid2)) if (t.meta or {}).get("llm_errors")]
         assert flagged and all(t.model is None for t in flagged) and flagged[0].meta["llm_degraded"] is True
+
+
+def test_no_database_connection_is_held_while_the_model_answers(tmp_path):
+    """Found by the load test: the answer's transaction stayed open across the LLM call, so slow models used up the pool."""
+    from harness import MockLLM
+    from app.services.student import StudentService
+    from app.api.schemas.student import AnswerRequest
+
+    held = []
+    clock = Clock()
+    app, client, _ = build(tmp_path, clock=clock)
+    codes = make_viva(client)
+    sid, _ = begin(client, codes["S1"])
+    clock.advance(30)
+    db = db_of(app)
+
+    class Watching(MockLLM):
+        def complete_json(self, *a, **k):
+            held.append(db.in_transaction())
+            return super().complete_json(*a, **k)
+
+        def complete_text(self, *a, **k):
+            held.append(db.in_transaction())
+            return super().complete_text(*a, **k)
+
+    svc = StudentService(db, app.state.settings, clock, lambda spec: Watching())
+    for seq in (1, 2):
+        clock.advance(30)
+        svc.answer(uuid.UUID(sid), AnswerRequest(text=LONG, client_seq=seq))
+    assert held, "the model was called"
+    assert not any(held), "a transaction (and its connection) was open during a model call"

@@ -1,0 +1,4 @@
+level,provider,scenario,llm_rpm,answers_per_session,cadence_s,burst,sessions_ok,sessions_dropped,turns,answers_per_s,latency_server_p50_ms,latency_server_p95_ms,latency_server_max_ms,latency_client_p50_ms,latency_client_p95_ms,stt_p50_ms,stt_p95_ms,operations,errors,error_rate,error_kinds,llm_degraded_turns,server_cpu_mean_pct,server_cpu_max_pct,server_rss_max_mb,db_connections_max,duration_s,pass
+10,stub,one_groq_model,27.0,3,15.0,False,10,0,30,0.83,1085,3181,3181,0.1,1910.7,430,996,70,0,0.0,{},0,6.3,20.5,114,11,36,True
+25,stub,one_groq_model,27.0,3,15.0,False,25,0,75,0.91,1185,60999,62952,24121.4,47960.3,519,2354,175,0,0.0,{},8,7.2,32.4,125,19,83,False
+50,stub,one_groq_model,27.0,3,15.0,False,50,0,150,1.74,2779,47824,64004,1875.4,48985.6,701,4070,350,0,0.0,{},23,12.1,68.0,135,36,86,False

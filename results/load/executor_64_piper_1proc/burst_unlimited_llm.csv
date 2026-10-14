@@ -1,0 +1,4 @@
+level,provider,scenario,llm_rpm,answers_per_session,cadence_s,burst,sessions_ok,sessions_dropped,turns,answers_per_s,latency_server_p50_ms,latency_server_p95_ms,latency_server_max_ms,latency_client_p50_ms,latency_client_p95_ms,stt_p50_ms,stt_p95_ms,operations,errors,error_rate,error_kinds,llm_degraded_turns,server_cpu_mean_pct,server_cpu_max_pct,server_rss_max_mb,db_connections_max,duration_s,pass
+50,stub,burst,0.0,3,15.0,True,50,0,150,4.02,6911,14182,14991,0.0,0.1,3415,6001,350,0,0.0,{},0,20.6,66.0,146,13,37,False
+100,stub,burst,0.0,3,15.0,True,96,4,297,2.46,22358,36901,42563,0.1,10387.7,8026,14494,697,4,0.0057,"{""answer_timeout"": 4}",0,13.0,138.9,174,40,121,False
+150,stub,burst,0.0,3,15.0,True,131,19,432,2.99,34023,54304,67450,4821.5,31311.3,11899,18612,1032,19,0.0184,"{""answer_timeout"": 19}",0,19.3,133.3,184,32,144,False

@@ -1,0 +1,2 @@
+level,provider,scenario,llm_rpm,answers_per_session,cadence_s,burst,sessions_ok,sessions_dropped,turns,answers_per_s,latency_server_p50_ms,latency_server_p95_ms,latency_server_max_ms,latency_client_p50_ms,latency_client_p95_ms,stt_p50_ms,stt_p95_ms,operations,errors,error_rate,error_kinds,llm_degraded_turns,server_cpu_mean_pct,server_cpu_max_pct,server_rss_max_mb,db_connections_max,duration_s,pass
+50,stub,storm_429,0.0,3,15.0,False,50,0,150,3.71,3048,5497,8104,0.1,4024.7,604,4256,350,0,0.0,{},6,21.7,75.4,142,13,40,False

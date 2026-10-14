@@ -1,0 +1,20 @@
+item,provider,model,unit,usd_per_unit,source_url,retrieved,note
+llm_input,groq,openai/gpt-oss-20b,1M tokens,0.075,https://console.groq.com/docs/model/openai/gpt-oss-20b,2026-10-15,paid tier; free tier costs nothing but is rate limited
+llm_cached_input,groq,openai/gpt-oss-20b,1M tokens,0.037,https://console.groq.com/docs/model/openai/gpt-oss-20b,2026-10-15,not used by the model: prompts change every call
+llm_output,groq,openai/gpt-oss-20b,1M tokens,0.30,https://console.groq.com/docs/model/openai/gpt-oss-20b,2026-10-15,output includes reasoning tokens
+llm_input,groq,openai/gpt-oss-120b,1M tokens,0.15,https://console.groq.com/docs/model/openai/gpt-oss-120b,2026-10-15,
+llm_cached_input,groq,openai/gpt-oss-120b,1M tokens,0.075,https://console.groq.com/docs/model/openai/gpt-oss-120b,2026-10-15,
+llm_output,groq,openai/gpt-oss-120b,1M tokens,0.60,https://console.groq.com/docs/model/openai/gpt-oss-120b,2026-10-15,
+stt,groq,whisper-large-v3-turbo,audio hour,0.04,https://console.groq.com/docs/model/whisper-large-v3-turbo,2026-10-15,no minimum billed length stated on the page
+llm_input,gemini,gemini-2.5-flash-lite,1M tokens,0.10,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,paid tier standard; free tier costs nothing but is rate limited
+llm_output,gemini,gemini-2.5-flash-lite,1M tokens,0.40,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,output includes thinking tokens
+llm_input,gemini,gemini-3.1-flash-lite,1M tokens,0.25,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,preview model
+llm_output,gemini,gemini-3.1-flash-lite,1M tokens,1.50,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,preview model
+llm_input,gemini,gemini-3.5-flash-lite,1M tokens,0.30,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,
+llm_output,gemini,gemini-3.5-flash-lite,1M tokens,2.50,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,
+llm_input,gemini,gemini-2.5-flash,1M tokens,0.30,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,
+llm_output,gemini,gemini-2.5-flash,1M tokens,2.50,https://ai.google.dev/gemini-api/docs/pricing,2026-10-15,
+fx,usd_inr,,INR per USD,95.319179,https://open.er-api.com/v6/latest/USD,2026-10-14,rate time_last_update_utc Wed 14 Oct 2026 00:02:32
+local,ollama,llama3.2:3b,viva,0,project decision D15 (zero-spend),2026-10-08,hardware and electricity not included
+local,whisper.cpp,base-q5_1,viva,0,project decision D15 (zero-spend),2026-10-08,hardware and electricity not included
+local,piper,en_GB-alba-medium,viva,0,project decision D15 (zero-spend),2026-10-08,hardware and electricity not included

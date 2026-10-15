@@ -79,25 +79,23 @@ def cache_files(cache_dir: Path) -> list[Path]:
 def purge(db, sessions: list[m.Session], recordings: list[Path | None], cached_audio: list[Path]) -> tuple[int, int]:
     """Delete relational data atomically, then unlink local recordings and generated audio."""
     session_ids = [row.id for row in sessions]
-    if not session_ids:
-        return 0, 0
-
-    pairs = {(row.viva_id, row.student_id) for row in sessions}
-    try:
-        db.execute(delete(m.IntegrityEvent).where(m.IntegrityEvent.session_id.in_(session_ids)))
-        db.execute(delete(m.Review).where(m.Review.session_id.in_(session_ids)))
-        db.execute(delete(m.Override).where(m.Override.session_id.in_(session_ids)))
-        db.execute(delete(m.Score).where(m.Score.session_id.in_(session_ids)))
-        db.execute(delete(m.Turn).where(m.Turn.session_id.in_(session_ids)))
-        db.execute(delete(m.Job).where(m.Job.session_id.in_(session_ids)))
-        db.execute(delete(m.Session).where(m.Session.id.in_(session_ids)))
-        for viva_id, student_id in pairs:
-            db.execute(delete(m.AccessCode).where(m.AccessCode.viva_id == viva_id, m.AccessCode.student_id == student_id))
-            db.execute(delete(m.RosterEntry).where(m.RosterEntry.viva_id == viva_id, m.RosterEntry.student_id == student_id))
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
+    if session_ids:
+        pairs = {(row.viva_id, row.student_id) for row in sessions}
+        try:
+            db.execute(delete(m.IntegrityEvent).where(m.IntegrityEvent.session_id.in_(session_ids)))
+            db.execute(delete(m.Review).where(m.Review.session_id.in_(session_ids)))
+            db.execute(delete(m.Override).where(m.Override.session_id.in_(session_ids)))
+            db.execute(delete(m.Score).where(m.Score.session_id.in_(session_ids)))
+            db.execute(delete(m.Turn).where(m.Turn.session_id.in_(session_ids)))
+            db.execute(delete(m.Job).where(m.Job.session_id.in_(session_ids)))
+            db.execute(delete(m.Session).where(m.Session.id.in_(session_ids)))
+            for viva_id, student_id in pairs:
+                db.execute(delete(m.AccessCode).where(m.AccessCode.viva_id == viva_id, m.AccessCode.student_id == student_id))
+                db.execute(delete(m.RosterEntry).where(m.RosterEntry.viva_id == viva_id, m.RosterEntry.student_id == student_id))
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
 
     failures, removed = 0, 0
     for path in set(recordings + cached_audio):

@@ -2,7 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import Button from '../../shared/Button'
 import Page from '../../shared/Page'
 import StudentError from '../StudentError'
-import { micChecked, modeOf, useFocusHeading, useStage, type AnswerMode } from '../phase'
+import { langOf, micChecked, modeOf, useFocusHeading, useStage, type AnswerMode } from '../phase'
 
 const OPTIONS: { value: AnswerMode; label: string; hint: string }[] = [
   { value: 'text', label: 'Type my answers', hint: 'Always available. No microphone needed.' },
@@ -14,6 +14,7 @@ function Waiting() {
   const session = useStage('ready')
   const [params, setParams] = useSearchParams()
   const mode = modeOf(params.get('mode'))
+  const lang = langOf(params.get('lang'))
   useFocusHeading()
   const needsMic = mode !== 'text'
   const micOk = micChecked()
@@ -31,7 +32,7 @@ function Waiting() {
                 type="radio"
                 name="mode"
                 checked={mode === o.value}
-                onChange={() => setParams({ mode: o.value }, { replace: true })}
+                onChange={() => setParams({ mode: o.value, lang }, { replace: true })}
               />
               <span>
                 {o.label}
@@ -41,9 +42,26 @@ function Waiting() {
             </label>
           ))}
         </fieldset>
+        {needsMic && (
+          <fieldset className="options">
+            <legend>Which language will you speak?</legend>
+            <label>
+              <input type="radio" name="lang" checked={lang === 'en'} onChange={() => setParams({ mode, lang: 'en' }, { replace: true })} />
+              <span>English</span>
+            </label>
+            <label>
+              <input type="radio" name="lang" checked={lang === 'auto'} onChange={() => setParams({ mode, lang: 'auto' }, { replace: true })} />
+              <span>
+                Hindi or Hinglish (a mix)
+                <br />
+                <small>The interviewer understands it and marks the content, never the language. It answers in English.</small>
+              </span>
+            </label>
+          </fieldset>
+        )}
         {needsMic && !micOk && (
           <p role="status">
-            Check your microphone first. <Link to={`/student/mic-check?mode=${mode}`}>Check my microphone</Link>
+            Check your microphone first. <Link to={`/student/mic-check?mode=${mode}&lang=${lang}`}>Check my microphone</Link>
           </p>
         )}
         {needsMic && micOk && <p role="status">Microphone checked.</p>}

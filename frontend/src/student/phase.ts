@@ -13,6 +13,12 @@ export const PATH: Record<Phase, string> = {
 }
 
 export type AnswerMode = 'text' | 'push_to_talk' | 'hands_free'
+/** the language a voice student will speak: English (default) or Hindi/Hinglish (the recogniser detects) */
+export type SpeakLanguage = 'en' | 'auto'
+
+export function langOf(value: string | null): SpeakLanguage {
+  return value === 'auto' ? 'auto' : 'en'
+}
 
 export function modeOf(value: string | null): AnswerMode {
   return value === 'push_to_talk' || value === 'hands_free' ? value : 'text'

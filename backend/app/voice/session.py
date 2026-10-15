@@ -38,7 +38,7 @@ class VoiceSession:
     def __init__(self, ws, sid, app_state, cfg: VoiceConfig = None, providers=None):
         self.ws, self.sid, self.app, self.cfg = ws, sid, app_state, cfg or VoiceConfig.from_env()
         self.stt, self.tts = providers or (None, None)  # made on connect, so a missing model is an error message, not a crash
-        self.state, self.mode = "listening", "push_to_talk"
+        self.state, self.mode, self.language = "listening", "push_to_talk", None
         self.recorder = None
         self.deadline = None
         self.last_seq = 0
@@ -140,6 +140,7 @@ class VoiceSession:
         if owner != self.sid:
             await self.error("forbidden", "This token belongs to another session.", False, 4403)
         self.mode = hello.get("mode") if hello.get("mode") in ("push_to_talk", "hands_free") else "push_to_talk"
+        self.language = hello.get("language") if hello.get("language") in ("en", "hi", "auto") else None  # speech language, per student
         st = await self._status()
         if st.status.value in ("created", "consented"):
             await self.error("invalid_state", "The viva has not started: call start first.", False, 4400)
@@ -307,7 +308,7 @@ class VoiceSession:
 
     async def process_audio(self, pcm: bytes, start, end, t_stop):
         t0 = time.perf_counter()
-        text, confidence = await asyncio.to_thread(self.stt.transcribe, pcm)
+        text, confidence = await asyncio.to_thread(self.stt.transcribe, pcm, self.language)
         stt_ms = int((time.perf_counter() - t0) * 1000)
         if not text.strip():
             await self.error("no_speech", "Nothing recognisable in that answer.", True)
@@ -330,7 +331,7 @@ class VoiceSession:
                 try:
                     body = AnswerRequest(text=text, client_seq=seq, t_start_ms=start, t_end_ms=end)
                     resp = await self._run(lambda svc, db: svc.answer(
-                        self.sid, body, stt_confidence=confidence,
+                        self.sid, body, stt_confidence=confidence, stt_language=self.language,
                         on_phrase_delta=lambda piece: loop.call_soon_threadsafe(pieces.put_nowait, piece)))
                     break
                 except ApiError as e:

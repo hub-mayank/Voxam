@@ -376,3 +376,44 @@ def test_if_the_stream_dies_the_started_sentence_is_cut_and_the_real_reply_is_sp
     assert "Alpha" not in turn["text"] and turn["text"], "the canned reply replaced it"
     c.until("audio_done", turn_idx=4)
     assert client.get(f"/student/sessions/{sid}/status", headers=h).json()["current_turn"]["text"] == turn["text"]
+
+
+def test_the_students_speech_language_reaches_the_recogniser_and_the_stored_turn(env, monkeypatch):
+    from app.voice.providers import StubSTT
+    seen = []
+    original = StubSTT.transcribe
+
+    def spy(self, pcm16k, language=None):
+        seen.append(language)
+        return original(self, pcm16k, language)
+
+    monkeypatch.setattr(StubSTT, "transcribe", spy)
+    app, client, clock, codes = env
+    sid, h, token = started(client, codes)
+    c = connect(client, sid, token, language="auto")
+    c.until("ready")
+    c.until("state", state="listening")
+    c.speak(1.0)
+    c.until("transcript")
+    c.until("ai_turn", idx=2)
+    assert seen == ["auto"]
+    with db_of(app) as db:
+        mine = db.scalar(select(m.Turn).where(m.Turn.session_id == UUID(sid), m.Turn.role == "student"))
+    assert mine.meta == {"stt_confidence": 0.9, "stt_language": "auto"}
+    c.ctx.__exit__(None, None, None)
+
+
+def test_an_unknown_speech_language_is_ignored_not_an_error(env, monkeypatch):
+    from app.voice.providers import StubSTT
+    seen = []
+    original = StubSTT.transcribe
+    monkeypatch.setattr(StubSTT, "transcribe", lambda self, pcm, language=None: (seen.append(language), original(self, pcm, language))[1])
+    app, client, clock, codes = env
+    sid, h, token = started(client, codes, "S2")
+    c = connect(client, sid, token, language="klingon")
+    c.until("ready")
+    c.until("state", state="listening")
+    c.speak(1.0)
+    c.until("transcript")
+    assert seen == [None]
+    c.ctx.__exit__(None, None, None)

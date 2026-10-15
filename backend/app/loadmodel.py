@@ -66,7 +66,7 @@ class ModelledSTT:
         self.lock, self.active, self.n, self.rng = threading.Lock(), 0, 0, rng or random.Random(7)
         self.peak_queue = self.waiting = 0
 
-    def transcribe(self, pcm16k: bytes):
+    def transcribe(self, pcm16k: bytes, language: str = None):
         from .voice.providers import STUB_SENTENCES
         audio_s = len(pcm16k) / 32000
         with self.lock:

@@ -207,7 +207,7 @@ class StudentService:
     def _reply_to(self, turns, mine):
         return next((t for t in turns if t.idx == mine.idx + 1 and t.role == "ai"), None)
 
-    def answer(self, sid, body: AnswerRequest, stt_confidence: float = None, on_phrase_delta=None) -> AnswerResponse:
+    def answer(self, sid, body: AnswerRequest, stt_confidence: float = None, on_phrase_delta=None, stt_language: str = None) -> AnswerResponse:
         """stt_confidence: set by the voice server (0-1); stored in the student turn's meta for the scorer's confidence flag.
         on_phrase_delta(piece): the voice server's hook to start speaking a model-phrased reply while it is still being written
         (called from this thread, only when this call really produces the reply, never for a replay)."""
@@ -234,7 +234,7 @@ class StudentService:
             if now >= s.deadline_at:
                 closing = self._expire(s)
                 raise ApiError(ErrorCode.deadline_passed, details={"closing_text": closing, "deadline_at": s.deadline_at.strftime("%Y-%m-%dT%H:%M:%SZ")})
-        return self._serialized(sid, seq, body, stt_confidence, on_phrase_delta)
+        return self._serialized(sid, seq, body, stt_confidence, on_phrase_delta, stt_language)
 
     def _claim(self, sid) -> bool:
         now = self.now()
@@ -259,7 +259,7 @@ class StudentService:
             raise ApiError(ErrorCode.bad_client_seq, "This client_seq was already used with different text.", {"received": seq})
         return self._out(self._session(sid), seq, reply, True, self.now())
 
-    def _serialized(self, sid, seq, body, stt_confidence=None, on_phrase_delta=None) -> AnswerResponse:
+    def _serialized(self, sid, seq, body, stt_confidence=None, on_phrase_delta=None, stt_language=None) -> AnswerResponse:
         """One answer at a time per session. The loser of a race waits for the winner's reply and returns it as a replay."""
         give_up = time.monotonic() + self.settings.answer_lease_seconds + 5
         while not self._claim(sid):
@@ -271,7 +271,7 @@ class StudentService:
             self.db.rollback()  # do not keep a connection while waiting for the other worker
             self.sleep(POLL_SECONDS)
         try:
-            return self._under_lease(sid, seq, body, stt_confidence, on_phrase_delta)
+            return self._under_lease(sid, seq, body, stt_confidence, on_phrase_delta, stt_language)
         finally:
             self._release(sid)
 
@@ -281,7 +281,7 @@ class StudentService:
         iv = Interviewer(llm, core.bank_of(self.db, viva.id), VivaClock.resume(cfg, s.started_at, self.now), cfg, seed=str(s.id))
         return iv.restore([core.turn_dict(t) for t in before]), llm, cfg
 
-    def _under_lease(self, sid, seq, body, stt_confidence=None, on_phrase_delta=None) -> AnswerResponse:
+    def _under_lease(self, sid, seq, body, stt_confidence=None, on_phrase_delta=None, stt_language=None) -> AnswerResponse:
         db = self.db
         db.expire_all()
         s = self._session(sid)
@@ -301,7 +301,8 @@ class StudentService:
         if mine is None:  # the answer is stored BEFORE any model is called
             mine = m.Turn(session_id=s.id, idx=len(before), role="student", text=body.text, phase=iv.phase_name,
                           question_id=iv.q["id"], t_start_ms=body.t_start_ms, t_end_ms=body.t_end_ms, client_seq=seq, created_at=now,
-                          meta={"stt_confidence": round(float(stt_confidence), 3)} if stt_confidence is not None else None)
+                          meta=({"stt_confidence": round(float(stt_confidence), 3)} if stt_confidence is not None else {})
+                          | ({"stt_language": stt_language} if stt_language else {}) or None)
             db.add(mine)
         text = mine.text  # read before the commit expires it
         db.commit()  # also ends the read transaction: no connection is held while the model answers

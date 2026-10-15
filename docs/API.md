@@ -1,6 +1,6 @@
 # API guide for the frontend (Parth: faculty screens, Bhavesh: student screens)
 
-The typed client generated from `docs/openapi.json` (`frontend/src/api/schema.ts`, `npm run gen:api` once the frontend foundation CL-4 lands) is the source of truth for field names; use it instead of writing request or response types by hand.
+The typed client generated from `docs/openapi.json` (`frontend/src/api/schema.ts`, `npm run gen:api`) is the source of truth for HTTP field names; use it instead of writing request or response types by hand.
 
 Contract: `docs/openapi.json` (OpenAPI 3.1, generated, frozen at G0). Every operation has a description, every model an example. Generate a typed client from it, or browse `/docs` while the mock runs.
 
@@ -25,7 +25,7 @@ python -m uvicorn app.api.main:app --port 8000
 Everything seeded is fake and labelled DEMO (viva `demo-dsa`, students `DEMO001`..`DEMO006`, scores from a mock model). It shows every dashboard state: scored, low-confidence (needs review), overridden, in progress, joined-not-started. To start over delete `backend/viva_dev.db*` and reseed. The real backend refuses to start without `AUDIO_SIGNING_SECRET` (and `ACCESS_CODE_PEPPER` unless `REQUIRE_ACCESS_CODE=false`).
 
 Environment: `FACULTY_TOKENS` (`name:token,...`), `CORS_ORIGINS`, `CONTRACT_STUB`, `DATABASE_URL` (default local SQLite), `ACCESS_CODE_PEPPER`, `AUDIO_SIGNING_SECRET`, `LLM_CHAIN` (default `mock`; the interviewer's providers), `REQUIRE_ACCESS_CODE` (default true; the code is required, D10), `CODE_DELAY_CAP_SECONDS` (60) and `IP_FAILURES_PER_MINUTE` (30) for wrong access codes, `TRUST_FORWARDED_FOR`, `ANSWER_LEASE_SECONDS` (60).
-Voice is a WebSocket on top of the same session, token, timer and `turn.idx`: the contract is `docs/VOICE_PROTOCOL.md`; the server (task T4) is not built yet, so build the text flow first and develop voice against `VOICE_PROVIDER=stub` once it lands.
+Voice is a live WebSocket on top of the same session, token, timer and `turn.idx`. It is implemented on the real backend and documented separately in `docs/VOICE_PROTOCOL.md` because generated OpenAPI does not describe WebSocket messages. Use `VOICE_PROVIDER=stub` for a model-free local voice session.
 
 ## Conventions
 - JSON everywhere except uploads (`multipart/form-data`, field `file`), the audio and the CSV export.
@@ -86,5 +86,5 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 ## Change policy after G0
 `docs/openapi.json` is frozen: a test fails if the code and the file differ. **Additive changes** (a new optional field, a new endpoint, a new error code) are allowed without asking, but each needs one line in `docs/CHANGELOG-api.md` and a message to you before it lands. **Removals, renames and type changes need Mayank's approval.** Regenerate with `python scripts/export_openapi.py`.
 
-## Not in the contract (yet)
-Voice WebSocket (T4) · closing or scheduling a viva · AI-generated question banks · faculty accounts/login (tokens are issued by env) · deleting vivas, students or sessions.
+## Not in the HTTP contract
+The voice WebSocket is implemented and follows `docs/VOICE_PROTOCOL.md`, but its messages are not represented in `docs/openapi.json`. Other product features not implemented include closing or scheduling a viva, AI-generated question banks, faculty accounts/login (tokens are issued by environment configuration), and deleting vivas, students or sessions.

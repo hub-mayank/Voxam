@@ -18,7 +18,7 @@ to the screen the server's status says, so the browser never has to guess.
 | **Mic check** | Listen for 2.5 s, record a 3 s sample, play it back, confirm "I can hear myself" | Passes only after the student confirms (or when the browser cannot play back, after a good level). Denied or no device: plain steps and "Type my answers instead". Nothing is saved. |
 | **Viva, typing** | Question, answer box, "Send answer", conversation log | Send is off while empty, busy, or when time is up. A failed send keeps the text; the retry uses the same sequence number, so an answer is never stored twice. At zero the box locks and the server is asked what happens next. |
 | **Viva, voice** | "Begin the viva", hold to talk (button or Space/Enter) or "I am done speaking", level meter in words, state words, typed answer as a fallback | Hold-to-talk works only while the interviewer is listening. Lost connection says so and the timer keeps running; three automatic retries (1, 2, 4 s), then a "Reconnect" button. A blocked microphone never blocks the viva: typing stays on. |
-| **Done** | Read the closing words, "Sign out" | Clears the saved session. No score is shown (the result page is not built). |
+| **Done** | Read the closing words, see the result and feedback once faculty released it, "Sign out" | Until release (or while marking) it says so kindly and offers "Check again". The total, each rubric dimension in words and the feedback with its turn numbers are shown; if a person changed the total, it says so. "Sign out" clears the saved session. |
 
 ## Timer words (screen reader and sighted)
 The digits are not read every second. "One minute left.", "Ten seconds left." and "Time is up." are announced once each; the
@@ -44,14 +44,13 @@ The exact error code is written to the browser console for support. It is never 
 | `rules_version_mismatch` | faculty changed the rules after the student joined | “The rules were updated. Please sign in again to read and accept them.” | sign out and join again to read the new rules |
 | `range_not_satisfiable` | faculty-side only (audio) | “Something went wrong on our side. Please reload the page.” | reload |
 | `audio_not_available` | faculty-side only (audio) | “Something went wrong on our side. Please reload the page.” | reload |
-| `results_not_released` | result asked for before faculty released it | “Your result is not available yet.” | show nothing (the student result page is not built) |
+| `results_not_released` | result asked for before faculty released it | “Your result is not available yet.” | the Done screen says the result is not released yet and offers "Check again" |
 | `rate_limited` | too many wrong codes; `details.retry_after_ms` says how long | “Too many tries. Please wait a moment before trying again.” | disable Continue and show the countdown from the server's value |
 | `provider_unavailable` | the AI model is down; retry the same request | “The interviewer is busy for a moment. Your answer is safe: please try again.” | keep the typed answer; the Send button works again at once; same request is retried with the same sequence number |
 | `internal_error` | a bug on our side | “Something went wrong on our side. Please try again. If it keeps happening, tell your invigilator.” | keep the typed answer; try again |
 | `network_error` | the browser could not reach the server | “Connection lost. Check your internet and try again. Your viva timer may keep running.” | keep the typed answer; try again; the timer keeps running |
 
 ## Not built (on purpose)
-- The result page (`GET /student/.../result`): the SPEC shows marks to faculty first; students see results only after release.
 - A visible history after a reload: the server returns the current question, not the earlier answers, so the log restarts. The
   answers are saved; this is display only.
 - Integrity signals (tab switch, multiple voices): no policy exists yet (`docs/PRIVACY.md`).

@@ -283,4 +283,46 @@ describe('student screens', () => {
     await screen.findByText('Join your viva')
     expect(sessionStorage.getItem('voxam.student.session')).toBeNull()
   })
+
+  const ended = () => ({
+    'GET /student/sessions/:sid/status': () => json({ status: 'scored', phase: 'wrapup', server_now: '', started_at: '', deadline_at: '', remaining_ms: 0, last_client_seq: 9, current_turn: turn(18, true) }),
+  })
+  const resultBody = (overridden = false) => ({
+    total: 72.5, overridden, feedback: [{ text: 'Explain collisions with an example.', evidence: [3, 5] }],
+    dimensions: [{ key: 'conceptual', weight: 30, score: 4 }, { key: 'communication', weight: 10, score: 3 }],
+  })
+
+  it('done: a released result shows the total, each dimension in words and the feedback with its turns', async () => {
+    saved()
+    app(backend({ ...ended(), 'GET /student/sessions/:sid/result': () => json(resultBody()) }).f, '/student/done')
+    await screen.findByText('Your result: 72.5 / 100')
+    expect(screen.getByText(/Conceptual understanding: 4 \/ 5/)).toBeTruthy()
+    expect(screen.getByText(/Communication: 3 \/ 5/)).toBeTruthy()
+    expect(screen.getByText(/Explain collisions/)).toBeTruthy()
+    expect(screen.getByText(/turns 3, 5/)).toBeTruthy()
+  })
+
+  it('done: an overridden total says a person changed it', async () => {
+    saved()
+    app(backend({ ...ended(), 'GET /student/sessions/:sid/result': () => json(resultBody(true)) }).f, '/student/done')
+    await screen.findByText(/A faculty member changed your total/)
+  })
+
+  it('done: not released and still being marked are kind messages and can be asked again', async () => {
+    saved()
+    let calls = 0
+    const f = backend({
+      ...ended(),
+      'GET /student/sessions/:sid/result': () => {
+        calls += 1
+        return calls === 1 ? err('results_not_released', 403) : calls === 2 ? err('invalid_state', 409, { status: 'scoring' }) : json(resultBody())
+      },
+    }).f
+    app(f, '/student/done')
+    await screen.findByText(/has not been released yet/)
+    click('Check again')
+    await screen.findByText(/still being marked/)
+    click('Check again')
+    await screen.findByText('Your result: 72.5 / 100')
+  })
 })

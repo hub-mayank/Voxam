@@ -50,6 +50,8 @@ export interface StudentSession extends SessionState {
   start: () => Promise<void>
   /** send a typed answer; resolves true when it was accepted */
   submitAnswer: (text: string) => Promise<boolean>
+  /** sync the accepted answer sequence received from the voice socket */
+  syncVoiceSequence: (lastSeq: number) => void
   /** re-read status (after a reload, or when the timer looks wrong) */
   refresh: () => Promise<void>
   /** the student's own result; rejects with results_not_released or invalid_state (not scored yet) */
@@ -152,6 +154,10 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
     }
   }, [api, state.sessionId, fail])
 
+  const syncVoiceSequence = useCallback((lastSeq: number) => {
+    dispatch({ type: 'voice_sequence', lastSeq })
+  }, [])
+
   const result = useCallback(() => api.result(state.sessionId ?? ''), [api, state.sessionId])
 
   // the server says this step is not allowed now: read where the session really is and move to that screen
@@ -189,7 +195,7 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
   const remainingMs = state.deadlineMs === null ? null : Math.max(0, state.deadlineMs - now)
 
   return {
-    ...state, remainingMs, restoring, join, accept, start, submitAnswer, refresh, result,
+    ...state, remainingMs, restoring, join, accept, start, submitAnswer, syncVoiceSequence, refresh, result,
     clearError: () => dispatch({ type: 'clear_error' }),
     signOut: () => { save(null); pending.current = null; dispatch({ type: 'reset' }) },
   }

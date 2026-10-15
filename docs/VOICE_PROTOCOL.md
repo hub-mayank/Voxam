@@ -74,6 +74,7 @@ S: state{thinking} ; endpoint{ptt} ; transcript ; ai_turn ; state{speaking} ; au
 - It is written incrementally (at most ~1 s behind), so a crash keeps what was received. A reconnect continues the same file.
 - For every answer the server stores `t_start_ms` / `t_end_ms` = milliseconds since `started_at`, i.e. offsets into that WAV. The dashboard seeks the recording by them (evidence replay). If the AI is interrupted, its channel keeps what was sent (the student may have heard less).
 - Student `transcript.seq` is the HTTP `client_seq`: the server assigns it, so a reconnect can never duplicate an answer.
+- Keep the REST session's next `client_seq` in sync with `ready.last_client_seq` on every connection and with each `transcript.seq`; a voice answer also advances the sequence used by any later REST answer.
 - `latency_ms` in `ai_turn` = student stopped speaking → first audio byte sent (the metric in the spike's end-to-end tests).
 
 ## 7. Errors and close codes

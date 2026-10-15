@@ -26,7 +26,7 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'text
 
   const label = voice.serverState ? (voice.aiSpeaking && voice.serverState !== 'ended' ? STATE_WORDS.speaking : STATE_WORDS[voice.serverState]) : ''
   const open = voice.connection === 'open'
-  const canTalk = open && voice.serverState === 'listening'
+  const canTalk = open && (voice.serverState === 'listening' || voice.serverState === 'speaking' || voice.serverState === 'thinking')
   const level = Math.min(1, voice.level * 4)
   const levelWords = voice.level < 0.02 ? 'quiet' : level > 0.9 ? 'very loud' : 'good'
   const last = voice.transcript.at(-1)
@@ -106,7 +106,7 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'text
               {holding ? 'Release when you are done' : 'Hold to talk'}
             </Button>
           ) : (
-            <Button className="talk" variant="primary" disabled={!canTalk} onClick={voice.endTurn}>
+            <Button className="talk" variant="primary" disabled={!open || voice.serverState !== 'listening'} onClick={voice.endTurn}>
               I am done speaking
             </Button>
           )}

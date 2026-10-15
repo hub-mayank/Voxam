@@ -2,7 +2,7 @@
 import { request, type RequestOptions } from './client'
 import type {
   OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest, ReviewResult, RosterList,
-  RosterUploadResult, SessionDetail, SessionList, SessionStatus, Viva, VivaList,
+  RosterUploadResult, SessionDetail, SessionList, SessionStatus, Viva, VivaCreate, VivaList,
 } from './types'
 
 export interface SessionFilters {
@@ -19,6 +19,7 @@ export function facultyApi(token: string, fetchImpl?: typeof fetch) {
   const s = (id: string) => `/faculty/sessions/${encodeURIComponent(id)}`
   return {
     listVivas: () => request<VivaList>('GET', '/faculty/vivas', o()),
+    createViva: (body: VivaCreate) => request<Viva>('POST', '/faculty/vivas', o({ json: body })),
     getViva: (vivaId: string) => request<Viva>('GET', v(vivaId), o()),
     setResultsVisible: (vivaId: string, visible: boolean) =>
       request<Viva>('PATCH', v(vivaId), o({ json: { results_visible_to_students: visible } })),

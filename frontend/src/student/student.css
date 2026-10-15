@@ -1,0 +1,15 @@
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.student { max-width: 760px; }
+.question { font-size: 1.25rem; line-height: 1.4; margin: 0 0 var(--gap); }
+.timer { font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 600; }
+.timer.low { color: var(--warn); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 var(--gap); align-items: center; }
+.options { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--gap); margin: 0 0 var(--gap); display: grid; gap: 8px; }
+.options label { display: flex; gap: 8px; align-items: flex-start; }
+.talk { padding: 16px 28px; font-size: 1.1rem; }
+.talk.live { background: var(--good); color: var(--accent-text); border-color: var(--good); }
+.log { list-style: none; padding: 0; margin: var(--gap) 0 0; display: grid; gap: 8px; }
+.log li { border-left: 3px solid var(--border); padding-left: 10px; }
+.log .ai { border-left-color: var(--accent); }
+textarea.answer { width: 100%; min-height: 120px; font: inherit; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.btn:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

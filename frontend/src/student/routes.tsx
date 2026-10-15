@@ -1,5 +1,6 @@
 // Student routes. Bhavesh: add or change routes here (and only here) when a card needs a new page.
 import type { RouteObject } from 'react-router-dom'
+import './student.css'
 import Done from './screens/Done'
 import Join from './screens/Join'
 import MicCheck from './screens/MicCheck'

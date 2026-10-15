@@ -249,3 +249,22 @@ def test_blank_feedback_entries_are_dropped_but_other_malformed_feedback_is_stil
     assert len(tidy(raw)["feedback"]) == 3
     assert tidy({"feedback": ["not blank", {"text": "x"}]})["feedback"] == ["not blank", {"text": "x"}]
     assert tidy("not a dict") == "not a dict"
+
+
+def test_every_injection_phrase_of_the_fairness_probe_is_flagged_and_real_answers_are_not():
+    import importlib.util
+    import json
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location("fairness_probes", root / "scripts" / "fairness_probes.py")
+    probes = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probes)
+    for name, phrase in probes.INJECTIONS:
+        assert INJECTION.search(phrase), f"{name} is not flagged"
+    for persona in ("strong", "weak", "idk", "strong_hinglish"):
+        for line in open(root / "backend" / "tests" / "personas" / f"{persona}.jsonl"):
+            e = json.loads(line)
+            if e.get("role") == "student":
+                assert not INJECTION.search(e["text"]), f"{persona}: {e['text'][:60]}"
+    assert not INJECTION.search("The maximum value is found with a full table scan; you are now at the root of the tree.")
+

@@ -107,7 +107,9 @@ DONT_KNOW = re.compile(r"\b(i\s*)?(don'?t|do not) know\b|\bno idea\b", re.I)
 # phrases a student might use to talk to the scorer instead of answering; matching only raises a flag, it never changes a mark
 INJECTION = re.compile(r"ignore (all |any )?(the )?(previous|prior|above|earlier) (instructions|prompts?|rules)|full marks|"
                        r"(give|award|grant) me (a )?(full|top|maximum|max|100|five|5)|(score|mark|grade|rate) me (as )?(full|100|5|five|top)|"
-                       r"you (must|should|have to) (give|score|mark|award)|system prompt|as the (scorer|examiner|grader)", re.I)
+                       r"you (must|should|have to) (give|score|mark|award)|system prompt|as the (scorer|examiner|grader)|"
+                       r"(maximum|top|max|full) marks|scoring override|(set|make|give|score|mark) (every|all|each) dimension|"
+                       r"already (approved|given|awarded)|always outputs? a score|you are now (an? )?(helpful|assistant|examiner|scorer|grader)|new instructions?:|mujhe .{0,12}marks|(use|take) this as the (final )?score", re.I)
 STT_LOW, STT_SHARE = 0.6, 0.25  # an answer with speech-recognition confidence below STT_LOW is shaky; flag when STT_SHARE of answers are
 IDK_REPEATS = 3
 

@@ -4,11 +4,12 @@ Voxam is a fair, auditable 15-minute technical viva run by an AI interviewer (MS
 The code owns the clock and follow-up policy; the LLM only classifies answers and phrases replies.
 Scoring runs afterwards on the full transcript against a rubric, and every score cites transcript turns.
 
-Status (2026-10-15): the backend is complete and tested: the engine, the HTTP API (frozen contract in `docs/openapi.json`), the voice
+Status (2026-10-15): the backend includes the interview engine, the HTTP API (frozen contract in `docs/openapi.json`), the live voice
 WebSocket (push-to-talk and hands-free, whisper.cpp + Piper), the scoring worker and provider adapters (Groq, Gemini, Ollama, mock)
-with a free-tier call budget. The React frontend has the voice client, a voice lab for trying a viva, and the faculty screens (login,
-vivas, sessions, detail with audio replay, review and override, bank and roster upload). The student viva screens and the faculty
-export and release screen are still being merged. What was measured, and what was not, is in `docs/DESIGN.md` section 6 and `results/`.
+with a free-tier call budget. The React frontend includes the student viva flow, voice client and lab, and faculty login, viva/session
+views, audio review, scoring review, bank and roster upload, CSV export, and result release. Faculty viva creation and roster access-code
+recovery are in review in [PR #52](https://github.com/hub-mayank/ai-viva/pull/52) and [PR #53](https://github.com/hub-mayank/ai-viva/pull/53).
+What was measured, and what was not, is in `docs/DESIGN.md` section 6 and `results/`.
 
 Documents: `docs/DESIGN.md` (architecture and design), `docs/PRIVACY.md` (what is stored and who sees it), `docs/SPEC.md`,
 `docs/DECISIONS.md`, `docs/CREDITS.md`, task reports in `docs/reports/`. The test report is generated from `results/` by

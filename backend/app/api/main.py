@@ -29,9 +29,10 @@ Timestamps are ISO-8601 UTC ending in `Z`. Durations are integer milliseconds (`
 `Authorization: Bearer <faculty token>`; students send `Authorization: Bearer <session token>` (starts with `st_`).
 Wrong role gives 403, missing or unknown token gives 401.
 
-**Voice (TBD, task T4):** a WebSocket for live audio is reserved (planned `/student/sessions/{sid}/voice`) but is not
-part of this contract and not implemented. The text endpoints below are the contract; voice will reuse the same
-session, token, timer and turn numbering.
+**Voice:** live audio is available at `/student/sessions/{sid}/voice`. FastAPI's generated OpenAPI document does not
+describe WebSocket routes, so the separate protocol in `docs/VOICE_PROTOCOL.md` is authoritative for its messages,
+audio framing, and close codes. The voice server uses the same session, student token, timer, and turn numbering as the
+HTTP endpoints. It is available on the real backend; contract-stub mode does not serve voice sessions.
 """
 
 TAGS = [

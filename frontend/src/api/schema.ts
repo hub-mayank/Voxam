@@ -588,6 +588,7 @@ export interface components {
         Body_upload_questions: {
             /**
              * File
+             * Format: binary
              * @description A .csv or .json file (picked by file extension).
              */
             file: string;
@@ -596,6 +597,7 @@ export interface components {
         Body_upload_roster: {
             /**
              * File
+             * Format: binary
              * @description A .csv file: header `student_id,name` (name optional).
              */
             file: string;

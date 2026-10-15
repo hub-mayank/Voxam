@@ -227,7 +227,7 @@ describe('student screens', () => {
     expect(sessionStorage.getItem('voxam.student.mic')).toBe('1')
   })
 
-  it('voice viva: hold to talk presses and releases, and only works while the interviewer is listening', async () => {
+  it('voice viva: hold to talk presses and releases, and works while the interviewer is speaking (barge-in)', async () => {
     saved()
     const voice = {
       connection: 'open', serverState: 'listening', aiSpeaking: false, aiText: 'Explain a hash table.', transcript: [], remainingMs: 600000,
@@ -245,12 +245,12 @@ describe('student screens', () => {
     expect(voice.pressToTalk).toHaveBeenCalledTimes(1)
     fireEvent.pointerUp(await screen.findByRole('button', { name: 'Release when you are done' }))
     expect(voice.release).toHaveBeenCalledTimes(1)
-    // the interviewer is speaking: the button is not available
+    // the interviewer is speaking: the button stays available (barge-in)
     mocks.useVoiceSession.mockReturnValue({ ...voice, serverState: 'speaking', aiSpeaking: true })
     cleanup()
     app(f, '/student/viva?mode=push_to_talk')
     const blocked = (await screen.findByRole('button', { name: 'Hold to talk' })) as HTMLButtonElement
-    expect(blocked.disabled).toBe(true)
+    expect(blocked.disabled).toBe(false)
     expect(screen.getByText('The interviewer is speaking')).toBeTruthy()
   })
 

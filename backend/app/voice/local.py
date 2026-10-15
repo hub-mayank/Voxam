@@ -132,7 +132,7 @@ class PiperTTS:
         self.pool = [_PiperProc(cfg, i) for i in range(cfg.piper_procs)]
         self._next, self._guard = 0, threading.Lock()
 
-    def synthesize(self, sentence: str):
+    def synthesize(self, sentence: str, *, cache: bool = True):
         if not re.search(r"\w", sentence):  # "..." has nothing to say; Piper exits on it, so give a short pause instead
             return bytes(2 * int(0.25 * self.RATE)), self.RATE
         with self._guard:
@@ -148,7 +148,7 @@ class PiperTTS:
 
 
 class CachedTTS:
-    """Write-through cache in front of a voice: a sentence is rendered once and reused (bank questions, opener, closer, canned lines).
+    """Write-through cache for reusable speech; dynamic student-specific turns opt out.
     The key includes the voice name, so changing the voice never serves old audio."""
     def __init__(self, inner, cache_dir: Path):
         self.inner, self.dir, self.name = inner, Path(cache_dir), inner.name
@@ -158,7 +158,9 @@ class CachedTTS:
     def _path(self, sentence: str) -> Path:
         return self.dir / (hashlib.sha1(f"{self.inner.name}\n{sentence}".encode()).hexdigest() + ".wav")
 
-    def synthesize(self, sentence: str):
+    def synthesize(self, sentence: str, *, cache: bool = True):
+        if not cache:
+            return self.inner.synthesize(sentence)
         path = self._path(sentence)
         if path.exists():
             try:

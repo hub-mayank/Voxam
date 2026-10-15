@@ -100,6 +100,8 @@ server; see `docs/reports/T7.md` for what it does and does not prove).
 
 ## Other commands
     python scripts/check_secrets.py                  # scan the repo for API-key shapes
+    DATABASE_URL="sqlite:////$PWD/.local/viva.db" AUDIO_DIR="$PWD/.local/audio" TTS_CACHE="$PWD/.local/audio/tts_cache" python scripts/purge_expired_sessions.py --before 2026-09-15T00:00:00Z  # preview
+    # Stop API/worker first, then add --apply; see docs/PRIVACY.md
     python scripts/make_personas.py                  # regenerate the scripted persona fixtures
     python scripts/bench_models.py <model> --runs 3 --delay 10   # live benchmark, counts against the cap
     python scripts/compare.py marks.csv              # AI vs human marks; columns session_id,ai_total,human_total

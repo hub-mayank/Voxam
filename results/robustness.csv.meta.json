@@ -1,0 +1,13 @@
+{
+  "provider": "stub",
+  "model": "stub voice + mock LLM behind the real server and database",
+  "date": "2026-10-15",
+  "git_sha": "122e9e87672dc146d855842fb00881065f761054",
+  "n": 13,
+  "n_unit": "scenarios run",
+  "not_run": [
+    "background noise in a real room through a real microphone",
+    "slow or lossy real network"
+  ],
+  "note": "each outcome is a pytest result; proves our handling of the failure, not speech or model quality"
+}

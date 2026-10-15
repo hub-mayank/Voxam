@@ -417,3 +417,26 @@ def test_an_unknown_speech_language_is_ignored_not_an_error(env, monkeypatch):
     c.until("transcript")
     assert seen == [None]
     c.ctx.__exit__(None, None, None)
+
+
+def test_model_written_sentences_are_never_cached_but_fixed_lines_stay_cacheable(tmp_path, monkeypatch):
+    """Dynamic replies carry what the student said; only fixed lines (opener, bank questions, closing) may be reused from the cache."""
+    from app.voice.providers import StubTTS
+    calls = []
+    original = StubTTS.synthesize
+
+    def spy(self, sentence, *, cache=True):
+        calls.append((sentence, cache))
+        return original(self, sentence, cache=cache)
+
+    monkeypatch.setattr(StubTTS, "synthesize", spy)
+    app, client, clock, codes = streaming_env(tmp_path, monkeypatch, StreamingLLM(["Good point. ", "What about ", "hash ", "collisions?"]))
+    sid, h, token = started(client, codes)
+    c = connect(client, sid, token)
+    reach_a_followup(c, clock)
+    c.until("audio_done", turn_idx=4)
+    dynamic = [cache for sentence, cache in calls if sentence.startswith(("Good point", "What about"))]
+    assert dynamic and not any(dynamic), "every model-written sentence is synthesised with cache=False"
+    fixed = [cache for sentence, cache in calls if "welcome" in sentence.lower()]
+    assert fixed and all(fixed), "the opener is a fixed line and stays cacheable"
+    c.ctx.__exit__(None, None, None)

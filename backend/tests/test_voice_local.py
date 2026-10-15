@@ -166,3 +166,27 @@ def test_a_sentence_with_nothing_to_say_is_a_pause_not_a_crash(fakes):
         assert tts.pool[0].proc is None, "Piper was not even started for it"
     finally:
         tts.close()
+
+
+def test_cached_tts_does_not_write_or_read_the_cache_when_asked_not_to(tmp_path):
+    from app.voice.local import CachedTTS
+
+    class Inner:
+        name = "inner"
+
+        def __init__(self):
+            self.calls = 0
+
+        def synthesize(self, sentence, *, cache=True):
+            self.calls += 1
+            return b"\x00\x00" * 100, 22050
+
+    inner = Inner()
+    tts = CachedTTS(inner, tmp_path / "cache")
+    tts.synthesize("Tell me about hash tables.")
+    tts.synthesize("Tell me about hash tables.")
+    assert inner.calls == 1, "a fixed line is rendered once"
+    tts.synthesize("You said something personal.", cache=False)
+    tts.synthesize("You said something personal.", cache=False)
+    assert inner.calls == 3, "an uncached line is rendered every time"
+    assert len(list((tmp_path / "cache").glob("*.wav"))) == 1, "and nothing of it reaches the disk"

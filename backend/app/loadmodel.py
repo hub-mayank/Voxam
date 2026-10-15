@@ -101,7 +101,7 @@ class ModelledTTS:
         self.sem = threading.BoundedSemaphore(procs or int(os.environ.get("LOAD_TTS_PROCS", 0)) or best)
         self.lock, self.active = threading.Lock(), 0
 
-    def synthesize(self, sentence: str):
+    def synthesize(self, sentence: str, *, cache: bool = True):
         from .voice import audio
         words = max(1, len(sentence.split()))
         with self.sem:

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../api/client'
-import type { RosterList, RosterUploadResult } from '../api/types'
+import type { ResetCodeResult, RosterList, RosterUploadResult } from '../api/types'
 import { useFacultyApi } from '../api/useFacultyApi'
 import Button from '../shared/Button'
 import ErrorBanner from '../shared/ErrorBanner'
@@ -9,6 +9,7 @@ function RosterUpload({ vivaId }: { vivaId: string }) {
   const { api, logout } = useFacultyApi()
   const [roster, setRoster] = useState<RosterList | null>(null)
   const [issued, setIssued] = useState<RosterUploadResult | null>(null)
+  const [resetIssued, setResetIssued] = useState<ResetCodeResult | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
@@ -57,10 +58,23 @@ function RosterUpload({ vivaId }: { vivaId: string }) {
     const result = await api.uploadRoster(vivaId, file)
     if (!active.current || current !== request.current) return
     setIssued(result)
+    setResetIssued(null)
     setMessage(`Roster saved: ${result.created} created, ${result.unchanged} unchanged.`)
     // A failed refresh must retry the read, not issue codes a second time.
     retry.current = () => { void perform(refresh) }
     await refresh()
+  }
+
+  async function resetCode(studentId: string) {
+    if (!api) return
+    setMessage('')
+    setIssued(null)
+    setResetIssued(null)
+    const current = request.current
+    const result = await api.resetCode(vivaId, studentId)
+    if (!active.current || current !== request.current) return
+    setResetIssued(result)
+    setMessage(`A new access code was issued for ${studentId}. The previous code no longer works.`)
   }
 
   if (!api) return null
@@ -107,8 +121,34 @@ function RosterUpload({ vivaId }: { vivaId: string }) {
           <Button onClick={() => { setIssued(null) }}>Dismiss codes</Button>
         </div>
       )}
+      {resetIssued && (
+        <div className="card" role="status" aria-label="New student access code">
+          <h3>New access code for {resetIssued.student_id}</h3>
+          <p>{resetIssued.access_code}</p>
+          <p>Copy this code now. It is shown once and is not saved in browser storage.</p>
+          <Button onClick={async () => {
+            setCopyMessage('')
+            try {
+              await navigator.clipboard.writeText(resetIssued.access_code)
+              if (active.current) setCopyMessage('Code copied.')
+            } catch {
+              if (active.current) setCopyMessage('Copy failed. Select the code and copy it manually, or try Copy again.')
+            }
+          }}>Copy code for {resetIssued.student_id}</Button>
+          {copyMessage && <p role="status">{copyMessage}</p>}
+          <Button onClick={() => { setResetIssued(null); setCopyMessage('') }}>Dismiss code</Button>
+        </div>
+      )}
       {!busy && roster?.items.length === 0 && <p>No students uploaded.</p>}
-      <ul>{roster?.items.map((entry) => <li key={entry.student_id}>{entry.student_id} {entry.name} — {entry.session_status ?? 'Not joined'}</li>)}</ul>
+      {roster?.items.length ? <p className="muted">Resetting a code immediately invalidates the old one. Codes cannot be reset after a student’s session has ended.</p> : null}
+      <ul>{roster?.items.map((entry) => (
+        <li key={entry.student_id}>
+          {entry.student_id} {entry.name} — {entry.session_status ?? 'Not joined'}
+          <Button disabled={busy || issued !== null || resetIssued !== null || (entry.session_status !== null && entry.session_status !== undefined && !['created', 'consented', 'in_progress'].includes(entry.session_status))} onClick={() => { void perform(() => resetCode(entry.student_id)) }}>
+            Reset access code for {entry.student_id}
+          </Button>
+        </li>
+      ))}</ul>
     </section>
   )
 }

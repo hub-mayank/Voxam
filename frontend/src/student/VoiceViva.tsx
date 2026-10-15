@@ -24,6 +24,17 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'text
     if (voice.ended) void session.refresh()
   }, [voice.ended])
 
+  // the voice socket closed or (re)opened without ending the viva: re-read the
+  // session so the REST lastSeq / phase match the server. Voice answers never
+  // update the REST lastSeq, and the reconnect ready message does not carry it,
+  // so without this the next REST answer would use a stale seq. The open case
+  // also fires on first connect (one extra status read, idempotent here because
+  // this screen sends no REST answers).
+  useEffect(() => {
+    if (voice.ended) return
+    if (voice.connection === 'closed' || voice.connection === 'open') void session.refresh()
+  }, [voice.connection, voice.ended])
+
   const label = voice.serverState ? (voice.aiSpeaking && voice.serverState !== 'ended' ? STATE_WORDS.speaking : STATE_WORDS[voice.serverState]) : ''
   const open = voice.connection === 'open'
   const canTalk = open && voice.serverState === 'listening'
@@ -61,7 +72,7 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'text
       )}
       {voice.connection === 'closed' && !voice.ended && (
         <div className="banner" role="alert">
-          The voice connection closed. <Button onClick={() => void voice.connect()}>Reconnect</Button> You can also type your answer below.
+          The voice connection closed. <Button onClick={() => void voice.connect()}>Reconnect</Button> Reconnect to keep going.
         </div>
       )}
       {voice.micError && (

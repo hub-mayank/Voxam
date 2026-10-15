@@ -240,7 +240,7 @@ export interface paths {
         };
         /**
          * List the roster
-         * @description Students with the status of their session, if any. Never contains access codes.
+         * @description Students with session status and whether an active code can start/rejoin a session. Never contains code values.
          */
         get: operations["list_roster"];
         put?: never;
@@ -272,6 +272,27 @@ export interface paths {
          *     after the student's session has ended.
          */
         post: operations["reset_code"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/faculty/vivas/{viva_id}/roster/{student_id}/revoke-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke a student's access code
+         * @description Revokes the active code so it cannot be used for future joins or rejoins. Idempotent. Does not end an existing
+         *     session or invalidate its session token; it preserves the student's session, transcript and audit records.
+         */
+        post: operations["revoke_code"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1163,8 +1184,9 @@ export interface components {
         };
         /**
          * RosterEntry
-         * @description A roster row as listed later: never contains the code.
+         * @description A roster row as listed later: never contains the code; access_code_active governs future joins only.
          * @example {
+         *       "access_code_active": true,
          *       "name": "Asha Verma",
          *       "session_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
          *       "session_status": "scored",
@@ -1172,6 +1194,11 @@ export interface components {
          *     }
          */
         RosterEntry: {
+            /**
+             * Access Code Active
+             * @description True if a code can currently start or rejoin a session. Revoking it does not end an existing session.
+             */
+            access_code_active: boolean;
             /** Name */
             name?: string | null;
             /**
@@ -1189,12 +1216,14 @@ export interface components {
          * @example {
          *       "items": [
          *         {
+         *           "access_code_active": true,
          *           "name": "Asha Verma",
          *           "session_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
          *           "session_status": "scored",
          *           "student_id": "S2024001"
          *         },
          *         {
+         *           "access_code_active": false,
          *           "name": "Ravi Iyer",
          *           "student_id": "S2024002"
          *         }
@@ -3388,6 +3417,66 @@ export interface operations {
             };
             /** @description `invalid_state`: The action is not allowed in the current state. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `validation_error`: The request body, query or path failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    revoke_code: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Viva ID (slug). */
+                viva_id: string;
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RosterEntry"];
+                };
+            };
+            /** @description `unauthorized`: Missing, malformed, unknown or replaced token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The token is valid but not allowed here (wrong role or someone else's session). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: No such viva, session, student or audio. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -158,11 +158,35 @@ class FacultyService:
     def list_roster(self, viva_id) -> RosterList:
         self._viva(viva_id)
         rows = self.db.execute(
-            select(m.RosterEntry, m.Session).outerjoin(m.Session, and_(m.Session.viva_id == m.RosterEntry.viva_id,
-                                                                       m.Session.student_id == m.RosterEntry.student_id))
+            select(m.RosterEntry, m.Session, m.AccessCode.id).outerjoin(
+                m.Session, and_(m.Session.viva_id == m.RosterEntry.viva_id,
+                                m.Session.student_id == m.RosterEntry.student_id)).outerjoin(
+                m.AccessCode, and_(m.AccessCode.viva_id == m.RosterEntry.viva_id,
+                                   m.AccessCode.student_id == m.RosterEntry.student_id,
+                                   m.AccessCode.revoked_at.is_(None)))
             .where(m.RosterEntry.viva_id == viva_id).order_by(m.RosterEntry.student_id)).all()
+        rejoinable_statuses = {status.value for status in REJOIN_OK}
         return RosterList(items=[RosterEntry(student_id=r.student_id, name=r.name, session_id=s.id if s else None,
-                                             session_status=s.status if s else None) for r, s in rows])
+                                             session_status=s.status if s else None,
+                                             access_code_active=code_id is not None and
+                                             (s is None or s.status in rejoinable_statuses))
+                            for r, s, code_id in rows])
+
+    def revoke_code(self, viva_id, student_id) -> RosterEntry:
+        db, now = self.db, self.now()
+        self._viva(viva_id)
+        roster = core.need(db, m.RosterEntry, (viva_id, student_id), "student")
+        for code in db.scalars(select(m.AccessCode).where(m.AccessCode.viva_id == viva_id,
+                                                          m.AccessCode.student_id == student_id,
+                                                          m.AccessCode.revoked_at.is_(None))):
+            code.revoked_at = now
+        db.commit()
+        session = db.scalar(select(m.Session).where(m.Session.viva_id == viva_id,
+                                                    m.Session.student_id == student_id))
+        return RosterEntry(student_id=roster.student_id, name=roster.name,
+                           session_id=session.id if session else None,
+                           session_status=session.status if session else None,
+                           access_code_active=False)
 
     def reset_code(self, viva_id, student_id) -> ResetCodeResult:
         db, now, st = self.db, self.now(), self.settings

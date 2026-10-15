@@ -1235,9 +1235,10 @@
         "type": "object"
       },
       "RosterEntry": {
-        "description": "A roster row as listed later: never contains the code.",
+        "description": "A roster row as listed later: never contains the code; access_code_active governs future joins only.",
         "examples": [
           {
+            "access_code_active": true,
             "name": "Asha Verma",
             "session_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
             "session_status": "scored",
@@ -1245,6 +1246,11 @@
           }
         ],
         "properties": {
+          "access_code_active": {
+            "description": "True if a code can currently start or rejoin a session. Revoking it does not end an existing session.",
+            "title": "Access Code Active",
+            "type": "boolean"
+          },
           "name": {
             "anyOf": [
               {
@@ -1285,7 +1291,8 @@
           }
         },
         "required": [
-          "student_id"
+          "student_id",
+          "access_code_active"
         ],
         "title": "RosterEntry",
         "type": "object"
@@ -1296,12 +1303,14 @@
           {
             "items": [
               {
+                "access_code_active": true,
                 "name": "Asha Verma",
                 "session_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
                 "session_status": "scored",
                 "student_id": "S2024001"
               },
               {
+                "access_code_active": false,
                 "name": "Ravi Iyer",
                 "student_id": "S2024002"
               }
@@ -5137,7 +5146,7 @@
     },
     "/faculty/vivas/{viva_id}/roster": {
       "get": {
-        "description": "Students with the status of their session, if any. Never contains access codes.",
+        "description": "Students with session status and whether an active code can start/rejoin a session. Never contains code values.",
         "operationId": "list_roster",
         "parameters": [
           {
@@ -5595,6 +5604,159 @@
           }
         ],
         "summary": "Issue a new access code for one student",
+        "tags": [
+          "faculty"
+        ]
+      }
+    },
+    "/faculty/vivas/{viva_id}/roster/{student_id}/revoke-code": {
+      "post": {
+        "description": "Revokes the active code so it cannot be used for future joins or rejoins. Idempotent. Does not end an existing\nsession or invalidate its session token; it preserves the student's session, transcript and audit records.",
+        "operationId": "revoke_code",
+        "parameters": [
+          {
+            "description": "Viva ID (slug).",
+            "in": "path",
+            "name": "viva_id",
+            "required": true,
+            "schema": {
+              "description": "Viva ID (slug).",
+              "examples": [
+                "dsa-midterm-2026"
+              ],
+              "title": "Viva Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "examples": [
+                "S2024002"
+              ],
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RosterEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "details": {
+                          "reason": "missing_token"
+                        },
+                        "message": "Missing, malformed, unknown or replaced token."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`unauthorized`: Missing, malformed, unknown or replaced token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "error": {
+                        "code": "forbidden",
+                        "details": {},
+                        "message": "The token is valid but not allowed here (wrong role or someone else's session)."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`forbidden`: The token is valid but not allowed here (wrong role or someone else's session)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "details": {
+                          "resource": "viva"
+                        },
+                        "message": "No such viva, session, student or audio."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`not_found`: No such viva, session, student or audio."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "validation_error": {
+                    "value": {
+                      "error": {
+                        "code": "validation_error",
+                        "details": {
+                          "fields": [
+                            {
+                              "loc": [
+                                "body",
+                                "text"
+                              ],
+                              "message": "Field required"
+                            }
+                          ]
+                        },
+                        "message": "The request body, query or path failed validation."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`validation_error`: The request body, query or path failed validation."
+          }
+        },
+        "security": [
+          {
+            "FacultyToken": []
+          }
+        ],
+        "summary": "Revoke a student's access code",
         "tags": [
           "faculty"
         ]

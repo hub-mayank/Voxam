@@ -6,6 +6,9 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("jiwer", reason="spike libraries are optional: pip install -r spikes/voice/requirements.txt")
+pytest.importorskip("indic_transliteration", reason="spike libraries are optional: pip install -r spikes/voice/requirements.txt")
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "spikes" / "voice"))
 
@@ -215,6 +218,7 @@ def test_gemini_stream_ignores_thinking_parts(monkeypatch):
 
 
 def test_the_real_llm_probe_replays_the_same_prompts(monkeypatch):
+    pytest.importorskip("soundfile", reason="spike libraries are optional: pip install -r spikes/voice/requirements.txt")
     """bench_e2e_real.probe: classify then phrase in sequence, then both started together; parallel is the slower of the two, not the sum."""
     import bench_e2e_real as b
     from brain import Call

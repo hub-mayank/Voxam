@@ -1,9 +1,3 @@
-<!-- DRAFT — do NOT commit as-is. This is a code-review-only note, NOT a browser pass. -->
-<!-- Intended target path on main: docs/qa/bh-4-browser-pass.md (NEW file — main has no such file) -->
-<!-- Base: upstream main as described in the port task (incl. docs/qa/student-checklist.md run sheet; student routes + ?mode= + seed local-dsa; no docs/qa/bh-4-browser-pass.md). Upstream main was NOT read via API here. -->
-<!-- Line count: 167 -->
-<!-- What was intentionally left out + why: see "Left out" section at the end. -->
-
 # BH-4 browser pass — code-review-only note (no browser run yet)
 
 `docs/qa/student-checklist.md` is the run sheet for a real browser

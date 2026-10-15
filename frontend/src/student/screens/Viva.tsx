@@ -1,11 +1,22 @@
-// TODO(BH-1/BH-2): Show session.currentTurn, session.remainingMs, typed answer -> session.submitAnswer(text). BH-2 adds voice via useVoiceSession.
-// Hook: const session = useSession() from '../session/StudentSessionProvider'. Do not call fetch directly.
+import { useSearchParams } from 'react-router-dom'
 import Page from '../../shared/Page'
+import TextViva from '../TextViva'
+import VoiceViva from '../VoiceViva'
+import { modeOf, useFocusHeading, useStage } from '../phase'
 
 function Viva() {
+  const session = useStage('viva')
+  const [params] = useSearchParams()
+  const mode = modeOf(params.get('mode'))
+  useFocusHeading()
+
   return (
-    <Page title="Your viva">
-      <p>Not built yet (BH-1/BH-2).</p>
+    <Page title={session.vivaTitle || 'Your viva'}>
+      {mode === 'text' || !session.sessionId || !session.token ? (
+        <TextViva />
+      ) : (
+        <VoiceViva mode={mode} sessionId={session.sessionId} token={session.token} />
+      )}
     </Page>
   )
 }

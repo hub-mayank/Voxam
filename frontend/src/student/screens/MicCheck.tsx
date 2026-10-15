@@ -1,39 +1,111 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../../shared/Button'
 import Page from '../../shared/Page'
+import { recordSample, type Sample } from '../micSample'
+import { modeOf, setMicChecked, useFocusHeading, useStage } from '../phase'
 import { checkMicrophone } from '../voice'
 
-type Result = { status: 'idle' } | { status: 'checking' } | { status: 'ok'; peak: number } | { status: 'failed'; message: string }
+type Step =
+  | { kind: 'idle' }
+  | { kind: 'listening' }
+  | { kind: 'failed'; message: string }
+  | { kind: 'quiet' }
+  | { kind: 'recording' }
+  | { kind: 'playback'; url: string | null; level: 'good' | 'loud' }
+
+const QUIET = 0.02
+const LOUD = 0.9
 
 function MicCheck() {
-  const [result, setResult] = useState<Result>({ status: 'idle' })
-  const run = async () => {
-    setResult({ status: 'checking' })
-    const r = await checkMicrophone()
-    setResult(r.ok ? { status: 'ok', peak: r.peak } : { status: 'failed', message: r.message })
+  useStage('ready')
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const mode = modeOf(params.get('mode'))
+  const [step, setStep] = useState<Step>({ kind: 'idle' })
+  const sample = useRef<Sample | null>(null)
+  useFocusHeading()
+
+  useEffect(() => () => sample.current?.stop(), [])
+
+  async function run() {
+    sample.current?.stop()
+    sample.current = null
+    setStep({ kind: 'listening' })
+    const result = await checkMicrophone(2500)
+    if (!result.ok) {
+      setStep({ kind: 'failed', message: result.message })
+      return
+    }
+    if (result.peak < QUIET) {
+      setStep({ kind: 'quiet' })
+      return
+    }
+    setStep({ kind: 'recording' })
+    try {
+      sample.current = await recordSample()
+    } catch {
+      sample.current = null
+    }
+    setStep({ kind: 'playback', url: sample.current?.url ?? null, level: result.peak > LOUD ? 'loud' : 'good' })
   }
+
+  function confirm() {
+    setMicChecked(true)
+    navigate(`/student/ready?mode=${mode === 'text' ? 'push_to_talk' : mode}`, { replace: true })
+  }
+
   return (
-    <Page title="Microphone check">
-      <div className="card">
-        <p>Press the button, then speak for a moment. The meter should move while you talk.</p>
-        <p><Button variant="primary" onClick={() => void run()} disabled={result.status === 'checking'}>{result.status === 'checking' ? 'Listening…' : 'Check microphone'}</Button></p>
-        {result.status === 'ok' && (
-          <>
-            <p><progress value={result.peak} max={1} /> {Math.round(result.peak * 100)}%</p>
-            {result.peak < 0.01
-              ? <p>We could not hear you. Speak louder or move closer to the microphone, then check again.</p>
-              : <p>Your microphone works. You are ready to talk.</p>}
-          </>
+    <Page title="Check your microphone">
+      <div className="student">
+        <p>We will listen for a moment and then play back a short recording so you can hear what we hear. Nothing is saved.</p>
+        <p className="sr-only" role="status">
+          {step.kind === 'listening' ? 'Listening. Please say a sentence.' : step.kind === 'recording' ? 'Recording a short sample.' : ''}
+        </p>
+        {step.kind === 'idle' && (
+          <Button variant="primary" onClick={() => void run()}>
+            Start the check
+          </Button>
         )}
-        {result.status === 'failed' && (
-          <>
-            <div className="banner">{result.message}</div>
-            <p>You can still take the viva by typing your answers.</p>
-          </>
+        {step.kind === 'listening' && <p>Listening… please say a sentence, for example "I am ready for my viva".</p>}
+        {step.kind === 'recording' && <p>Recording a short sample… keep talking.</p>}
+        {step.kind === 'failed' && (
+          <div className="banner" role="alert">
+            {step.message}
+            <small>You can still take the viva by typing.</small>
+          </div>
+        )}
+        {step.kind === 'quiet' && (
+          <div className="banner" role="alert">
+            We cannot hear you yet. Check your input device and speak a little louder, then try again.
+          </div>
+        )}
+        {step.kind === 'playback' && (
+          <div className="card">
+            {step.level === 'loud' && <p role="status">Your voice is very loud. Move back a little or lower the input volume.</p>}
+            {step.url ? (
+              <>
+                <p>Press play. Can you hear yourself clearly?</p>
+                <audio controls src={step.url} />
+              </>
+            ) : (
+              <p>Your microphone works. This browser cannot play back a sample, so we skip that step.</p>
+            )}
+            <p>
+              <Button variant="primary" onClick={confirm}>
+                {step.url ? 'Yes, I can hear myself' : 'Continue'}
+              </Button>{' '}
+              <Button onClick={() => void run()}>Try again</Button>
+            </p>
+          </div>
+        )}
+        {(step.kind === 'failed' || step.kind === 'quiet') && (
+          <p>
+            <Button onClick={() => void run()}>Try again</Button>{' '}
+            <Button onClick={() => navigate('/student/ready?mode=text', { replace: true })}>Type my answers instead</Button>
+          </p>
         )}
       </div>
-      <p><Link to="../ready">Back</Link></p>
     </Page>
   )
 }

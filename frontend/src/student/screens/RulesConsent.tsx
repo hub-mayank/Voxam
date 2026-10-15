@@ -1,30 +1,36 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import Button from '../../shared/Button'
-import ErrorBanner from '../../shared/ErrorBanner'
 import Page from '../../shared/Page'
-import { useSession } from '../session/StudentSessionProvider'
-
-const NEXT: Record<string, string> = { ready: '../ready', viva: '../viva', done: '../done' }
+import StudentError from '../StudentError'
+import { useFocusHeading, useStage } from '../phase'
 
 function RulesConsent() {
-  const session = useSession()
-  const navigate = useNavigate()
-  const [declined, setDeclined] = useState(false)
-  useEffect(() => {
-    const next = NEXT[session.phase]
-    if (next) navigate(next, { replace: true })
-  }, [session.phase, navigate])
-  if (session.phase === 'login') return (<Page title="Rules and recording"><p>You have not joined a viva yet. <Link to="..">Join</Link></p></Page>)
+  const session = useStage('rules')
+  const [agree, setAgree] = useState(false)
+  useFocusHeading()
+  const minutes = Math.round(session.durationMs / 60000)
+  const paragraphs = session.rulesText.split(/\n+/).filter((p) => p.trim())
+
   return (
-    <Page title={session.vivaTitle || 'Rules and recording'}>
-      <ErrorBanner error={session.error} onDismiss={session.clearError} />
-      <div className="card">
-        <p>{session.rulesText}</p>
-        <p>Your voice and transcript are kept for faculty review.</p>
-        {declined && <p>Nothing has started. You can still accept the rules below.</p>}
-        <Button variant="primary" onClick={() => void session.accept()} disabled={session.busy}>I accept</Button>{' '}
-        <Button onClick={() => setDeclined(true)}>Not now</Button>
+    <Page title={session.vivaTitle || 'Before you start'}>
+      <div className="student">
+        <StudentError error={session.error} onDismiss={session.clearError} />
+        <section className="card" aria-label="Rules">
+          {paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+          <p>The viva lasts {minutes || 15} minutes. You can answer by voice or by typing.</p>
+        </section>
+        <p>
+          <label>
+            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> I have read the rules and I agree to
+            my voice and answers being recorded and kept for faculty review.
+          </label>
+        </p>
+        <Button variant="primary" disabled={!agree || session.busy} onClick={() => void session.accept()}>
+          I agree, continue
+        </Button>{' '}
+        <Button onClick={session.signOut}>Not now</Button>
       </div>
     </Page>
   )

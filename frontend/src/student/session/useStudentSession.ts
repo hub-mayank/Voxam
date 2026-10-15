@@ -40,6 +40,8 @@ function save(v: Saved | null) {
 export interface StudentSession extends SessionState {
   /** milliseconds left, 0 when over, null before start. Updates 4 times a second. */
   remainingMs: number | null
+  /** true while a saved session is being re-read after a reload: screens should wait before redirecting */
+  restoring: boolean
   join: (vivaId: string, studentId: string, accessCode: string) => Promise<void>
   /** accept the rules and recording (consent) */
   accept: () => Promise<void>
@@ -56,6 +58,7 @@ export interface StudentSession extends SessionState {
 export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
   const [state, dispatch] = useReducer(reducer, initialState)
   const [now, setNow] = useState(() => Date.now())
+  const [restoring, setRestoring] = useState(() => load() !== null)
   const pending = useRef<{ text: string; seq: number } | null>(null)
   const api = useMemo(() => studentApi(state.token, fetchImpl), [state.token, fetchImpl])
 
@@ -146,6 +149,11 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
     }
   }, [api, state.sessionId, fail])
 
+  // the server says this step is not allowed now: read where the session really is and move to that screen
+  useEffect(() => {
+    if (state.error?.code === 'invalid_state' && state.sessionId) void refresh()
+  }, [state.error])
+
   // resume after a reload
   useEffect(() => {
     const saved = load()
@@ -156,14 +164,19 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
         dispatch({ type: 'joined', res: { session_id: saved.sessionId, session_token: saved.token, status: st.status, resumed: true,
           viva_title: saved.vivaTitle, duration_ms: saved.durationMs, rules_text: saved.rulesText, rules_version: saved.rulesVersion } })
         dispatch({ type: 'status', res: st, now: Date.now() })
+        setRestoring(false)
       },
-      () => save(null),
+      () => {
+        save(null)
+        setRestoring(false)
+      },
     )
   }, [fetchImpl])
 
   // countdown
   useEffect(() => {
     if (state.phase !== 'viva') return
+    setNow(Date.now()) // the first paint must not use a clock value from before the start
     const id = setInterval(() => setNow(Date.now()), 250)
     return () => clearInterval(id)
   }, [state.phase])
@@ -171,7 +184,7 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
   const remainingMs = state.deadlineMs === null ? null : Math.max(0, state.deadlineMs - now)
 
   return {
-    ...state, remainingMs, join, accept, start, submitAnswer, refresh,
+    ...state, remainingMs, restoring, join, accept, start, submitAnswer, refresh,
     clearError: () => dispatch({ type: 'clear_error' }),
     signOut: () => { save(null); pending.current = null; dispatch({ type: 'reset' }) },
   }

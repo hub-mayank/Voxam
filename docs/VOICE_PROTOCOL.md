@@ -20,7 +20,7 @@ The server owns the clock, the question flow and the end of the viva (D1). The c
 ### Client → server
 | type | fields | when |
 |---|---|---|
-| `hello` | `protocol: 1`, `token`, `mode`: `push_to_talk` or `hands_free`, `resume`: bool | first message after connect. The server always speaks the open question after `ready` (first connect: the opener; reconnect: the question again); `resume` only marks a reconnect for the logs |
+| `hello` | `protocol: 1`, `token`, `mode`: `push_to_talk` or `hands_free`, `resume`: bool, optional `language`: `en`, `hi` or `auto` (the speech-recognition language for this student; omitted or unknown = the server default) | first message after connect. The server always speaks the open question after `ready` (first connect: the opener; reconnect: the question again); `resume` only marks a reconnect for the logs |
 | *binary* | PCM16 mono 16 kHz little-endian, any frame size (a 20 ms worklet frame = 640 bytes) | hands-free: continuously after `ready`. Push-to-talk: only between `ptt_start` and `ptt_end` |
 | `ptt_start` | | push-to-talk: button pressed. If the AI is speaking this is a barge-in: the server sends `interrupt` |
 | `ptt_end` | | push-to-talk: button released; the server transcribes and answers |

@@ -15,6 +15,7 @@ from pathlib import Path
 from .config import VoiceConfig
 
 CLI_TIMEOUT_S = 60
+LANGUAGES = ('en', 'hi', 'auto')  # what a student may choose; the server default (WHISPER_LANG) is used otherwise
 
 
 class ProviderUnavailable(RuntimeError):
@@ -38,12 +39,13 @@ class WhisperCppSTT:
             raise ProviderUnavailable(f"{cfg.whisper_cli!r} not found: brew install whisper-cpp (or set WHISPER_CLI)")
         _need(self.model, "whisper.cpp model", "Run spikes/voice/fetch_models.py or set VOICE_MODELS_DIR.")
 
-    def transcribe(self, pcm16k: bytes):
+    def transcribe(self, pcm16k: bytes, language: str = None):
+        lang = language if language in LANGUAGES else self.cfg.whisper_lang
         with tempfile.TemporaryDirectory() as d:
             wav, base = Path(d) / "in.wav", Path(d) / "out"
             with wave.open(str(wav), "wb") as w:
                 w.setnchannels(1), w.setsampwidth(2), w.setframerate(16000), w.writeframes(pcm16k)
-            cmd = [self.cfg.whisper_cli, "-m", str(self.model), "-f", str(wav), "-l", self.cfg.whisper_lang, "-nt",
+            cmd = [self.cfg.whisper_cli, "-m", str(self.model), "-f", str(wav), "-l", lang, "-nt",
                    "-t", str(self.cfg.whisper_threads), "-ojf", "-of", str(base)]
             with self.slots:
                 done = subprocess.run(cmd, capture_output=True, text=True, timeout=CLI_TIMEOUT_S)

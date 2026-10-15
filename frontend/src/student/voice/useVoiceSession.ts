@@ -8,7 +8,7 @@ import { API_URL } from '../../api/client'
 import { startCapture, type Capture, type MicError } from './capture'
 import { VoiceClient, type SocketFactory } from './client'
 import { createPlayer, type Player } from './player'
-import type { ServerState, VoiceMode } from './types'
+import type { ServerState, SpeechLanguage, VoiceMode } from './types'
 
 export interface VoiceLine {
   role: 'student' | 'ai' | 'system'
@@ -28,6 +28,7 @@ export interface VoiceOptions {
   sessionId: string
   token: string
   mode?: VoiceMode
+  language?: SpeechLanguage
   deps?: VoiceDeps
 }
 
@@ -60,7 +61,7 @@ export interface VoiceSession {
 const NO_RETRY = new Set([1000, 4400, 4401, 4403, 4409])
 const MAX_RETRIES = 3
 
-export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', deps = {} }: VoiceOptions): VoiceSession {
+export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', language, deps = {} }: VoiceOptions): VoiceSession {
   const [connection, setConnection] = useState<Connection>('idle')
   const [serverState, setServerState] = useState<ServerState | null>(null)
   const [aiSpeaking, setAiSpeaking] = useState(false)
@@ -86,7 +87,7 @@ export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', deps 
 
   const open = useCallback((resume: boolean) => {
     const c = new VoiceClient({
-      url, token, mode, socketFactory: deps.socketFactory,
+      url, token, mode, language, socketFactory: deps.socketFactory,
       events: {
         onOpen: () => { setConnection('open'); retries.current = 0 },
         onReady: (m) => {
@@ -125,7 +126,7 @@ export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', deps 
     })
     client.current = c
     c.connect(resume)
-  }, [url, token, mode, deps.socketFactory])
+  }, [url, token, mode, language, deps.socketFactory])
 
   const connect = useCallback(async () => {
     if (client.current) return

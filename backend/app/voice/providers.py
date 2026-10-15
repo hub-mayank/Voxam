@@ -23,8 +23,8 @@ STUB_SENTENCES = [
 class STT(Protocol):
     name: str
 
-    def transcribe(self, pcm16k: bytes) -> tuple[str, float | None]:
-        """16 kHz mono PCM16 -> (text, confidence 0-1 or None)."""
+    def transcribe(self, pcm16k: bytes, language: str | None = None) -> tuple[str, float | None]:
+        """16 kHz mono PCM16 -> (text, confidence 0-1 or None). language: en | hi | auto, or None for the server default."""
 
 
 class TTS(Protocol):
@@ -45,7 +45,7 @@ class StubSTT:
     def __init__(self, delay_ms: int = 300):
         self.delay, self.n = delay_ms / 1000, 0
 
-    def transcribe(self, pcm16k: bytes):
+    def transcribe(self, pcm16k: bytes, language: str | None = None):
         time.sleep(self.delay)
         self.n += 1
         return f"[stub answer {self.n}] {STUB_SENTENCES[(self.n - 1) % len(STUB_SENTENCES)]}", 0.9

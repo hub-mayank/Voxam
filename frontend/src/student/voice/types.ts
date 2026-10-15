@@ -1,5 +1,7 @@
 // The WebSocket protocol of docs/VOICE_PROTOCOL.md (v1), as TypeScript types.
 export type VoiceMode = 'push_to_talk' | 'hands_free'
+/** the language the student will speak: English, Hindi or Hinglish (auto detects), sent in hello */
+export type SpeechLanguage = 'en' | 'hi' | 'auto'
 export type ServerState = 'listening' | 'thinking' | 'speaking' | 'ended'
 
 export interface AiTurnInfo {
@@ -10,7 +12,7 @@ export interface AiTurnInfo {
 }
 
 export type ClientMsg =
-  | { type: 'hello'; protocol: 1; token: string; mode: VoiceMode; resume: boolean }
+  | { type: 'hello'; protocol: 1; token: string; mode: VoiceMode; resume: boolean; language?: SpeechLanguage }
   | { type: 'ptt_start' }
   | { type: 'ptt_end' }
   | { type: 'end_turn' }

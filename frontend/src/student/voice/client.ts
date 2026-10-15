@@ -2,7 +2,7 @@
 // with a fake socket. It sends hello first, decodes every server message, and pairs each `audio` header with the binary frame
 // that follows it.
 import { bytesToPcm16 } from './pcm'
-import type { AiTurnInfo, ClientMsg, ServerMsg, ServerState, VoiceMode } from './types'
+import type { AiTurnInfo, ClientMsg, ServerMsg, ServerState, SpeechLanguage, VoiceMode } from './types'
 
 export interface SocketLike {
   binaryType: string
@@ -39,6 +39,7 @@ export interface VoiceClientOptions {
   url: string
   token: string
   mode?: VoiceMode
+  language?: SpeechLanguage
   socketFactory?: SocketFactory
   events?: Partial<VoiceEvents>
 }
@@ -73,7 +74,7 @@ export class VoiceClient {
     this.pendingAudio = null
     this.pressing = false
     socket.onopen = () => {
-      this.sendJson({ type: 'hello', protocol: 1, token: this.opts.token, mode: this.mode, resume })
+      this.sendJson({ type: 'hello', protocol: 1, token: this.opts.token, mode: this.mode, resume, ...(this.opts.language ? { language: this.opts.language } : {}) })
       this.emit('onOpen')
     }
     socket.onmessage = (ev) => this.onMessage(ev.data)

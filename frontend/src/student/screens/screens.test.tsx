@@ -223,7 +223,7 @@ describe('student screens', () => {
     app(consented(), '/student/mic-check?mode=hands_free')
     click(await screen.findByRole('button', { name: 'Start the check' }))
     click(await screen.findByRole('button', { name: 'Continue' })) // jsdom has no MediaRecorder: the sample step is skipped
-    await waitFor(() => expect(where()).toBe('/student/ready?mode=hands_free'))
+    await waitFor(() => expect(where()).toBe('/student/ready?mode=hands_free&lang=en'))
     expect(sessionStorage.getItem('voxam.student.mic')).toBe('1')
   })
 
@@ -330,4 +330,33 @@ describe('student screens', () => {
     click('Check again')
     await screen.findByText('Your result: 72.5 / 100')
   })
+
+  it('ready: voice students choose English or Hindi/Hinglish, typing students are not asked, and the choice reaches the voice session', async () => {
+    saved()
+    const f = backend({
+      'GET /student/sessions/:sid/status': () => json({ status: 'in_progress', phase: 'depth', server_now: '', started_at: '', deadline_at: '', remaining_ms: 600000, last_client_seq: 0, current_turn: turn(0) }),
+    }).f
+    const voice = {
+      connection: 'idle', serverState: null, aiSpeaking: false, aiText: '', transcript: [], remainingMs: 600000, warning: false, level: 0,
+      micError: null, error: null, ended: null, latencyMs: null,
+      connect: vi.fn(), disconnect: vi.fn(), pressToTalk: vi.fn(), release: vi.fn(), endTurn: vi.fn(), sendText: vi.fn(), clearError: vi.fn(),
+    }
+    mocks.useVoiceSession.mockReturnValue(voice)
+    app(f, '/student/viva?mode=hands_free&lang=auto')
+    await screen.findByRole('button', { name: 'Begin the viva' })
+    expect(mocks.useVoiceSession).toHaveBeenCalledWith(expect.objectContaining({ mode: 'hands_free', language: 'auto' }))
+  })
+
+  it('ready screen shows the language choice for voice only', async () => {
+    saved()
+    const f = consented()
+    app(f, '/student/ready?mode=text')
+    await screen.findByText('How will you answer?')
+    expect(screen.queryByText('Which language will you speak?')).toBeNull()
+    cleanup()
+    app(f, '/student/ready?mode=push_to_talk&lang=auto')
+    await screen.findByText('Which language will you speak?')
+    expect((screen.getByLabelText(/Hindi or Hinglish/) as HTMLInputElement).checked).toBe(true)
+  })
 })
+

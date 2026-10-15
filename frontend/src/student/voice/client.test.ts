@@ -99,3 +99,16 @@ describe('VoiceClient', () => {
     expect(socket.json().filter((m) => m.type === 'text_answer')).toHaveLength(1)
   })
 })
+
+describe('speech language', () => {
+  it('is sent in hello only when the student chose one', () => {
+    const plain = setup()
+    expect(plain.socket.json()[0]).not.toHaveProperty('language')
+    const socket = new FakeSocket()
+    const client = new VoiceClient({ url: 'ws://x/voice', token: 'st_1', mode: 'push_to_talk', language: 'auto', socketFactory: () => socket })
+    client.connect()
+    socket.open()
+    expect(socket.json()[0]).toMatchObject({ type: 'hello', protocol: 1, language: 'auto' })
+  })
+})
+

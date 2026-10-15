@@ -3,7 +3,7 @@ import Button from '../shared/Button'
 import { useSession } from './session/StudentSessionProvider'
 import Timer from './Timer'
 import { voiceMessage } from './copy'
-import type { AnswerMode } from './phase'
+import type { AnswerMode, SpeakLanguage } from './phase'
 import { useVoiceSession } from './voice'
 
 const STATE_WORDS: Record<string, string> = {
@@ -13,9 +13,9 @@ const STATE_WORDS: Record<string, string> = {
   ended: 'The viva has ended',
 }
 
-function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'text'>; sessionId: string; token: string }) {
+function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerMode, 'text'>; language: SpeakLanguage; sessionId: string; token: string }) {
   const session = useSession()
-  const voice = useVoiceSession({ sessionId, token, mode })
+  const voice = useVoiceSession({ sessionId, token, mode, language })
   const [text, setText] = useState('')
   const [holding, setHolding] = useState(false)
 

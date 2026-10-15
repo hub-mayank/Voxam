@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../../shared/Button'
 import Page from '../../shared/Page'
 import { recordSample, type Sample } from '../micSample'
-import { modeOf, setMicChecked, useFocusHeading, useStage } from '../phase'
+import { langOf, modeOf, setMicChecked, useFocusHeading, useStage } from '../phase'
 import { checkMicrophone } from '../voice'
 
 type Step =
@@ -22,6 +22,7 @@ function MicCheck() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const mode = modeOf(params.get('mode'))
+  const lang = langOf(params.get('lang'))
   const [step, setStep] = useState<Step>({ kind: 'idle' })
   const sample = useRef<Sample | null>(null)
   useFocusHeading()
@@ -52,7 +53,7 @@ function MicCheck() {
 
   function confirm() {
     setMicChecked(true)
-    navigate(`/student/ready?mode=${mode === 'text' ? 'push_to_talk' : mode}`, { replace: true })
+    navigate(`/student/ready?mode=${mode === 'text' ? 'push_to_talk' : mode}&lang=${lang}`, { replace: true })
   }
 
   return (

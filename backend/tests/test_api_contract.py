@@ -332,7 +332,7 @@ def test_openapi_basics():
     assert len(ids) == len(set(ids)) == 24
     assert all(op.get("summary") for _, _, op in operations(make_app()))
     assert set(spec["components"]["securitySchemes"]) == {"FacultyToken", "StudentToken"}
-    assert "Voice" in spec["info"]["description"] and "TBD" in spec["info"]["description"]
+    assert "Voice" in spec["info"]["description"] and "VOICE_PROTOCOL.md" in spec["info"]["description"]
 
 
 # ---------- the mock server really boots ----------

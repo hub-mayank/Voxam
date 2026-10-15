@@ -54,7 +54,7 @@ All under `frontend/src/student/`, branch `task/BH-student-flow` (PR to follow):
 
 - `screens/Join.tsx`, `RulesConsent.tsx`, `Waiting.tsx` (the "ready" screen), `MicCheck.tsx`, `Viva.tsx`, `Done.tsx`
 - `TextViva.tsx`, `VoiceViva.tsx`, `Timer.tsx`, `StudentError.tsx`, `copy.ts`, `phase.ts`, `micSample.ts`, `student.css`
-- `screens/screens.test.tsx` (13 tests: wrong code and wait, consent gating, voice locked until mic check, a full typed viva,
+- `screens/screens.test.tsx` (14 tests: wrong code and wait, consent gating, voice locked until mic check, a full typed viva,
   `deadline_passed`, reload restore, sign-out, mic denied / quiet / pass, hold-to-talk, lost connection, sign in again)
 - verified by hand against the real backend (mock LLM, stub voice): wrong code, rules, consent, ready, a typed answer, a reload in
   the middle. **Not verified: a real microphone, Safari, Firefox, Edge, a phone-width window, a screen reader.** That is your part.

@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.api.main import create_app
 from app.db import models as m
-from app.local_seed import STUDENTS, VIVA_ID, AlreadySeeded, seed_local
+from app.local_seed import STUDENTS, VIVA_ID, WEBDEV_ID, WEBDEV_STUDENTS, AlreadySeeded, seed_local, seed_webdev
 from harness import RAO, settings_for
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -55,3 +55,17 @@ def test_the_run_script_is_valid_shell_and_keeps_its_state_out_of_git():
     assert subprocess.run(["bash", "-n", str(ROOT / "scripts" / "run_local.sh")]).returncode == 0
     ignored = subprocess.run(["git", "check-ignore", ".local/viva.db", ".local/codes.txt"], cwd=ROOT, capture_output=True, text=True)
     assert ignored.returncode == 0 and len(ignored.stdout.split()) == 2
+
+
+def test_the_web_development_viva_is_seeded_with_drafts_for_a_faculty_member_to_approve(seeded):
+    settings, _ = seeded
+    codes = seed_webdev(settings)
+    app = create_app(settings)
+    with app.state.sessionmaker() as db:
+        questions = list(db.scalars(select(m.Question).where(m.Question.viva_id == WEBDEV_ID)))
+        assert len(questions) == 30
+        assert {(q.source, q.approved_by) for q in questions} == {("ai-draft", None)}, "left for a human to approve"
+    assert sorted(codes) == sorted(s for s, _ in WEBDEV_STUDENTS) and len(set(codes.values())) == 5
+    with pytest.raises(AlreadySeeded):
+        seed_webdev(settings)
+

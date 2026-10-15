@@ -2,7 +2,7 @@
 
 Voxam records volunteer test vivas to evaluate speech recognition, interview quality and AI marks against human marks.
 This describes the current prototype and the team's handling policy. **One month after the viva is the proposed retention
-period, pending MSOT confirmation** ([open questions](MSOT_QUESTIONS.md)). It is not enforced automatically.
+period; MSOT said on 2026-10-08 that retention is about one month and configurable by the admin** ([questions](MSOT_QUESTIONS.md)). It is not enforced automatically.
 
 ## Data and storage
 

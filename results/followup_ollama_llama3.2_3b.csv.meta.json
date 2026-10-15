@@ -1,0 +1,17 @@
+{
+  "provider": "live",
+  "model": "ollama:llama3.2:3b",
+  "date": "2026-10-15",
+  "git_sha": "80c86f1941e44990d20ec67af9c895cff9f326d0",
+  "n": 54,
+  "n_unit": "scripted answers",
+  "personas": [
+    "strong",
+    "weak",
+    "idk"
+  ],
+  "bank": "question_bank.dsa.json",
+  "seconds_per_answer": 45,
+  "scripted_from": "question bank key_points",
+  "note": "the AI side is a real model; the student side is scripted from the bank's key points, so this shows how the interviewer adapts, not how real students answer; leaked_key_points recounted with the current rule (echo of the question or of the student is not a leak)"
+}

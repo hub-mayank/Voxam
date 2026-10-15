@@ -12,6 +12,9 @@ VIVA_ID = "local-dsa"
 STUDENTS = [(f"LOCAL{n:02d}", f"Local Student {n:02d}") for n in range(1, 11)]
 ROOT = Path(__file__).resolve().parents[2]
 BANK = ROOT / "config" / "question_bank.dsa.json"
+WEBDEV_ID = "local-webdev"
+WEBDEV_STUDENTS = [(f"WEB{n:02d}", f"Web Student {n:02d}") for n in range(1, 6)]
+WEBDEV_BANK = ROOT / "config" / "question_bank.webdev.json"
 
 
 class AlreadySeeded(Exception):
@@ -38,5 +41,28 @@ def seed_local(settings, now=None) -> dict:
     assert approved.status_code == 200, approved.text
     roster = "student_id,name\n" + "".join(f"{i},{n}\n" for i, n in STUDENTS)
     issued = client.post(f"/faculty/vivas/{VIVA_ID}/roster", headers=headers, files={"file": ("roster.csv", roster.encode(), "text/csv")})
+    assert issued.status_code == 200, issued.text
+    return {i["student_id"]: i["access_code"] for i in issued.json()["items"]}
+
+
+def seed_webdev(settings, now=None) -> dict:
+    """The second pilot subject. Unlike the DSA seed the bank is left as AI drafts, so a faculty member reviews and approves it in the
+    dashboard (Manage question bank) before any student joins. -> {student_id: access_code}; raises AlreadySeeded."""
+    app = create_app(settings, now=now)
+    client = TestClient(app)
+    with app.state.sessionmaker() as db:
+        if db.get(m.Viva, WEBDEV_ID):
+            raise AlreadySeeded(WEBDEV_ID)
+    headers = {"Authorization": f"Bearer {next(iter(settings.faculty_tokens))}"}
+    topics = sorted({q["topic"] for q in json.loads(WEBDEV_BANK.read_text())})
+    made = client.post("/faculty/vivas", headers=headers, json={
+        "viva_id": WEBDEV_ID, "title": "[LOCAL] Web Development viva (AI-draft bank: faculty approval needed)",
+        "subject": "Web Development", "topics": topics, "difficulty": "medium", "results_visible_to_students": True})
+    assert made.status_code == 201, made.text
+    up = client.post(f"/faculty/vivas/{WEBDEV_ID}/questions", headers=headers,
+                     files={"file": ("bank.json", WEBDEV_BANK.read_bytes(), "application/json")})
+    assert up.status_code == 200, up.text
+    roster = "student_id,name\n" + "".join(f"{i},{n}\n" for i, n in WEBDEV_STUDENTS)
+    issued = client.post(f"/faculty/vivas/{WEBDEV_ID}/roster", headers=headers, files={"file": ("roster.csv", roster.encode(), "text/csv")})
     assert issued.status_code == 200, issued.text
     return {i["student_id"]: i["access_code"] for i in issued.json()["items"]}

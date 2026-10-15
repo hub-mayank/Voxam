@@ -1,0 +1,16 @@
+scenario,expected,outcome,test
+"network drop in the middle of the viva, same tab reconnects",the same question and time left return; the answer is not stored twice; the old socket is replaced,pass,test_voice_protocol.py::test_reconnect_resumes_without_duplicating_and_the_old_connection_is_replaced
+student rejoins from another tab or after a reload,resumes the session with a new token; the old token stops working,pass,test_real_student.py::test_rejoin_mid_viva_resumes_with_a_new_token_and_kills_the_old_one
+same answer sent twice (retry after a timeout),the same reply is replayed and nothing is stored twice,pass,test_real_student.py::test_duplicate_client_seq_replays_the_same_reply_and_stores_nothing_twice
+two copies of the same answer arrive at once,exactly one reply is produced,pass,test_real_student.py::test_concurrent_duplicates_produce_exactly_one_reply
+long silence,"one gentle prompt per question, not more",pass,test_voice_protocol.py::test_one_silence_prompt_per_question
+microphone muted or a click instead of speech,no speech: nothing is stored and the student is not penalised,pass,test_voice_protocol.py::test_a_too_short_answer_is_no_speech_and_nothing_is_stored
+student talks over the AI,the AI stops and listens,pass,test_voice_protocol.py::test_speaking_over_the_ai_is_an_interrupt
+a short noise while the AI talks,not treated as a barge-in; real speech is,pass,test_voice_protocol.py::test_a_short_noise_while_the_ai_talks_is_not_a_barge_in_but_real_speech_is
+every language model is down,a graceful canned reply; the answer is stored; the viva continues,pass,test_real_student.py::test_when_every_model_is_down_the_student_gets_a_graceful_reply_and_nothing_is_lost
+the server process is killed and restarted,the viva continues from the database,pass,test_real_student.py::test_kill_and_restart_continues_the_session
+a worker dies holding the answer lease,another worker takes over after the lease,pass,test_real_student.py::test_a_dead_workers_lease_expires_and_another_worker_takes_over
+the hard time limit passes,"the AI speaks the closing turn, the session ends and scoring is queued",pass,test_voice_protocol.py::test_hard_stop_speaks_the_closing_turn_ends_the_session_and_closes
+malformed or unknown messages on the socket,ignored; the connection stays up,pass,test_voice_protocol.py::test_bad_json_and_unknown_messages_do_not_break_the_connection
+background noise in a real room through a real microphone,,not run,needs a person; see docs/qa/student-checklist.md rows 10-12
+slow or lossy real network,,not run,"not simulated; the reconnect path is tested, throughput is not"

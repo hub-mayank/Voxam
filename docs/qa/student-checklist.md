@@ -18,3 +18,9 @@ Fill the table; every ❌ becomes a GitHub issue with steps, expected, actual an
 | 11 | Voice answer (push-to-talk) | Live transcript, AI speaks, state label changes | | | |
 | 12 | Speak while the AI is talking | The AI stops and listens | | | |
 | 13 | Narrow the window to phone width | Nothing overlaps; buttons reachable | | | |
+| 14 | Choose a voice mode without doing the mic check | Start is disabled and a link to the check is shown; typing stays available | | | |
+| 15 | Wrong code twice in a row | The button counts down the wait the server asked for and the fields are kept | | | |
+| 16 | Leave the tab in the background until the clock reaches 0, then return | The correct closing state; no extra answer sent | | | |
+| 17 | Finish five vivas one after another in one tab | No stuck microphone indicator; no duplicate sockets | | | |
+| 18 | Tab through every screen with the keyboard only | Visible focus; every control reachable; no trap | | | |
+| 19 | Same flow in Edge | As Chrome | | | |

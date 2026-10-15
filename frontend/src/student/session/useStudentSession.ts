@@ -149,6 +149,11 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
     }
   }, [api, state.sessionId, fail])
 
+  // the server says this step is not allowed now: read where the session really is and move to that screen
+  useEffect(() => {
+    if (state.error?.code === 'invalid_state' && state.sessionId) void refresh()
+  }, [state.error])
+
   // resume after a reload
   useEffect(() => {
     const saved = load()

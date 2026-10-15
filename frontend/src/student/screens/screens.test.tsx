@@ -269,4 +269,18 @@ describe('student screens', () => {
     expect(screen.getByRole('button', { name: 'Reconnect' })).toBeTruthy()
     expect(screen.getByLabelText(/Prefer to type/)).toBeTruthy()
   })
+
+  it('a session the server no longer accepts offers to sign in again instead of a dead end', async () => {
+    saved()
+    const f = backend({
+      'GET /student/sessions/:sid/status': () => json({ status: 'consented', phase: null, server_now: '', started_at: null, deadline_at: null, remaining_ms: null, last_client_seq: 0, current_turn: null }),
+      'POST /student/sessions/:sid/start': () => err('unauthorized', 401, { reason: 'replaced' }),
+    }).f
+    app(f, '/student/ready')
+    click(await screen.findByRole('button', { name: 'Start the viva' }))
+    expect((await screen.findByRole('alert')).textContent).toMatch(/sign in again/i)
+    click('Sign in again')
+    await screen.findByText('Join your viva')
+    expect(sessionStorage.getItem('voxam.student.session')).toBeNull()
+  })
 })

@@ -197,7 +197,7 @@ def test_auth_matrix_over_every_route():
         else:
             checked["public"] += 1
             assert path in ("/health", "/student/join"), f"{path} has no auth"
-    assert checked == {"faculty": 17, "student": 5, "public": 2}
+    assert checked == {"faculty": 18, "student": 5, "public": 2}
 
 
 def test_no_faculty_tokens_configured_means_everything_is_401():
@@ -329,7 +329,7 @@ def test_openapi_is_independent_of_the_environment():
 def test_openapi_basics():
     spec = make_app().openapi()
     ids = [op["operationId"] for _, _, op in operations(make_app())]
-    assert len(ids) == len(set(ids)) == 24
+    assert len(ids) == len(set(ids)) == 25
     assert all(op.get("summary") for _, _, op in operations(make_app()))
     assert set(spec["components"]["securitySchemes"]) == {"FacultyToken", "StudentToken"}
     assert "Voice" in spec["info"]["description"] and "VOICE_PROTOCOL.md" in spec["info"]["description"]

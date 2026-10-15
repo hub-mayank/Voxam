@@ -4,7 +4,8 @@ import { ApiError } from '../api/client'
 import BankUpload from './BankUpload'
 import RosterUpload from './RosterUpload'
 const mock = vi.hoisted(() => ({
-  api: { listQuestions: vi.fn(), uploadQuestions: vi.fn(), approveQuestions: vi.fn(), listRoster: vi.fn(), uploadRoster: vi.fn() },
+  api: { listQuestions: vi.fn(), uploadQuestions: vi.fn(), approveQuestions: vi.fn(), listRoster: vi.fn(), uploadRoster: vi.fn(),
+    resetCode: vi.fn(), revokeCode: vi.fn() },
   logout: vi.fn(),
 }))
 vi.mock('../api/useFacultyApi', () => ({ useFacultyApi: () => mock }))
@@ -83,4 +84,22 @@ describe('Faculty uploads', () => {
     render(<BankUpload vivaId="test-viva" />)
     await waitFor(() => expect(mock.logout).toHaveBeenCalledOnce())
   })
+
+  it('issues a new code once, says the old one stops working, and can revoke a code', async () => {
+    const entry = { student_id: 'S1', name: 'Asha', session_id: null, session_status: null, access_code_active: true }
+    mock.api.listRoster.mockResolvedValue({ items: [entry] })
+    mock.api.resetCode.mockResolvedValue({ student_id: 'S1', access_code: 'H4TN-6WZB', issued_at: '2026-10-15T10:00:00Z' })
+    mock.api.revokeCode.mockResolvedValue({ ...entry, access_code_active: false })
+    render(<RosterUpload vivaId="test-viva" />)
+    await screen.findByText(/S1 Asha/)
+    fireEvent.click(screen.getByRole('button', { name: 'Issue new access code for S1' }))
+    await screen.findByText('H4TN-6WZB')
+    expect(screen.getByText(/previous code no longer works/i)).toBeTruthy()
+    expect(mock.api.resetCode).toHaveBeenCalledWith('test-viva', 'S1')
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss code' }))
+    expect(screen.queryByText('H4TN-6WZB')).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: 'Revoke access code for S1' }))
+    await waitFor(() => expect(mock.api.revokeCode).toHaveBeenCalledWith('test-viva', 'S1'))
+  })
 })
+

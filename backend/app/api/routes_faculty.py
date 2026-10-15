@@ -9,7 +9,7 @@ from .auth import faculty_scheme, require_faculty
 from ..services.secrets_util import audio_signature_ok
 from .errors import ErrorCode, error_responses
 from .schemas.faculty import (ApproveQuestions, OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest,
-                              ReviewResult, RosterList, RosterUploadResult, SessionDetail, SessionList, Viva, VivaCreate,
+                              ReviewResult, RosterEntry, RosterList, RosterUploadResult, SessionDetail, SessionList, Viva, VivaCreate,
                               VivaList, VivaUpdate)
 from .deps import faculty_ops
 from .stub import byte_range, stub_marker
@@ -93,7 +93,7 @@ def upload_roster(viva_id: str = VIVA, file: UploadFile = File(description="A .c
 @router.get("/vivas/{viva_id}/roster", response_model=RosterList, summary="List the roster",
             responses=error_responses(*AUTH, ErrorCode.not_found))
 def list_roster(viva_id: str = VIVA, ops=Depends(faculty_ops)):
-    """Students with the status of their session, if any. Never contains access codes."""
+    """Students with session status and whether an active code can start/rejoin a session. Never contains code values."""
     return ops.list_roster(viva_id)
 
 
@@ -104,6 +104,15 @@ def reset_code(viva_id: str = VIVA, student_id: str = Path(examples=["S2024002"]
     """The old code stops working at once; the new one is returned in plaintext once. Not allowed (409 `invalid_state`)
     after the student's session has ended."""
     return ops.reset_code(viva_id, student_id)
+
+
+@router.post("/vivas/{viva_id}/roster/{student_id}/revoke-code", response_model=RosterEntry,
+             summary="Revoke a student's access code",
+             responses=error_responses(*AUTH, ErrorCode.not_found))
+def revoke_code(viva_id: str = VIVA, student_id: str = Path(examples=["S2024002"]), ops=Depends(faculty_ops)):
+    """Revokes the active code so it cannot be used for future joins or rejoins. Idempotent. Does not end an existing
+    session or invalidate its session token; it preserves the student's session, transcript and audit records."""
+    return ops.revoke_code(viva_id, student_id)
 
 
 @router.get("/vivas/{viva_id}/sessions", response_model=SessionList, summary="List sessions",

@@ -204,7 +204,8 @@ def test_roster_upload_returns_codes_once_and_stores_only_hashes(env):
     app, client, clock, codes = env
     assert set(codes) == {"S1", "S2", "S3"} and all(len(c) == 9 and c[4] == "-" for c in codes.values())
     listing = client.get("/faculty/vivas/demo-viva/roster", headers=RAO)
-    assert "access_code" not in listing.text and all(codes[c] not in listing.text for c in codes)
+    assert all("access_code" not in item for item in listing.json()["items"]), "the list has no code field (access_code_active is only a flag)"
+    assert all(codes[c] not in listing.text for c in codes)
     csv = b"student_id,name\nS1,Student S1\nS4,New Student\n"
     r = client.post("/faculty/vivas/demo-viva/roster", headers=RAO, files={"file": ("r.csv", csv, "text/csv")}).json()
     assert (r["created"], r["unchanged"]) == (1, 1)
@@ -450,3 +451,40 @@ def test_csv_export_has_the_marks_and_neutralises_formulas(tmp_path):
     assert r.headers["content-type"].startswith("text/csv") and lines[0].startswith("student_id,name,status,ai_total,effective_total")
     assert lines[1].startswith("'=EVIL,") and "S1,Student S1,scored,71.0,80.0,true,false,false,4,3,3,4,4,dr-rao" in lines[2]
     assert client.get("/faculty/vivas/nope/export.csv", headers=RAO).status_code == 404
+
+
+def test_revoking_a_code_stops_future_joins_keeps_the_session_and_can_be_followed_by_a_new_code(env):
+    app, client, clock, codes = env
+    first = client.get("/faculty/vivas/demo-viva/roster", headers=RAO).json()["items"]
+    assert {i["student_id"]: i["access_code_active"] for i in first} == {"S1": True, "S2": True, "S3": True}
+
+    r = client.post("/faculty/vivas/demo-viva/roster/S1/revoke-code", headers=RAO)
+    assert r.status_code == 200 and r.json()["student_id"] == "S1" and r.json()["access_code_active"] is False
+    assert "access_code" not in r.json()
+    again = client.post("/faculty/vivas/demo-viva/roster/S1/revoke-code", headers=RAO)
+    assert again.status_code == 200, "revoking twice is harmless"
+    assert client.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S1", "access_code": codes["S1"]}).status_code == 403
+    others = {i["student_id"]: i["access_code_active"] for i in client.get("/faculty/vivas/demo-viva/roster", headers=RAO).json()["items"]}
+    assert others == {"S1": False, "S2": True, "S3": True}
+
+    fresh = client.post("/faculty/vivas/demo-viva/roster/S1/reset-code", headers=RAO).json()["access_code"]
+    assert client.post("/student/join", json={"viva_id": "demo-viva", "student_id": "S1", "access_code": fresh}).status_code == 200
+
+
+def test_revoking_an_unknown_student_or_viva_is_not_found_and_needs_a_faculty_token(env):
+    app, client, clock, codes = env
+    assert client.post("/faculty/vivas/demo-viva/roster/NOPE/revoke-code", headers=RAO).status_code == 404
+    assert client.post("/faculty/vivas/nope/roster/S1/revoke-code", headers=RAO).status_code == 404
+    assert client.post("/faculty/vivas/demo-viva/roster/S1/revoke-code").status_code == 401
+
+
+def test_revoking_a_code_does_not_end_a_session_already_in_progress(env):
+    from harness import begin
+    app, client, clock, codes = env
+    sid, headers = begin(client, codes["S2"], student_id="S2")
+    client.post("/faculty/vivas/demo-viva/roster/S2/revoke-code", headers=RAO)
+    status = client.get(f"/student/sessions/{sid}/status", headers=headers)
+    assert status.status_code == 200 and status.json()["status"] == "in_progress", "the running viva and its token keep working"
+    item = {i["student_id"]: i for i in client.get("/faculty/vivas/demo-viva/roster", headers=RAO).json()["items"]}["S2"]
+    assert item["access_code_active"] is False and item["session_status"] == "in_progress"
+

@@ -1,7 +1,7 @@
 // One typed function per faculty endpoint (docs/API.md). Screens call these through useFacultyApi(), never fetch directly.
 import { request, type RequestOptions } from './client'
 import type {
-  OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest, ReviewResult, RosterList,
+  OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest, ReviewResult, RosterEntry, RosterList,
   RosterUploadResult, SessionDetail, SessionList, SessionStatus, Viva, VivaCreate, VivaList,
 } from './types'
 
@@ -40,6 +40,8 @@ export function facultyApi(token: string, fetchImpl?: typeof fetch) {
     },
     resetCode: (vivaId: string, studentId: string) =>
       request<ResetCodeResult>('POST', `${v(vivaId)}/roster/${encodeURIComponent(studentId)}/reset-code`, o()),
+    revokeCode: (vivaId: string, studentId: string) =>
+      request<RosterEntry>('POST', `${v(vivaId)}/roster/${encodeURIComponent(studentId)}/revoke-code`, o()),
     listSessions: (vivaId: string, f: SessionFilters = {}) =>
       request<SessionList>('GET', `${v(vivaId)}/sessions`, o({ query: { ...f } })),
     getSession: (sid: string) => request<SessionDetail>('GET', s(sid), o()),

@@ -5,8 +5,8 @@ from typing import Callable
 
 from ..api.errors import ApiError, ErrorCode
 from ..api.schemas.common import example_of
-from ..api.schemas.faculty import (OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewResult, RosterList,
-                                   RosterUploadResult, SessionDetail, SessionList, Viva, VivaList)
+from ..api.schemas.faculty import (OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewResult, RosterEntry,
+                                   RosterList, RosterUploadResult, SessionDetail, SessionList, Viva, VivaList)
 from ..api.schemas.student import (AnswerResponse, ConsentResponse, JoinResponse, StartResponse, StatusResponse, StudentResult)
 from ..api.stub import silent_wav
 
@@ -41,6 +41,11 @@ class StubFaculty:
     def upload_roster(self, viva_id, filename, data): return example_of(RosterUploadResult)
     def list_roster(self, viva_id): return example_of(RosterList)
     def reset_code(self, viva_id, student_id): return example_of(ResetCodeResult)
+    def revoke_code(self, viva_id, student_id):
+        result = example_of(RosterEntry)
+        result.student_id = student_id
+        result.access_code_active = False
+        return result
     def list_sessions(self, viva_id, status, low_confidence, search, limit, cursor): return example_of(SessionList)
     def get_session(self, sid): return example_of(SessionDetail)
     def rescore_session(self, sid): return example_of(RescoreResult)

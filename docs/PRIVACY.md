@@ -33,6 +33,7 @@ transcripts may identify people even when filenames use volunteer IDs.
 
 - Valid `FACULTY_TOKENS` allow faculty to view every viva's roster, transcript, audio and marks, review/override and export.
   There is currently no restriction by viva owner.
+- Faculty can revoke a roster access code to block future joins or rejoins. This marks the code as revoked and preserves its audit record; it does not terminate an existing session or revoke that session's token. Use the separate data-removal procedure below when a participant deletion request requires removing session content and related records.
 - In the real backend, a student's session token authorizes only their session. The result endpoint returns total/dimension marks
   and feedback after faculty release; it does not provide the faculty transcript or audio replay endpoint.
 - Faculty session detail issues a signed audio URL valid for 15 minutes. **Anyone holding that URL can play the audio

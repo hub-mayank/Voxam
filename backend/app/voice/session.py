@@ -374,13 +374,13 @@ class VoiceSession:
                     self.interrupted.clear()
                     await self.set_state("speaking")
                     first_at = time.perf_counter()
-                await self.send_sentence(sentence, idx, last=False)
+                await self.send_sentence(sentence, idx, last=False, cache=cache)
                 spoken.append(sentence)
         return {"spoken": " ".join(spoken), "tail": buf, "first_at": first_at}
 
-    async def send_sentence(self, sentence: str, turn_idx: int, last: bool):
+    async def send_sentence(self, sentence: str, turn_idx: int, last: bool, cache: bool = True):
         try:
-            pcm, rate = await asyncio.to_thread(self.tts.synthesize, sentence)
+            pcm, rate = await asyncio.to_thread(self.tts.synthesize, sentence, cache=cache)
         except Exception as e:  # the text still reaches the student; only this sentence is silent
             log.error("tts failed for one sentence: %s", e)
             await self.error("provider_unavailable", "Speech synthesis failed for part of this turn.", True)
@@ -397,30 +397,30 @@ class VoiceSession:
         rest is spoken now; if the final text differs (the provider failed midway and a canned line replaced it), stop and say it all."""
         said, final = " ".join(streamed["spoken"].split()), " ".join(turn.text.split())
         if streamed["first_at"] is None or turn.ended:
-            await self.speak_turn(turn.idx, turn.text, turn.phase, turn.ended, remaining_ms, t_stop)
+            await self.speak_turn(turn.idx, turn.text, turn.phase, turn.ended, remaining_ms, t_stop, cache=False)
             return
         if not final.startswith(said):
             await self.send(type="interrupt")
             self.playing_until = 0.0
-            await self.speak_turn(turn.idx, turn.text, turn.phase, turn.ended, remaining_ms, t_stop)
+            await self.speak_turn(turn.idx, turn.text, turn.phase, turn.ended, remaining_ms, t_stop, cache=False)
             return
         latency = None if t_stop is None else int((streamed["first_at"] - t_stop) * 1000)
         self.current_idx = turn.idx
         await self.send(type="ai_turn", idx=turn.idx, text=turn.text, phase=turn.phase, ended=turn.ended, remaining_ms=remaining_ms, latency_ms=latency)
         rest = final[len(said):].strip()
         if rest and not self.interrupted.is_set():
-            await self.stream_audio(rest, turn.idx)
+            await self.stream_audio(rest, turn.idx, cache=False)
         else:
             await self.send(type="audio_done", turn_idx=turn.idx)
         await self.set_state("listening")
         self.last_activity = time.time()
 
-    async def stream_audio(self, text: str, turn_idx: int, on_first=None):
+    async def stream_audio(self, text: str, turn_idx: int, on_first=None, cache: bool = True):
         """Synthesize `text` sentence by sentence and send each chunk; stops at once after a barge-in."""
         sentences = split_sentences(text)
         for i, sentence in enumerate(sentences):
             try:
-                pcm, rate = await asyncio.to_thread(self.tts.synthesize, sentence)
+                pcm, rate = await asyncio.to_thread(self.tts.synthesize, sentence, cache=cache)
             except Exception as e:  # the text still reaches the student; only this sentence is silent
                 log.error("tts failed for one sentence: %s", e)
                 await self.error("provider_unavailable", "Speech synthesis failed for part of this turn.", True)
@@ -435,7 +435,7 @@ class VoiceSession:
             self.playing_until = max(self.playing_until, time.time()) + audio.duration_s(pcm, rate)
         await self.send(type="audio_done", turn_idx=turn_idx)
 
-    async def speak_turn(self, idx, text, phase, ended, remaining_ms, t_stop):
+    async def speak_turn(self, idx, text, phase, ended, remaining_ms, t_stop, cache: bool = True):
         self.current_idx = idx
         self.interrupted.clear()
         await self.set_state("speaking")
@@ -443,7 +443,7 @@ class VoiceSession:
         async def announce():  # sent when the first audio chunk is ready, so latency_ms covers speech recognition, engine and TTS
             latency = None if t_stop is None else int((time.perf_counter() - t_stop) * 1000)
             await self.send(type="ai_turn", idx=idx, text=text, phase=phase, ended=ended, remaining_ms=remaining_ms, latency_ms=latency)
-        await self.stream_audio(text, idx, announce)
+        await self.stream_audio(text, idx, announce, cache=cache)
         if not ended:
             await self.set_state("listening")
             self.last_activity = time.time()
@@ -465,7 +465,7 @@ class VoiceSession:
         st = await self._status()
         turn = st.current_turn
         if not spoken and turn is not None:
-            await self.speak_turn(turn.idx, turn.text, turn.phase, True, 0, None)
+            await self.speak_turn(turn.idx, turn.text, turn.phase, True, 0, None, cache=False)
         await self.set_state("ended")
         await self.send(type="ended", status=st.status.value, text=turn.text if turn else "")
         self.finished = True

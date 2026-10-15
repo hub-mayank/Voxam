@@ -30,7 +30,7 @@ class STT(Protocol):
 class TTS(Protocol):
     name: str
 
-    def synthesize(self, sentence: str) -> tuple[bytes, int]:
+    def synthesize(self, sentence: str, *, cache: bool = True) -> tuple[bytes, int]:
         """One sentence -> (PCM16 mono, sample rate)."""
 
 
@@ -55,7 +55,7 @@ class StubTTS:
     name = "stub-tts"
     rate = 22_050
 
-    def synthesize(self, sentence: str):
+    def synthesize(self, sentence: str, *, cache: bool = True):
         seconds = max(0.6, 0.055 * len(sentence.split()))
         return audio.tone(seconds, self.rate), self.rate
 

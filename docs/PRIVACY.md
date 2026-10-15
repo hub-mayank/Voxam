@@ -72,7 +72,32 @@ date and perform deletion themselves. For testing questions or deletion requests
 `dadhichtejas653@gmail.com`, using your volunteer/session ID privately. The operator must name the exact private
 storage location and permitted recipients on the consent form before testing.
 
-Manual operator procedure (not an implemented deletion endpoint):
+## Expired-session cleanup
+
+The retention helper previews by default. Stop the API and scoring worker before applying it; this prevents an in-flight session or
+worker from recreating data while cleanup runs. Set `DATABASE_URL`, `AUDIO_DIR`, and `TTS_CACHE` to the same locations used by the
+server. For the local launcher, those are usually `.local/viva.db`, `.local/audio`, and `.local/audio/tts_cache`:
+
+```sh
+DATABASE_URL="sqlite:////$PWD/.local/viva.db" AUDIO_DIR="$PWD/.local/audio" TTS_CACHE="$PWD/.local/audio/tts_cache" \
+  python scripts/purge_expired_sessions.py --before 2026-09-15T00:00:00Z
+
+# After checking the counts and cutoff:
+DATABASE_URL="sqlite:////$PWD/.local/viva.db" AUDIO_DIR="$PWD/.local/audio" TTS_CACHE="$PWD/.local/audio/tts_cache" \
+  python scripts/purge_expired_sessions.py --before 2026-09-15T00:00:00Z --apply
+```
+
+Use the cutoff that matches the approved retention schedule (the example is illustrative). Apply mode removes only terminal sessions
+whose `ended_at` is at or before that timezone-qualified cutoff. It deletes the session, transcript turns, scores, reviews, overrides,
+integrity events, scoring jobs, access codes and roster row, plus local per-session recordings and generated TTS cache files. Clearing
+the shared TTS cache may make the next voice run slower; it is disposable and will be rebuilt. A path check refuses per-session audio
+outside `AUDIO_DIR`. If an external recording URI is configured, cleanup stops before changing anything so its storage provider can be
+handled separately. If file removal fails after the database commit, the command reports that local cleanup remains incomplete.
+
+This helper does not remove the viva's shared question bank, provider-held data, application or system logs, backups, signed consent
+forms, exports, or copies on shared drives. Continue the manual steps below for those copies and record what was handled.
+
+### Manual operator procedure for copies outside the application database
 
 1. Confirm the requester and affected session/volunteer IDs privately; stop further recording, scoring and sharing of
    that material. Revoke affected session/access credentials and prevent queued or in-flight work from recreating data.

@@ -49,8 +49,11 @@ def answer_for(persona: str, question: dict, repeat: int) -> str:
     if not points:  # a fallback question outside the bank
         return FALLBACK_STRONG if persona == "strong" else "I am not sure, maybe it depends."
     if persona == "strong":
-        return FOLLOW_STRONG if repeat else " ".join(sentence(p) for p in points)
-    return f"I think it is something like {points[0]}, but I am not sure about the rest."
+        if repeat:  # a follow-up: say it again in the other order and add the trade-off, still about this question
+            return " ".join(sentence(p) for p in reversed(points)) + " " + FOLLOW_STRONG
+        return " ".join(sentence(p) for p in points)
+    half = points[: max(1, len(points) // 2)]  # about half of the key points, hedged: a partial answer
+    return f"I think it is something like {' and '.join(half)}, but I am not sure about the rest."
 
 
 def leaked(text: str, question: dict) -> int:

@@ -13,5 +13,5 @@
   "bank": "question_bank.dsa.json",
   "seconds_per_answer": 45,
   "scripted_from": "question bank key_points",
-  "note": "the AI side is a real model; the student side is scripted from the bank's key points, so this shows how the interviewer adapts, not how real students answer"
+  "note": "the AI side is a real model; the student side is scripted from the bank's key points, so this shows how the interviewer adapts, not how real students answer; leaked_key_points recounted with the current rule (echo of the question or of the student is not a leak)"
 }

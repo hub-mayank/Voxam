@@ -56,10 +56,12 @@ def answer_for(persona: str, question: dict, repeat: int) -> str:
     return f"I think it is something like {' and '.join(half)}, but I am not sure about the rest."
 
 
-def leaked(text: str, question: dict) -> int:
-    """How many of the question's key points appear word for word in the AI's reply (it must never give the answer away)."""
-    low = text.lower()
-    return sum(1 for p in question.get("key_points") or [] if p.lower() in low)
+def leaked(text: str, question: dict, student: str = "") -> int:
+    """How many of the question's key points the AI's reply gives away: a key point that appears word for word in the reply but
+    not in the question itself and not in what the student just said (an echo of the student is not a leak)."""
+    low, asked, said = text.lower(), question["text"].lower(), student.lower()
+    return sum(1 for p in question.get("key_points") or []
+               if p.lower() in low and p.lower() not in asked and p.lower() not in said)
 
 
 class VirtualClock:
@@ -87,7 +89,7 @@ def run(persona: str, llm, cfg, bank) -> list[dict]:
         quality = next((e.get("quality") for e in events if e.get("role") == "system" and e.get("quality")), "")
         action = next((e["action"] for e in events if e.get("role") == "ai"), "")
         rows.append({"persona": persona, "n": n, "phase": iv.phase_name, "question_id": q["id"], "question": q["text"],
-                     "student": text, "quality": quality, "action": action, "ai": reply, "leaked_key_points": leaked(reply, q),
+                     "student": text, "quality": quality, "action": action, "ai": reply, "leaked_key_points": leaked(reply, q, text),
                      "model": llm.name})
         if action == "close":
             break
@@ -110,11 +112,30 @@ def main():
     ap.add_argument("--llm", default="mock")
     ap.add_argument("--tag", default=None)
     ap.add_argument("--bank", default=str(ROOT / "config" / "question_bank.dsa.json"))
+    ap.add_argument("--recompute", help="recount the leak column of an existing results CSV with the current rule (no model calls)")
     ap.add_argument("--personas", default=",".join(PERSONAS), help="comma list, to run only some (a small token budget)")
     a = ap.parse_args()
     load_env()
     cfg = load_config(ROOT / "config" / "viva.config.json")
     bank = load_bank(Path(a.bank))
+    if a.recompute:
+        by_id = {q["id"]: q for q in bank}
+        path = Path(a.recompute)
+        old = list(csv.DictReader(open(path)))
+        for r in old:
+            q = by_id.get(r["question_id"], {"text": r["question"], "key_points": []})
+            r["leaked_key_points"] = leaked(r["ai"], q, r["student"])
+        with open(path, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(old[0]))
+            w.writeheader()
+            w.writerows(old)
+        meta = path.with_name(path.name + ".meta.json")
+        import json
+        m = json.loads(meta.read_text())
+        m["note"] += "; leaked_key_points recounted with the current rule (echo of the question or of the student is not a leak)"
+        meta.write_text(json.dumps(m, indent=2) + "\n")
+        print("recomputed", path, sum(int(r["leaked_key_points"]) for r in old), "leaks")
+        return
     llm = make_llm(a.llm, retries=1)
     rows = []
     chosen = [p for p in a.personas.split(",") if p in PERSONAS]

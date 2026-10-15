@@ -2,7 +2,7 @@
 talks over the AI, a worker dies, or every model is down. Each row names the executable test that proves it and records pass/fail
 from a real pytest run (junit xml). Providers are stub/mock: this proves OUR handling, not speech quality. Background noise through
 a real microphone is NOT run here (needs a person and a room) and is listed as such.
-Usage: python scripts/robustness.py [--out results/robustness.csv]"""
+Usage: python scripts/robustness.py [--out results/robustness_scenarios.csv]"""
 import argparse
 import csv
 import subprocess
@@ -51,7 +51,7 @@ NOT_RUN = [("background noise in a real room through a real microphone", "needs 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(ROOT / "results" / "robustness.csv"))
+    ap.add_argument("--out", default=str(ROOT / "results" / "robustness_scenarios.csv"))
     a = ap.parse_args()
     with tempfile.TemporaryDirectory() as d:
         xml = Path(d) / "junit.xml"

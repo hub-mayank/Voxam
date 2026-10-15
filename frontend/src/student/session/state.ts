@@ -42,6 +42,7 @@ export type Event =
   | { type: 'consented' }
   | { type: 'started'; res: StartResponse; now: number }
   | { type: 'answered'; res: AnswerResponse; text: string; now: number }
+  | { type: 'voice_sequence'; lastSeq: number }
   | { type: 'status'; res: StatusResponse; now: number }
   | { type: 'ended'; closingText: string | null }
   | { type: 'clear_error' }
@@ -85,6 +86,8 @@ export function reducer(s: SessionState, e: Event): SessionState {
         closingText: ended ? e.res.turn.text : s.closingText, busy: false, error: null,
       }
     }
+    case 'voice_sequence':
+      return { ...s, lastSeq: Math.max(s.lastSeq, e.lastSeq) }
     case 'status': {
       const byStatus: Partial<Record<string, Phase>> = { created: 'rules', consented: 'ready', in_progress: 'viva' }
       const phase: Phase = byStatus[e.res.status] ?? 'done' // ended, scoring, scored, abandoned, failed: nothing more to do

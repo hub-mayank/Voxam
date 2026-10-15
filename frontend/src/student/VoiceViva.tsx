@@ -19,17 +19,18 @@ function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerM
   const [text, setText] = useState('')
   const [holding, setHolding] = useState(false)
 
+  // Keep the REST answer sequence aligned after voice answers and reconnects.
+  useEffect(() => {
+    if (voice.lastClientSeq !== null) session.syncVoiceSequence(voice.lastClientSeq)
+  }, [voice.lastClientSeq, session.syncVoiceSequence])
+
   // the voice server ended the viva: re-read the session so the screen moves on
   useEffect(() => {
     if (voice.ended) void session.refresh()
   }, [voice.ended])
 
-  // the voice socket closed or (re)opened without ending the viva: re-read the
-  // session so the REST lastSeq / phase match the server. Voice answers never
-  // update the REST lastSeq, and the reconnect ready message does not carry it,
-  // so without this the next REST answer would use a stale seq. The open case
-  // also fires on first connect (one extra status read, idempotent here because
-  // this screen sends no REST answers).
+  // Re-read phase and current turn after the voice socket closes or reopens.
+  // The accepted answer sequence syncs directly from ready/transcript messages.
   useEffect(() => {
     if (voice.ended) return
     if (voice.connection === 'closed' || voice.connection === 'open') void session.refresh()

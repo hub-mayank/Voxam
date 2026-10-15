@@ -40,6 +40,8 @@ export interface VoiceSession {
   aiSpeaking: boolean
   aiText: string
   transcript: VoiceLine[]
+  /** highest accepted answer sequence reported by the voice server */
+  lastClientSeq: number | null
   remainingMs: number | null
   warning: boolean
   /** microphone level 0..1 for a meter */
@@ -67,6 +69,7 @@ export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', langu
   const [aiSpeaking, setAiSpeaking] = useState(false)
   const [aiText, setAiText] = useState('')
   const [transcript, setTranscript] = useState<VoiceLine[]>([])
+  const [lastClientSeq, setLastClientSeq] = useState<number | null>(null)
   const [deadline, setDeadline] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [warning, setWarning] = useState(false)
@@ -93,9 +96,13 @@ export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', langu
         onReady: (m) => {
           if (m.remaining_ms !== null) setDeadline(Date.now() + m.remaining_ms)
           if (m.current_turn) setAiText(m.current_turn.text)
+          setLastClientSeq((current) => Math.max(current ?? 0, m.last_client_seq))
         },
         onState: setServerState,
-        onTranscript: (t) => setTranscript((l) => [...l, { role: 'student', text: t.text, confidence: t.confidence }]),
+        onTranscript: (t) => {
+          setLastClientSeq((current) => Math.max(current ?? 0, t.seq))
+          setTranscript((l) => [...l, { role: 'student', text: t.text, confidence: t.confidence }])
+        },
         onAiTurn: (t) => {
           setAiText(t.text)
           setDeadline(Date.now() + t.remainingMs)
@@ -169,7 +176,7 @@ export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', langu
   }, [deadline, ended])
 
   return {
-    connection, serverState, aiSpeaking, aiText, transcript, warning, level, micError, error, ended, latencyMs,
+    connection, serverState, aiSpeaking, aiText, transcript, lastClientSeq, warning, level, micError, error, ended, latencyMs,
     remainingMs: deadline === null ? null : ended ? 0 : Math.max(0, deadline - now),
     connect, disconnect,
     pressToTalk: () => client.current?.pressToTalk(),

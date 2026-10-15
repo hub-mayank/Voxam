@@ -29,7 +29,17 @@ export function studentMessage(error: ApiError): string {
   return MESSAGES[error.code]
 }
 
-/** The viva's own error codes from the voice server (docs/VOICE_PROTOCOL.md) have plain wording too. */
-export function voiceMessage(message: string): string {
-  return message || 'The voice connection had a problem. You can type your answer instead.'
+// The voice server's own codes (docs/VOICE_PROTOCOL.md section 7), in the same plain words. Unknown codes fall back to the server's text.
+const VOICE_MESSAGES: Record<string, string> = {
+  replaced: 'Another window or tab is now listening. This one has stopped. Go to the tab or window that is now listening.',
+  stt_failed: 'We could not understand that answer. Please say it again.',
+  no_speech: 'We did not hear anything. Please speak again, and keep close to the microphone.',
+  bad_message: 'That message could not be sent. Please try again, or type your answer instead.',
+  provider_unavailable: 'Voice is not available right now. You can type your answer instead.',
+  unauthorized: 'Your session is no longer valid. Please sign in again with your ID and access code.',
+  session_ended: 'Your viva is complete. You can safely close this page.',
+}
+
+export function voiceMessage(code: string, message: string): string {
+  return VOICE_MESSAGES[code] ?? (message || 'The voice connection had a problem. You can type your answer instead.')
 }

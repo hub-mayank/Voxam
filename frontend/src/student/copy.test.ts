@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '../api/client'
 import type { ErrorCode } from '../api/types'
-import { studentMessage } from './copy'
+import { studentMessage, voiceMessage } from './copy'
 
 const CODES: (ErrorCode | 'network_error')[] = [
   'unauthorized', 'forbidden', 'not_found', 'method_not_allowed', 'validation_error', 'invalid_upload', 'invalid_credentials',
@@ -27,3 +27,13 @@ describe('student error copy', () => {
     expect(studentMessage(new ApiError('session_ended', '', 409))).toMatch(/safely close/i)
   })
 })
+
+describe('voice error copy', () => {
+  it('turns the voice server codes into plain sentences and falls back to the server text', () => {
+    expect(voiceMessage('replaced', 'A newer connection took over this session.')).toMatch(/Another window or tab/)
+    expect(voiceMessage('stt_failed', 'x')).toMatch(/say it again/)
+    expect(voiceMessage('something_new', 'Server words')).toBe('Server words')
+    expect(voiceMessage('something_new', '')).toMatch(/type your answer/)
+  })
+})
+

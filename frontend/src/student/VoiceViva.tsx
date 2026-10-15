@@ -26,7 +26,8 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'text
 
   const label = voice.serverState ? (voice.aiSpeaking && voice.serverState !== 'ended' ? STATE_WORDS.speaking : STATE_WORDS[voice.serverState]) : ''
   const open = voice.connection === 'open'
-  const canTalk = open && (voice.serverState === 'listening' || voice.serverState === 'speaking' || voice.serverState === 'thinking')
+  // listening, or speaking (barge-in): while the answer is being processed the server ignores a new press, so the button stays off
+  const canTalk = open && (voice.serverState === 'listening' || voice.serverState === 'speaking')
   const level = Math.min(1, voice.level * 4)
   const levelWords = voice.level < 0.02 ? 'quiet' : level > 0.9 ? 'very loud' : 'good'
   const last = voice.transcript.at(-1)
@@ -72,7 +73,7 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'text
       )}
       {voice.error && (
         <div className="banner" role="alert">
-          {voiceMessage(voice.error.message)}
+          {voiceMessage(voice.error.code, voice.error.message)}
           <Button onClick={voice.clearError}>OK</Button>
         </div>
       )}

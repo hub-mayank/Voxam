@@ -252,6 +252,11 @@ describe('student screens', () => {
     const blocked = (await screen.findByRole('button', { name: 'Hold to talk' })) as HTMLButtonElement
     expect(blocked.disabled).toBe(false)
     expect(screen.getByText('The interviewer is speaking')).toBeTruthy()
+    // while the answer is being processed the server ignores a new press, so the button is off
+    mocks.useVoiceSession.mockReturnValue({ ...voice, serverState: 'thinking', aiSpeaking: false })
+    cleanup()
+    app(f, '/student/viva?mode=push_to_talk')
+    expect(((await screen.findByRole('button', { name: 'Hold to talk' })) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('voice viva: a lost connection says so honestly and offers to reconnect', async () => {

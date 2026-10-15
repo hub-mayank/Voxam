@@ -37,11 +37,11 @@ The exact error code is written to the browser console for support. It is never 
 | `invalid_upload` | faculty-side only | “Something went wrong on our side. Please reload the page.” | reload |
 | `invalid_credentials` | wrong student ID or access code | “That ID or access code did not work. Check both and try again.” | stay on join, keep the fields; no retry timer until the server sends one |
 | `already_exists` | faculty-side only | “Something went wrong on our side. Please reload the page.” | reload |
-| `invalid_state` | action not allowed in the current state (for example start before consent) | “That step is not available right now. We are checking where you are.” | read the status again and move to the screen it says |
+| `invalid_state` | action not allowed in the current state (for example start before consent) | “That step is not available right now. We are checking where you are in the viva. Please wait.” | read the status again and move to the screen it says |
 | `session_ended` | the viva is over; the code and token are dead | “Your viva is complete. You can safely close this page.” | end screen |
 | `deadline_passed` | answer was too late and was not recorded | “Time is up. Your last answer was not saved. Your viva is now complete.” | end screen with the server's closing words; the typed text is not sent |
-| `bad_client_seq` | the answer count is out of step (double send, or another tab) | “We need to resync this question before continuing.” | read the status again; the screen shows the server's current question |
-| `rules_version_mismatch` | faculty changed the rules after the student joined | “The rules were updated. Please sign in again to read and accept them.” | sign out and join again to read the new rules |
+| `bad_client_seq` | the answer count is out of step (double send, or another tab) | “We are checking your current question. Please wait.” | read the status again; the screen shows the server's current question |
+| `rules_version_mismatch` | faculty changed the rules after the student joined | “The rules have changed. Please sign in again to read and accept them.” | sign out and join again to read the new rules |
 | `range_not_satisfiable` | faculty-side only (audio) | “Something went wrong on our side. Please reload the page.” | reload |
 | `audio_not_available` | faculty-side only (audio) | “Something went wrong on our side. Please reload the page.” | reload |
 | `results_not_released` | result asked for before faculty released it | “Your result is not available yet.” | the Done screen says the result is not released yet and offers "Check again" |
@@ -65,8 +65,8 @@ Voice errors come from the voice session. Retryable: yes means the student may t
 |---|---|---|
 | `replaced` | yes | “Another window or tab is now listening. This one has stopped. Go to the tab or window that is now listening.” |
 | `stt_failed` | yes | “We could not understand that answer. Please say it again.” |
-| `no_speech` | yes | “We did not hear anything. Please speak again, and keep close to the microphone.” |
-| `bad_message` | yes | “That message could not be sent. Please try again, or type your answer instead.” |
+| `no_speech` | yes | “We did not hear anything. Move closer to the microphone, then try again.” |
+| `bad_message` | yes | “We could not send that message. Try again or type your answer instead.” |
 
 ### Additional sentence rules
 

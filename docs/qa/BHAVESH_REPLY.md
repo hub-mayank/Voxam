@@ -28,6 +28,7 @@ demo. This note tells you exactly what changed, why, and what is yours now.
 | Central dispose on unmount | the voice hook stops tracks, socket, player and timers on unmount; the mic sample URL is revoked | built |
 | Focus moves to the new screen heading; keyboard reachable | `useFocusHeading`; hold-to-talk also works with Space/Enter | built |
 | Never persist the access code or audio | only the session token and rules text are in `sessionStorage`; the code is never stored | built |
+| Result and feedback on the end screen (your PR #39 had it) | `ResultView.tsx` on the Done screen: total, dimensions in words, feedback with turns, "not released" and "still marking" states | built, tested |
 | Browser/device/network/timing test matrix | folded into `docs/qa/student-checklist.md` (see section 4) | yours to run |
 | Five-minute demo with one success and one recovery | `docs/DEMO_SCRIPT.md` (draft by us, adapted to the real features) | **yours to rehearse and finish** |
 | Risk register and fallbacks | adopted as-is: protocol mismatch → stop, TTS failure → show text, noisy mic → retest then text | in force |

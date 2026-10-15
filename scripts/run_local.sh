@@ -63,6 +63,7 @@ fi
 "$PY" scripts/seed_local.py
 if [ "$VOICE_PROVIDER" = "local" ] && [ -f scripts/prerender_tts.py ]; then
   "$PY" scripts/prerender_tts.py --bank config/question_bank.dsa.json   # fixed lines are spoken without waiting for synthesis
+  "$PY" scripts/prerender_tts.py --bank config/question_bank.webdev.json
 fi
 
 cd backend
@@ -84,6 +85,7 @@ Voxam local profile is running.
   API + docs      http://localhost:$PORT/docs
   Faculty token   ${FACULTY_TOKENS#*:}   (header: Authorization: Bearer <token>)
   Viva id         local-dsa        students LOCAL01..LOCAL10, codes in .local/codes.txt
+  Second viva     local-webdev     students WEB01..WEB05; its questions are drafts: approve them in the faculty dashboard first
   Interviewer LLM $LLM_CHAIN        Scorer LLM $SCORER_LLM_CHAIN
   Voice           $VOICE_PROVIDER         recordings in $AUDIO_DIR
   Logs            .local/api.log   .local/worker.log

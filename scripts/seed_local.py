@@ -9,14 +9,14 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 from app.api.settings import Settings  # noqa: E402
 from app.envfile import load_env  # noqa: E402
-from app.local_seed import STUDENTS, VIVA_ID, AlreadySeeded, seed_local  # noqa: E402
+from app.local_seed import STUDENTS, VIVA_ID, WEBDEV_ID, WEBDEV_STUDENTS, AlreadySeeded, seed_local, seed_webdev  # noqa: E402
 
 CODES = ROOT / ".local" / "codes.txt"
 
 
-def show(codes):
-    print(f"LOCAL viva {VIVA_ID!r}: students and one-time access codes")
-    for student_id, name in STUDENTS:
+def show(codes, viva_id=VIVA_ID, students=STUDENTS):
+    print(f"LOCAL viva {viva_id!r}: students and one-time access codes")
+    for student_id, name in students:
         print(f"  {student_id}  {codes[student_id]}  {name}")
 
 
@@ -31,7 +31,18 @@ except AlreadySeeded:
     if CODES.exists():
         print(f"Saved codes ({CODES.relative_to(ROOT)}):")
         print(CODES.read_text(), end="")
-    sys.exit(0)
-CODES.parent.mkdir(exist_ok=True)
-CODES.write_text("".join(f"{i}  {codes[i]}  {n}\n" for i, n in STUDENTS))
-show(codes)
+else:
+    CODES.parent.mkdir(exist_ok=True)
+    CODES.write_text("".join(f"{i}  {codes[i]}  {n}\n" for i, n in STUDENTS))
+    show(codes)
+
+# the second pilot subject: its bank stays AI-draft until a faculty member approves it in the dashboard
+try:
+    web = seed_webdev(settings)
+except AlreadySeeded:
+    pass
+else:
+    with open(CODES, "a") as f:
+        f.write("".join(f"{i}  {web[i]}  {n}\n" for i, n in WEBDEV_STUDENTS))
+    show(web, WEBDEV_ID, WEBDEV_STUDENTS)
+    print(f"  ({WEBDEV_ID!r} questions are drafts: approve them in the faculty dashboard before a student joins)")

@@ -110,13 +110,15 @@ def main():
     ap.add_argument("--llm", default="mock")
     ap.add_argument("--tag", default=None)
     ap.add_argument("--bank", default=str(ROOT / "config" / "question_bank.dsa.json"))
+    ap.add_argument("--personas", default=",".join(PERSONAS), help="comma list, to run only some (a small token budget)")
     a = ap.parse_args()
     load_env()
     cfg = load_config(ROOT / "config" / "viva.config.json")
     bank = load_bank(Path(a.bank))
     llm = make_llm(a.llm, retries=1)
     rows = []
-    for p in PERSONAS:
+    chosen = [p for p in a.personas.split(",") if p in PERSONAS]
+    for p in chosen:
         rows += run(p, llm, cfg, bank)
     tag = a.tag or a.llm.replace("/", "_").replace(":", "_")
     out = ROOT / "results" / f"followup_{tag}.csv"
@@ -125,12 +127,13 @@ def main():
         w.writeheader()
         w.writerows(rows)
     provider = "mock" if a.llm == "mock" else "live"
-    write_meta(out, provider=provider, model=llm.name, n=len(rows), n_unit="scripted answers", personas=list(PERSONAS),
+    write_meta(out, provider=provider, model=llm.name, n=len(rows), n_unit="scripted answers", personas=chosen,
                bank=Path(a.bank).name, seconds_per_answer=SECONDS_PER_ANSWER, scripted_from="question bank key_points",
                note="the AI side is a real model; the student side is scripted from the bank's key points, so this shows how the "
                     "interviewer adapts, not how real students answer")
     for p, s in summarise(rows).items():
-        print(p, s)
+        if s["answers"]:
+            print(p, s)
     print(f"wrote {out.relative_to(ROOT)} ({provider}, median answer length {int(statistics.median(len(r['student']) for r in rows))} chars)")
 
 

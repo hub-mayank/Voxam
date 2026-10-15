@@ -2,7 +2,7 @@
   "provider": "stub",
   "model": "stub voice + mock LLM behind the real server and database",
   "date": "2026-10-15",
-  "git_sha": "122e9e87672dc146d855842fb00881065f761054",
+  "git_sha": "e07d801737ac5449731108ef9ea3633c5a08d625",
   "n": 13,
   "n_unit": "scenarios run",
   "not_run": [

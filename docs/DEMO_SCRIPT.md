@@ -1,29 +1,43 @@
-# Five-minute demo script (BH-5, draft: rehearse it, then fix the timings)
+# Voxam demo script: 5 minutes, followable cold
 
-**One rule: never improvise the outage and never wait for the real 15 minutes.** The student part runs live for about three
-minutes; the faculty part uses a viva that finished earlier.
+Drafted by Bhavesh (BH-5) and corrected to what is on `main` (student result view, language choice, Ready-screen modes).
+One student takes a short viva; faculty review the transcript, recording and score; the student then sees the released result.
+Everything uses local test data: no real students, no paid services.
 
-## Before you press record (checklist)
-- [ ] `scripts/run_local.sh --fresh` running with the voice mode you will show (real: whisper.cpp + Piper, or `VOICE_PROVIDER=stub`).
-- [ ] `cd frontend && npm install && npm run dev`, browser open at `http://localhost:5173/student?viva=local-dsa`.
-- [ ] One finished, scored viva exists (run one earlier; `python scripts/seed_demo.py` also makes demo data: check that it contains a scored session before you rely on it), and its audio plays on the faculty screen.
-- [ ] Microphone permission reset, headphones on, notifications off, no real names or codes on screen (the local codes are test data).
-- [ ] Network trigger rehearsed once: browser DevTools → Network → "Offline" for about 5 s, then "No throttling".
-- [ ] A backup recording of a clean run is saved.
+## Setup (before the audience arrives, about 3 minutes)
+Terminal 1, backend + worker + two seeded vivas (`local-dsa`, `local-webdev`):
+```bash
+FACULTY_TOKENS="mayank:choose-a-long-secret" scripts/run_local.sh --fresh
+```
+Read the token (the part after the colon) and the student codes from its output or `.local/codes.txt`; never hard-code them in a script.
+Terminal 2:
+```bash
+cd frontend && npm install && npm run dev
+```
+- Use Chrome on `http://localhost:5173` (the microphone needs localhost or https).
+- Second tab: `http://localhost:5173/faculty`, signed in with the faculty token.
+- Have one **finished and scored** viva ready (take one beforehand) so the faculty half never waits for scoring.
+- If something fails: reload, check both terminals, and fall back to typed answers; the demo still works.
 
-## Script
-| Time | Do | The audience sees | Say |
-|---|---|---|---|
-| 0:00 | Open the join page, point at the demo label (local test data) | Viva ID filled in, hidden code | "Same structure and rules for every student, and the code is personal." |
-| 0:20 | Enter student and code, continue | Rules in plain words, one consent tick | "Consent is explicit and the version of the rules is stored." |
-| 0:45 | Tick, agree, choose **Push to talk**, run the mic check | Level meter in words, playback of your own voice | "No viva starts on a microphone nobody can hear; typing is always available." |
-| 1:30 | Start, answer one question by voice | Question, state words (listening, thinking, speaking), live transcript | "The server keeps the clock; the AI only listens, classifies and phrases." |
-| 2:30 | Go offline for 5 s, then online | "Connection lost… timer may continue", then the same question returns | "The browser never decides the state; it rejoins the server's session." |
-| 3:15 | Type the next answer instead | Answer accepted, reply shown | "Voice failure does not block the exam." |
-| 3:45 | Switch to the faculty dashboard, open the finished viva | Transcript, audio replay, scores with evidence turns, flags | "Every mark cites the turns behind it, and faculty can override with a reason." |
-| 4:30 | Show the CSV export or the evidence row | The sidecar-labelled results | "Mock, stub and live results are labelled; nothing is hand-typed." |
-| 4:50 | Close | – | "The browser never decides the exam state or the score." |
+## The demo
+| Time | Do | Say |
+|---|---|---|
+| 0:00 | Open `/student?viva=local-dsa`. | "A student joins with an ID and a personal one-time code. Same structure and rules for everyone." |
+| 0:30 | Student `LOCAL01` + the printed code. Rules appear; tick the box, **I agree, continue**. | "Rules and recording consent come first; declining starts nothing." |
+| 1:00 | Ready screen: pick **Push to talk**, language **English** (mention **Hindi or Hinglish** exists), **Check my microphone**, say a sentence, play it back, **Yes, I can hear myself**. | "No viva starts on a microphone nobody can hear. Typing is always available." |
+| 1:45 | **Start the viva**, **Begin the viva**. Answer the first question by holding the button. | "The clock is the server's. The AI only listens, classifies and phrases." |
+| 2:45 | While the interviewer speaks, hold the button (barge-in). | "The AI stops and listens, like a person would." |
+| 3:15 | Switch off Wi-Fi for 5 s, back on (or DevTools → Network → Offline). Then type the next answer instead. | "The browser never decides the state; it rejoins the server's session. Voice failure never blocks the exam." |
+| 3:45 | Faculty tab: open the finished viva. Show transcript, audio replay, the score with reasons and evidence turn numbers, any confidence flag. | "Every mark cites the turns behind it; the recording replays from those moments; faculty can override with a reason." |
+| 4:30 | **Export and release results**: tick release, reload the student's end screen. | "Faculty release results; the student sees the total and the feedback, never before." |
+| 4:50 | Close. | "The browser never decides the exam state or the score." |
 
-## If something breaks live
-Switch to typing; if the backend is down, play the backup recording. Do not explain the failure while recording; say "that is
-exactly the recovery path" only if the reconnect banner really appeared.
+## Before recording
+- [ ] Microphone permission is reset and known; headphones on; notifications off.
+- [ ] No real names, codes or tokens on screen; the local test codes are fine.
+- [ ] The offline step was rehearsed once; a backup recording of a clean run exists.
+- [ ] Do not wait for the real 15 minutes: stop the live student part at the faculty switch.
+
+## What the demo proves
+Student: join → rules → mode and language → mic check → voice and typed answers → barge-in → reconnect → result after release.
+Faculty: transcript, recording, evidence-cited score, override, export and release.

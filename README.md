@@ -20,7 +20,7 @@ Text mode runs fully offline with the mock LLM. It needs no Docker, database or 
     python3 -m venv backend/.venv && source backend/.venv/bin/activate
     pip install -r backend/requirements.txt
     python scripts/install_hooks.py                  # once per clone: secret scan before every commit
-    python -m pytest -q                              # from the repo root
+    python -m pytest -q                              # from the repo root; spike tests skip unless spikes/voice/requirements.txt is installed
 
     cd backend
     python -m app.cli --llm mock                     # text viva, writes session.jsonl
@@ -36,7 +36,7 @@ The seeded viva is `local-dsa` (30 AI-drafted DSA questions, approved by the fac
 `LOCAL01`..`LOCAL10`. The voice WebSocket (`/student/sessions/{sid}/voice`, contract in `docs/VOICE_PROTOCOL.md`) runs in the same process:
 `VOICE_PROVIDER=stub` needs no models; `local` uses whisper.cpp and Piper (as separate processes) and needs `brew install whisper-cpp`,
 the models from `spikes/voice/fetch_models.py` and the `piper` executable. The script picks `local` when all of them are found.
-To try it yourself in the browser: `scripts/run_local.sh`, then `cd frontend && npm run dev` and open `http://localhost:5173/student/voice-lab`
+To try it yourself in the browser: `scripts/run_local.sh`, then `cd frontend && npm install && npm run dev` (first time only for `npm install`) and open `http://localhost:5173/student/voice-lab`
 (student `LOCAL01`..`LOCAL10`, codes in `.local/codes.txt`). `python scripts/voice_bot.py --viva local-dsa --student LOCAL01 --code <code>` plays a scripted student over the WebSocket (`--mode hands_free` for
 the voice-activity path). Hands-free uses Silero VAD (`pysilero-vad`) with `VOICE_VAD`, `VOICE_HANGOVER_MS` (600) and `VOICE_PREROLL_MS` (300).
 

@@ -1,0 +1,28 @@
+--- a/frontend/src/student/VoiceViva.tsx
++++ b/frontend/src/student/VoiceViva.tsx
+@@ -22,7 +22,18 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'tex
+   // the voice server ended the viva: re-read the session so the screen moves on
+   useEffect(() => {
+     if (voice.ended) void session.refresh()
+   }, [voice.ended])
++
++  // the voice socket closed or (re)opened without ending the viva: re-read the
++  // session so the REST lastSeq / phase match the server. Voice answers never
++  // update the REST lastSeq, and the reconnect ready message does not carry it,
++  // so without this the next REST answer would use a stale seq. The open case
++  // also fires on first connect (one extra status read, idempotent here because
++  // this screen sends no REST answers).
++  useEffect(() => {
++    if (voice.ended) return
++    if (voice.connection === 'closed' || voice.connection === 'open') void session.refresh()
++  }, [voice.connection, voice.ended])
+ 
+   const label = voice.serverState ? (voice.aiSpeaking && voice.serverState !== 'ended' ? STATE_WORDS.speaking : STATE_WORDS[voice.serverState]) : ''
+   const open = voice.connection === 'open'
+@@ -62,5 +73,5 @@ function VoiceViva({ mode, sessionId, token }: { mode: Exclude<AnswerMode, 'tex
+       {voice.connection === 'closed' && !voice.ended && (
+         <div className="banner" role="alert">
+-          The voice connection closed. <Button onClick={() => void voice.connect()}>Reconnect</Button> You can also type your answer below.
++          The voice connection closed. <Button onClick={() => void voice.connect()}>Reconnect</Button> Reconnect to keep going.
+         </div>
+       )}

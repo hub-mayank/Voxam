@@ -1,6 +1,6 @@
 {
   "viva_id": "demo-dsa-v1",
-  "prompt_version": "interviewer-v1",
+  "prompt_version": "interviewer-v2",
   "hard_limit_seconds": 900,
   "answer_cap_seconds": 90,
   "phases": [

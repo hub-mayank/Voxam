@@ -37,7 +37,7 @@ def test_a_whole_viva_ends_by_itself_and_queues_scoring_in_the_same_commit(env):
         assert [(j.kind, j.status, j.attempts) for j in jobs] == [("score", "queued", 0)]
     rows = turns(app, sid)
     assert [r[0] for r in rows] == list(range(len(rows))), "idx must be contiguous: it is what scoring evidence cites"
-    assert all(r[5] == "interviewer-v1" for r in rows if r[1] == "ai"), "prompt_version on every AI turn"
+    assert all(r[5] == "interviewer-v2" for r in rows if r[1] == "ai"), "prompt_version on every AI turn"
 
 
 def test_serving_model_is_stored_on_ai_turns_that_used_a_model(env):
@@ -50,7 +50,7 @@ def test_serving_model_is_stored_on_ai_turns_that_used_a_model(env):
     assert ai[0][3] == "open" and ai[0][4] is None, "the canned opener used no model"
     assert ai[2][4] == "mock", "a model-phrased follow-up records who served it"
     detail = client.get(f"/faculty/sessions/{sid}", headers=RAO).json()
-    assert detail["turns"][4]["model"] == "mock" and detail["turns"][4]["prompt_version"] == "interviewer-v1"
+    assert detail["turns"][4]["model"] == "mock" and detail["turns"][4]["prompt_version"] == "interviewer-v2"
     assert detail["turns"][1]["model"] is None
 
 

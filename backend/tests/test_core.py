@@ -88,3 +88,47 @@ def test_applied_phase_uses_applied_questions():
 def test_events_carry_audit_fields():
     f, iv = make(); iv.start(); f.t = 70; iv.respond("hello")
     assert all({"t", "phase", "question_id", "model", "prompt_version"} <= set(e) for e in iv.log)
+
+
+def test_a_no_answer_is_classified_without_calling_the_model_in_english_hindi_and_hinglish():
+    from app.interviewer import is_no_answer
+    for text in ("I don't know", "no idea", "ok", "yes", "pata nahi sir", "मुझे नहीं पता", "I am not sure about this one"):
+        assert is_no_answer(text), text
+    for text in ("A hash table maps keys to buckets using a hash function.", "Hash table mein key ko index mein badalte hain",
+                 "I don't know the exact formula but it grows by doubling the capacity when it is full and copies the elements"):
+        assert not is_no_answer(text), text
+
+
+def test_the_interviewer_makes_no_model_call_for_a_no_answer():
+    from app.clock import VivaClock
+    from app.config import load_config, load_bank
+    from app.interviewer import Interviewer
+    from pathlib import Path
+
+    class Counting:
+        name = "counting"
+
+        def __init__(self):
+            self.calls = 0
+
+        def complete_json(self, *a, **k):
+            self.calls += 1
+            return {"quality": "strong"}
+
+        def complete_text(self, *a, **k):
+            self.calls += 1
+            return "Okay."
+
+    root = Path(__file__).resolve().parents[2]
+    cfg = load_config(root / "config" / "viva.config.json")
+    llm = Counting()
+    t = [0.0]
+    iv = Interviewer(llm, load_bank(root / "config" / "question_bank.dsa.json"), VivaClock(cfg, now=lambda: t[0]), cfg)
+    iv.start()
+    t[0] = 20
+    iv.respond("I built a small website")  # opener answered: a new question, no model needed
+    t[0] = 40
+    before = llm.calls
+    iv.respond("pata nahi")
+    assert llm.calls == before, "a no-answer must not cost a model call"
+    assert any(e.get("action") == "classify_skipped" for e in iv.log)

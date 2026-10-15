@@ -56,7 +56,7 @@ we do not control.
 The project source-code register contains only your volunteer ID, consent-signing date and public-demo yes/no choice.
 Past versions may remain in Git history. Your name/signature and private identity mapping are kept outside Git.
 
-The proposed retention period is **one calendar month after the recording**, pending MSOT confirmation. The
+The retention period is **one calendar month after the recording** (MSOT said on 2026-10-08 that about one month is expected and configurable). The
 coordinator writes the due date above and arranges manual removal of recordings, transcripts, marks, signed forms
 and related private copies for this session, or earlier removal on request. The prototype does not delete them automatically.
 If the retention period, storage recipients or processors change, explain the change and obtain consent again before new use.

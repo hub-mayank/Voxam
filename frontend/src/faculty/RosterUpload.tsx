@@ -77,6 +77,21 @@ function RosterUpload({ vivaId }: { vivaId: string }) {
     setMessage(`A new access code was issued for ${studentId}. The previous code no longer works.`)
   }
 
+  async function revokeCode(studentId: string) {
+    if (!api) return
+    setMessage('')
+    setIssued(null)
+    setResetIssued(null)
+    setCopyMessage('')
+    const result = await api.revokeCode(vivaId, studentId)
+    if (!active.current) return
+    setRoster((current) => current && ({
+      ...current,
+      items: current.items.map((entry) => entry.student_id === studentId ? result : entry),
+    }))
+    setMessage(`Future joins and rejoins are disabled for ${studentId}. Any existing session and session token remain active.`)
+  }
+
   if (!api) return null
   const rows = Array.isArray(error?.details.rows) ? error.details.rows : []
   return (
@@ -140,12 +155,17 @@ function RosterUpload({ vivaId }: { vivaId: string }) {
         </div>
       )}
       {!busy && roster?.items.length === 0 && <p>No students uploaded.</p>}
-      {roster?.items.length ? <p className="muted">Resetting a code immediately invalidates the old one. Codes cannot be reset after a student’s session has ended.</p> : null}
+      {roster?.items.length ? <p className="muted">A revoked code cannot be used for future joins or rejoins; revocation does not end an existing session. New codes can be issued only before a session has ended.</p> : null}
       <ul>{roster?.items.map((entry) => (
         <li key={entry.student_id}>
           {entry.student_id} {entry.name} — {entry.session_status ?? 'Not joined'}
+          {entry.access_code_active
+            ? <Button disabled={busy || issued !== null || resetIssued !== null} onClick={() => { void perform(() => revokeCode(entry.student_id)) }}>
+                Revoke access code for {entry.student_id}
+              </Button>
+            : <span className="muted"> No active access code for future joins.</span>}
           <Button disabled={busy || issued !== null || resetIssued !== null || (entry.session_status !== null && entry.session_status !== undefined && !['created', 'consented', 'in_progress'].includes(entry.session_status))} onClick={() => { void perform(() => resetCode(entry.student_id)) }}>
-            Reset access code for {entry.student_id}
+            Issue new access code for {entry.student_id}
           </Button>
         </li>
       ))}</ul>

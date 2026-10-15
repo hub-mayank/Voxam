@@ -194,13 +194,15 @@ class RosterUploadResult(ApiResponse):
 
 
 class RosterEntry(ApiResponse):
-    """A roster row as listed later: never contains the code."""
+    """A roster row as listed later: never contains the code; access_code_active governs future joins only."""
     student_id: str
     name: Optional[str] = None
     session_id: Optional[UUID] = Field(None, description="Null until the student has joined.")
     session_status: Optional[SessionStatus] = None
+    access_code_active: bool = Field(description="True if a code can currently start or rejoin a session. Revoking it does not end an existing session.")
     model_config = ConfigDict(json_schema_extra={"examples": [{
-        "student_id": "S2024001", "name": "Asha Verma", "session_id": SESSION_ID, "session_status": "scored"}]})
+        "student_id": "S2024001", "name": "Asha Verma", "session_id": SESSION_ID, "session_status": "scored",
+        "access_code_active": True}]})
 
 
 class RosterList(ApiResponse):
@@ -208,7 +210,8 @@ class RosterList(ApiResponse):
     items: list[RosterEntry]
     model_config = ConfigDict(json_schema_extra={"examples": [{"items": [
         RosterEntry.model_config["json_schema_extra"]["examples"][0],
-        {"student_id": "S2024002", "name": "Ravi Iyer", "session_id": None, "session_status": None}]}]})
+        {"student_id": "S2024002", "name": "Ravi Iyer", "session_id": None, "session_status": None,
+         "access_code_active": False}]}]})
 
 
 class ResetCodeResult(ApiResponse):

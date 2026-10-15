@@ -54,3 +54,22 @@ The exact error code is written to the browser console for support. It is never 
 - A visible history after a reload: the server returns the current question, not the earlier answers, so the log restarts. The
   answers are saved; this is display only.
 - Integrity signals (tab switch, multiple voices): no policy exists yet (`docs/PRIVACY.md`).
+
+## BH-0 delta — additional wording
+
+### Additional voice error sentences
+
+Voice errors come from the voice session. Retryable: yes means the student may try again; the screen says so instead of showing a code.
+
+| Code | Retryable | Exact student sentence |
+|---|---|---|
+| `replaced` | yes | “Another window or tab is now listening. This one has stopped. Go to the tab or window that is now listening.” |
+| `stt_failed` | yes | “We could not understand that answer. Please say it again.” |
+| `no_speech` | yes | “We did not hear anything. Please speak again, and keep close to the microphone.” |
+| `bad_message` | yes | “That message could not be sent. Please try again, or type your answer instead.” |
+
+### Additional sentence rules
+
+- Never blame the student for a server or provider failure.
+- Never reveal another student's data, a code, or how many tries remain.
+- If the screen cannot tell the student what to do, it says to reload once and then ask faculty — and the PR notes that gap.

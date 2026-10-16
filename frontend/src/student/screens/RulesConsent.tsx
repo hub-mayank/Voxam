@@ -19,12 +19,12 @@ function RulesConsent() {
           {paragraphs.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
-          <p>The viva lasts {minutes || 15} minutes. You can answer by voice or by typing.</p>
+          <p>You will have {minutes || 15} minutes. Answer by voice or by typing.</p>
         </section>
         <p>
           <label>
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> I have read the rules and I agree to
-            my voice and answers being recorded and kept for faculty review.
+            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> I have read these rules and agree that
+            my voice and answers will be recorded and kept for faculty review.
           </label>
         </p>
         <Button variant="primary" disabled={!agree || session.busy} onClick={() => void session.accept()}>

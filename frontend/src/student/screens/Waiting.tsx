@@ -7,7 +7,7 @@ import { langOf, micChecked, modeOf, useFocusHeading, useStage, type AnswerMode 
 const OPTIONS: { value: AnswerMode; label: string; hint: string }[] = [
   { value: 'text', label: 'Type my answers', hint: 'Always available. No microphone needed.' },
   { value: 'push_to_talk', label: 'Push to talk', hint: 'Hold a button while you speak. Needs a microphone check.' },
-  { value: 'hands_free', label: 'Hands-free', hint: 'It hears when you stop. Use headphones. Needs a microphone check.' },
+  { value: 'hands_free', label: 'Hands-free', hint: 'Speak naturally. The interviewer responds when you finish. Use headphones. Needs a microphone check.' },
 ]
 
 function Waiting() {

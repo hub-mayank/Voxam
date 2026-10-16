@@ -59,7 +59,7 @@ function MicCheck() {
   return (
     <Page title="Check your microphone">
       <div className="student">
-        <p>We will listen for a moment and then play back a short recording so you can hear what we hear. Nothing is saved.</p>
+        <p>We will check your microphone and record a short sample. If your browser supports playback, you can listen to it. The sample is not saved.</p>
         <p className="sr-only" role="status">
           {step.kind === 'listening' ? 'Listening. Please say a sentence.' : step.kind === 'recording' ? 'Recording a short sample.' : ''}
         </p>

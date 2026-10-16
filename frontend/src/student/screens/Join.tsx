@@ -62,7 +62,7 @@ function Join() {
             {wait > 0 ? `Wait ${wait} s` : 'Continue'}
           </Button>
         </form>
-        <p>Your faculty gave you the viva ID and a personal access code. The code works for one viva only.</p>
+        <p>Enter the viva ID and personal access code your faculty gave you. Each access code is for one viva.</p>
       </div>
     </Page>
   )

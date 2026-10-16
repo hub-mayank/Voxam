@@ -63,10 +63,24 @@ function ResultView() {
           {state.result.overridden && (
             <p>A faculty member changed your total after reviewing your viva. The marks below are the AI's first marking.</p>
           )}
-          <ul>
+          <ul className="result-scores" aria-label="Rubric scores">
             {state.result.dimensions.map((d) => (
-              <li key={d.key}>
-                {LABELS[d.key] ?? d.key}: {d.score} / 5 <small>(weight {d.weight}%)</small>
+              <li className="result-score" key={d.key}>
+                <div className="result-score-label">
+                  <strong>{LABELS[d.key] ?? d.key}</strong>
+                  <span>{d.score} / 5 <small>(weight {d.weight}%)</small></span>
+                </div>
+                <div className="result-score-track">
+                  <div
+                    className="result-score-fill"
+                    role="progressbar"
+                    aria-label={`${LABELS[d.key] ?? d.key} score`}
+                    aria-valuemin={0}
+                    aria-valuemax={5}
+                    aria-valuenow={d.score}
+                    style={{ width: `${Math.max(0, Math.min(100, (d.score / 5) * 100))}%` }}
+                  />
+                </div>
               </li>
             ))}
           </ul>

@@ -316,17 +316,25 @@ describe('student screens', () => {
   })
   const resultBody = (overridden = false) => ({
     total: 72.5, overridden, feedback: [{ text: 'Explain collisions with an example.', evidence: [3, 5] }],
-    dimensions: [{ key: 'conceptual', weight: 30, score: 4 }, { key: 'communication', weight: 10, score: 3 }],
+    dimensions: [
+      { key: 'conceptual', weight: 30, score: 4 },
+      { key: 'depth', weight: 25, score: 3.5 },
+      { key: 'problem', weight: 20, score: 4 },
+      { key: 'practical', weight: 15, score: 3 },
+      { key: 'communication', weight: 10, score: 3 },
+    ],
   })
 
   it('done: a released result shows the total, each dimension in words and the feedback with its turns', async () => {
     saved()
     app(backend({ ...ended(), 'GET /student/sessions/:sid/result': () => json(resultBody()) }).f, '/student/done')
     await screen.findByText('Your result: 72.5 / 100')
-    expect(screen.getByText(/Conceptual understanding: 4 \/ 5/)).toBeTruthy()
-    expect(screen.getByText(/Communication: 3 \/ 5/)).toBeTruthy()
+    expect(screen.getByText('Conceptual understanding')).toBeTruthy()
+    expect(screen.getByText('Communication')).toBeTruthy()
     expect(screen.getByText(/Explain collisions/)).toBeTruthy()
     expect(screen.getByText(/turns 3, 5/)).toBeTruthy()
+    expect(screen.getAllByRole('progressbar')).toHaveLength(5)
+    expect(screen.getByRole('progressbar', { name: 'Depth and reasoning score' }).getAttribute('aria-valuenow')).toBe('3.5')
   })
 
   it('done: an overridden total says a person changed it', async () => {

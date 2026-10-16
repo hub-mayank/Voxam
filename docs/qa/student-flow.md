@@ -7,8 +7,9 @@ one. Change a sentence in `copy.ts`, then here.
 ## The path
 
 `/student` join → `/student/rules` rules and consent → `/student/ready` choose how to answer → (`/student/mic-check`) →
-`/student/viva` → `/student/done`. The server decides where a student is: after a join, a reload or the deadline the app moves
-to the screen the server's status says, so the browser never has to guess.
+`/student/viva` → `/student/done`. A four-step progress indicator marks Join, Rules, Ready and Viva, including all four
+complete on Done. The server decides where a student is: after a join, a reload or the deadline the app moves to the screen
+the server's status says, so the browser never has to guess.
 
 | Screen | What the student can do | Rules |
 |---|---|---|
@@ -16,13 +17,13 @@ to the screen the server's status says, so the browser never has to guess.
 | **Rules and consent** | Read the server's rules text, confirm that voice and answers will be recorded for faculty review, tick one box, "I agree, continue" or "Not now" | The button stays off until the box is ticked. The rules version the student saw is the one sent with the consent. |
 | **Ready** | Choose: type, push to talk, hands-free. For voice, also the language: English, or Hindi/Hinglish (the recogniser detects it; the interviewer still answers in English). Start. | Typing is always available and needs no microphone. Voice modes stay locked until the microphone check passed. Hands-free responds when the student finishes speaking. The clock starts only on "Start the viva". |
 | **Mic check** | Check the microphone, record a short sample, play it back when supported, confirm "I can hear myself" | Passes only after the student confirms (or when the browser cannot play back, after a good level). Denied or no device: plain steps and "Type my answers instead". The sample is not saved. |
-| **Viva, typing** | Question, answer box, "Send answer", conversation log | Send is off while empty, busy, or when time is up. A failed send keeps the text; the retry uses the same sequence number, so an answer is never stored twice. At zero the box locks and the server is asked what happens next. |
-| **Viva, voice** | "Begin the viva", hold to talk (button or Space/Enter) or "I am done speaking", level meter in words, state words, typed answer as a fallback | Hold-to-talk works only while the interviewer is listening. Lost connection says so and the timer keeps running; three automatic retries (1, 2, 4 s), then a "Reconnect" button. A blocked microphone never blocks the viva: typing stays on. |
-| **Done** | Read the closing words, see the result and feedback once faculty released it, "Sign out" | Until release (or while marking) it says so kindly and offers "Check again". The total, each rubric dimension in words and the feedback with its turn numbers are shown; if a person changed the total, it says so. "Sign out" clears the saved session. |
+| **Viva, typing** | Question, answer box, "Send answer", conversation log | Send is off while empty, busy, or when time is up. A failed send keeps the text; the retry uses the same sequence number, so an answer is never stored twice. At zero the box locks and the server is asked what happens next. The log scrolls internally to the latest turn. After reload, when earlier turns are not in the status response, the log says that earlier answers are saved. |
+| **Viva, voice** | "Begin the viva", centered hold-to-talk button (button or Space/Enter) or "I am done speaking", level meter in words, state labels, typed answer as a fallback | The state label reads Ready, Listening — your turn, Thinking, Speaking — interviewer, or Viva ended. Hold-to-talk works while listening and speaking (barge-in). Lost connection says so and the timer keeps running; three automatic retries (1, 2, 4 s), then a "Reconnect" button. A blocked microphone never blocks the viva: typing stays on. |
+| **Done** | Read the closing words, see the result and feedback once faculty released it, "Check again", "Sign out" | Until release (or while marking) it says so kindly and offers "Check again". The total, five rubric score bars with accessible values, and feedback with turn numbers are shown; if a person changed the total, it says so. "Sign out" clears the saved session. |
 
 ## Timer words (screen reader and sighted)
 The digits are not read every second. "One minute left.", "Ten seconds left." and "Time is up." are announced once each; the
-last minute turns amber and says "(less than a minute)" so colour is never the only signal.
+remaining-time bar turns amber at one minute and a visible "1 minute left" note makes the warning clear without relying on colour.
 
 ## Error sentences
 The exact error code is written to the browser console for support. It is never shown. Every sentence tells the student what to do next.
@@ -51,8 +52,8 @@ The exact error code is written to the browser console for support. It is never 
 | `network_error` | the browser could not reach the server | “Connection lost. Check your internet and try again. Your viva timer may keep running.” | keep the typed answer; try again; the timer keeps running |
 
 ## Not built (on purpose)
-- A visible history after a reload: the server returns the current question, not the earlier answers, so the log restarts. The
-  answers are saved; this is display only.
+- A visible history after a reload: the server returns the current question and accepted-answer count, not earlier turns, so the
+  log restarts with the current question and a muted note that earlier answers are saved. This is display only.
 - Integrity signals (tab switch, multiple voices): no policy exists yet (`docs/PRIVACY.md`).
 
 ## BH-0 delta — additional wording

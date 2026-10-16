@@ -4,7 +4,7 @@ File: ~/.cache/ai-viva/telemetry.jsonl (override: TELEMETRY_FILE). Fields (all r
   provider    backend family, e.g. gemini
   model       model id
   mode        live (real model) | stub (simulated)
-  kind        classify | phrase | score | stt | tts
+  kind        classify | phrase | score | generate | stt | tts
   latency_ms  one attempt, provider time only (excludes backoff sleeps)
   tokens_in, tokens_out   LLM tokens as reported by the provider; null if not reported
   audio_seconds           STT/TTS audio length; null for LLM calls
@@ -17,7 +17,7 @@ import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
-KINDS = ("classify", "phrase", "score", "stt", "tts")
+KINDS = ("classify", "phrase", "score", "generate", "stt", "tts")
 STATUSES = ("ok", "rate_limited", "unavailable", "timeout", "error", "bad_output", "cap_exceeded")
 MODES = ("live", "stub")
 TS_FORMAT = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$")

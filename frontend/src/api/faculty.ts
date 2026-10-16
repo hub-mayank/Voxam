@@ -1,7 +1,7 @@
 // One typed function per faculty endpoint (docs/API.md). Screens call these through useFacultyApi(), never fetch directly.
 import { request, type RequestOptions } from './client'
 import type {
-  OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest, ReviewResult, RosterEntry, RosterList,
+  GenerateQuestionsRequest, OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest, ReviewResult, RosterEntry, RosterList,
   RosterUploadResult, SessionDetail, SessionList, SessionStatus, Viva, VivaCreate, VivaList,
 } from './types'
 
@@ -29,6 +29,8 @@ export function facultyApi(token: string, fetchImpl?: typeof fetch) {
       form.append('file', file)
       return request<QuestionList>('POST', `${v(vivaId)}/questions`, o({ form }))
     },
+    generateQuestions: (vivaId: string, body: GenerateQuestionsRequest) =>
+      request<QuestionList>('POST', `${v(vivaId)}/questions/generate`, o({ json: body })),
     /** questionIds omitted: approve every ai-draft. */
     approveQuestions: (vivaId: string, questionIds?: string[]) =>
       request<QuestionList>('POST', `${v(vivaId)}/questions/approve`, o({ json: questionIds ? { question_ids: questionIds } : {} })),

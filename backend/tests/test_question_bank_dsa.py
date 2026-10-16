@@ -114,6 +114,8 @@ def test_through_the_real_backend_too(tmp_path):
     """A viva answered every 30 s through the API (the fastest pace the clock allows) never touches the canned fallbacks."""
     app, client, clock = build(tmp_path)
     codes = make_viva(client, bank=JSON_FILE.read_bytes())
+    approved = client.post("/faculty/vivas/demo-viva/questions/approve", headers=RAO, json={})
+    assert approved.status_code == 200 and all(q["source"] == "bank" for q in approved.json()["items"])
     sid, h = begin(client, codes["S1"])
     last = finish(client, clock, sid, h, step=30)
     assert last.json()["turn"]["ended"]

@@ -1,4 +1,5 @@
 import re
+import json
 
 
 class MockLLM:
@@ -6,6 +7,17 @@ class MockLLM:
     name = "mock"
 
     def complete_json(self, system, user, max_tokens=200, kind="classify"):
+        if kind == "generate":
+            topics_text = re.search(r"VIVA TOPICS .*?: (\[[^\n]*\])", user)
+            count = re.search(r"QUESTION COUNT: (\d+)", user)
+            concept_count = re.search(r"QUESTION MIX: (\d+) concept", user)
+            topics = json.loads(topics_text.group(1)) if topics_text else ["general"]
+            n = int(count.group(1)) if count else 1
+            concepts = int(concept_count.group(1)) if concept_count else n
+            return [{"topic": topics[i % len(topics)], "type": "concept" if i < concepts else "applied",
+                     "difficulty": 2, "text": f"Explain a key idea in {topics[i % len(topics)]} and describe one trade-off.",
+                     "key_points": ["states the relevant concept", "explains how it works", "gives a suitable example"]}
+                    for i in range(n)]
         if system.startswith("SCORE"):
             return self._score(user)
         m = re.search(r"ANSWER:\s*(.*)", user, re.S)

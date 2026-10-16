@@ -36,6 +36,13 @@ class StubFaculty:
     def get_viva(self, viva_id): return example_of(Viva)
     def update_viva(self, viva_id, body): return example_of(Viva)
     def upload_questions(self, viva_id, filename, data): return example_of(QuestionList)
+    def generate_questions(self, viva_id, body, llm):
+        result = example_of(QuestionList)
+        result.items = result.items[:body.count]
+        for question in result.items:
+            question.source = "ai-draft"
+            question.approved_by = None
+        return result
     def list_questions(self, viva_id): return example_of(QuestionList)
     def approve_questions(self, viva_id, body, faculty): return example_of(QuestionList)
     def upload_roster(self, viva_id, filename, data): return example_of(RosterUploadResult)

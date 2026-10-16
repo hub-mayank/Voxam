@@ -10,6 +10,7 @@ type State =
   | { kind: 'result'; result: StudentResult }
   | { kind: 'not_released' }
   | { kind: 'marking' }
+  | { kind: 'failed' }
   | { kind: 'error'; error: ApiError }
 
 // the five rubric dimensions of docs/SPEC.md; any other key is shown as written
@@ -33,7 +34,7 @@ function ResultView() {
       setState({ kind: 'result', result: await result() })
     } catch (e) {
       if (e instanceof ApiError && e.code === 'results_not_released') setState({ kind: 'not_released' })
-      else if (e instanceof ApiError && e.code === 'invalid_state') setState({ kind: 'marking' })
+      else if (e instanceof ApiError && e.code === 'invalid_state') setState({ kind: e.details.status === 'failed' ? 'failed' : 'marking' })
       else setState({ kind: 'error', error: e instanceof ApiError ? e : new ApiError('internal_error', 'failed', 0) })
     }
   }, [result])
@@ -49,8 +50,11 @@ function ResultView() {
         <p>Your result has not been released yet. Your faculty will release it when marking is done. Please check back later.</p>
       )}
       {state.kind === 'marking' && <p>Your viva is still being marked. Please check back in a little while.</p>}
+      {state.kind === 'failed' && (
+        <p>Your answers are saved, but the automatic marking did not finish. Your faculty will mark your viva and release the result.</p>
+      )}
       {state.kind === 'error' && <p role="alert">{studentMessage(state.error)}</p>}
-      {(state.kind === 'not_released' || state.kind === 'marking' || state.kind === 'error') && (
+      {(state.kind === 'not_released' || state.kind === 'marking' || state.kind === 'failed' || state.kind === 'error') && (
         <Button onClick={() => void load()}>Check again</Button>
       )}
       {state.kind === 'result' && (

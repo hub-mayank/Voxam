@@ -53,6 +53,7 @@ class MockLLM:
             "deeper": "Good. What edge cases or trade-offs would you worry about here?",
             "nudge": "You're partway there. Think about what happens as the input grows.",
             "redirect": "Let's bring it back to the question. Could you answer that directly?",
+            "cross_check": "Going back to the project you described: why did you make that design choice?",
         }.get(action, "Okay, let's move on.")
         if on_delta is not None:
             on_delta(text)

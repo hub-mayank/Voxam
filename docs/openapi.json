@@ -601,14 +601,15 @@
         "type": "object"
       },
       "IntegrityEvent": {
-        "description": "A recorded integrity signal (stretch goal; the list is usually empty).",
+        "description": "A recorded integrity signal: something to look at, never a verdict, and never part of the mark.",
         "examples": [
           {
             "detail": {
-              "silence_ms": 21000
+              "client_id": "b1f4c0de",
+              "duration_ms": 9200
             },
             "id": 1,
-            "kind": "long_silence",
+            "kind": "tab_hidden",
             "t_ms": 312000
           }
         ],
@@ -623,7 +624,7 @@
             "type": "integer"
           },
           "kind": {
-            "description": "e.g. tab_switch, long_silence.",
+            "description": "tab_hidden, window_blur, paste or copy (sent by the student page); other kinds may be added later.",
             "title": "Kind",
             "type": "string"
           },
@@ -638,6 +639,133 @@
           "t_ms"
         ],
         "title": "IntegrityEvent",
+        "type": "object"
+      },
+      "IntegrityReport": {
+        "additionalProperties": false,
+        "description": "Signals from the student's page. The server stamps them with its own viva clock.",
+        "examples": [
+          {
+            "events": [
+              {
+                "client_id": "b1f4c0de",
+                "duration_ms": 9200,
+                "kind": "tab_hidden"
+              },
+              {
+                "chars": 312,
+                "client_id": "a8c2e7f1",
+                "kind": "paste"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/IntegritySignal"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "IntegrityReport",
+        "type": "object"
+      },
+      "IntegrityResponse": {
+        "description": "How many signals were stored.",
+        "examples": [
+          {
+            "recorded": 2
+          }
+        ],
+        "properties": {
+          "recorded": {
+            "description": "How many were stored. 0 when the viva is not in progress, a repeat, or the per-session limit was reached.",
+            "title": "Recorded",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "recorded"
+        ],
+        "title": "IntegrityResponse",
+        "type": "object"
+      },
+      "IntegritySignal": {
+        "additionalProperties": false,
+        "description": "One thing the page noticed. A signal for faculty to look at, never a verdict and never part of the mark.",
+        "examples": [
+          {
+            "client_id": "b1f4c0de",
+            "duration_ms": 9200,
+            "kind": "tab_hidden"
+          }
+        ],
+        "properties": {
+          "chars": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How many characters were pasted or copied (never the text).",
+            "title": "Chars"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Random id from the page. Sending the same one twice records it once.",
+            "title": "Client Id"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "maximum": 3600000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How long the student was away (tab_hidden, window_blur).",
+            "title": "Duration Ms"
+          },
+          "kind": {
+            "description": "tab_hidden: the tab was hidden. window_blur: the window lost focus while the tab stayed visible. paste / copy: text was pasted into or copied out of the page.",
+            "enum": [
+              "tab_hidden",
+              "window_blur",
+              "paste",
+              "copy"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "IntegritySignal",
         "type": "object"
       },
       "IssuedEntry": {
@@ -6784,6 +6912,158 @@
           }
         ],
         "summary": "Accept the rules and recording",
+        "tags": [
+          "student"
+        ]
+      }
+    },
+    "/student/sessions/{sid}/integrity": {
+      "post": {
+        "description": "Fire and forget while the viva is running: tab hidden, window blur, paste, copy. Stored for faculty review with the server's\nviva time; nothing here changes the mark. Outside `in_progress` nothing is stored (200, `recorded: 0`).",
+        "operationId": "student_integrity",
+        "parameters": [
+          {
+            "description": "Session ID (UUID) from join.",
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "description": "Session ID (UUID) from join.",
+              "examples": [
+                "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+              ],
+              "format": "uuid",
+              "title": "Sid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrityReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "value": {
+                      "error": {
+                        "code": "unauthorized",
+                        "details": {
+                          "reason": "missing_token"
+                        },
+                        "message": "Missing, malformed, unknown or replaced token."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`unauthorized`: Missing, malformed, unknown or replaced token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "value": {
+                      "error": {
+                        "code": "forbidden",
+                        "details": {},
+                        "message": "The token is valid but not allowed here (wrong role or someone else's session)."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`forbidden`: The token is valid but not allowed here (wrong role or someone else's session)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "not_found": {
+                    "value": {
+                      "error": {
+                        "code": "not_found",
+                        "details": {
+                          "resource": "viva"
+                        },
+                        "message": "No such viva, session, student or audio."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`not_found`: No such viva, session, student or audio."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "validation_error": {
+                    "value": {
+                      "error": {
+                        "code": "validation_error",
+                        "details": {
+                          "fields": [
+                            {
+                              "loc": [
+                                "body",
+                                "text"
+                              ],
+                              "message": "Field required"
+                            }
+                          ]
+                        },
+                        "message": "The request body, query or path failed validation."
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "`validation_error`: The request body, query or path failed validation."
+          }
+        },
+        "security": [
+          {
+            "StudentToken": []
+          }
+        ],
+        "summary": "Report focus and paste signals from the page",
         "tags": [
           "student"
         ]

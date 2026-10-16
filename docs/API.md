@@ -80,6 +80,7 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 2. Show `rules_text`. `POST /student/sessions/{sid}/consent` {accepted: true, rules_version}. Declining (`false`) changes nothing: the student cannot start.
 3. `POST .../start` -> first AI turn, `deadline_at`, `remaining_ms`. Safe to call twice.
 4. Loop: `POST .../answer` {text, client_seq (1, 2, 3...), t_start_ms?, t_end_ms?} -> next AI turn. On network timeout resend the **same** `client_seq` and text: you get the same reply, nothing is recorded twice. Stop when `turn.ended` is true or on `deadline_passed`.
+   - While the viva runs the page may report what it noticed with `POST .../integrity` {events: [{kind: `tab_hidden`|`window_blur`|`paste`|`copy`, duration_ms?, chars?, client_id?}]}. Fire and forget: never block or show an error to the student if it fails. The server stamps its own viva time, stores only the length, never the text, and ignores signals outside `in_progress`. Faculty see them under `integrity_events`; the scorer never does.
 5. Timer: poll `GET .../status` (every few seconds) and count down from `remaining_ms`, correcting with `server_now`. The server decides when time is up, not the browser.
 6. After reload or rejoin: `GET .../status` gives `current_turn` and `last_client_seq` to continue (next answer is `last_client_seq + 1`).
 7. After scoring: `GET /student/sessions/{sid}/result` gives total, dimension scores and feedback, but only if faculty released results (else 403 `results_not_released`; 409 `invalid_state` if not scored yet).

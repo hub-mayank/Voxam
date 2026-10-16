@@ -8,6 +8,7 @@ from sqlalchemy import select, update
 from app.db import models as m
 from app.services import core
 from app.services import secrets_util
+from app.services.rules import RULES_VERSION
 from harness import (LONG, RAO, Clock, DownLLM, SlowMock, answer, auth, begin, build, db_of, finish, join, make_viva, start)
 
 
@@ -37,7 +38,7 @@ def test_a_whole_viva_ends_by_itself_and_queues_scoring_in_the_same_commit(env):
         assert [(j.kind, j.status, j.attempts) for j in jobs] == [("score", "queued", 0)]
     rows = turns(app, sid)
     assert [r[0] for r in rows] == list(range(len(rows))), "idx must be contiguous: it is what scoring evidence cites"
-    assert all(r[5] == "interviewer-v2" for r in rows if r[1] == "ai"), "prompt_version on every AI turn"
+    assert all(r[5] == "interviewer-v3" for r in rows if r[1] == "ai"), "prompt_version on every AI turn"
 
 
 def test_serving_model_is_stored_on_ai_turns_that_used_a_model(env):
@@ -50,7 +51,7 @@ def test_serving_model_is_stored_on_ai_turns_that_used_a_model(env):
     assert ai[0][3] == "open" and ai[0][4] is None, "the canned opener used no model"
     assert ai[2][4] == "mock", "a model-phrased follow-up records who served it"
     detail = client.get(f"/faculty/sessions/{sid}", headers=RAO).json()
-    assert detail["turns"][4]["model"] == "mock" and detail["turns"][4]["prompt_version"] == "interviewer-v2"
+    assert detail["turns"][4]["model"] == "mock" and detail["turns"][4]["prompt_version"] == "interviewer-v3"
     assert detail["turns"][1]["model"] is None
 
 
@@ -71,7 +72,7 @@ def test_start_needs_consent_and_a_bank(tmp_path):
     sid, h, _ = join(client, codes["S1"])
     r = client.post(f"/student/sessions/{sid}/start", headers=h)
     assert r.status_code == 409 and r.json()["error"]["details"]["required_status"] == "consented"
-    client.post(f"/student/sessions/{sid}/consent", headers=h, json={"accepted": True, "rules_version": "rules-v1"})
+    client.post(f"/student/sessions/{sid}/consent", headers=h, json={"accepted": True, "rules_version": RULES_VERSION})
     r = client.post(f"/student/sessions/{sid}/start", headers=h)
     assert r.status_code == 409 and "bank is empty" in r.json()["error"]["message"]
 
@@ -82,10 +83,10 @@ def test_consent_rules_version_decline_and_repeat(env):
     url = f"/student/sessions/{sid}/consent"
     bad = client.post(url, headers=h, json={"accepted": True, "rules_version": "rules-v0"})
     assert bad.status_code == 409 and bad.json()["error"]["code"] == "rules_version_mismatch"
-    no = client.post(url, headers=h, json={"accepted": False, "rules_version": "rules-v1"}).json()
+    no = client.post(url, headers=h, json={"accepted": False, "rules_version": RULES_VERSION}).json()
     assert no == {"status": "created", "consent_at": None}
-    yes = client.post(url, headers=h, json={"accepted": True, "rules_version": "rules-v1"}).json()
-    again = client.post(url, headers=h, json={"accepted": True, "rules_version": "rules-v1"}).json()
+    yes = client.post(url, headers=h, json={"accepted": True, "rules_version": RULES_VERSION}).json()
+    again = client.post(url, headers=h, json={"accepted": True, "rules_version": RULES_VERSION}).json()
     assert yes["status"] == "consented" and again == yes
 
 
@@ -112,7 +113,7 @@ def test_double_start_returns_the_same_clock_and_opener(env):
 def test_concurrent_double_start_makes_one_opener(env):
     app, client, clock, codes, _ = env
     sid, h, _ = join(client, codes["S1"])
-    client.post(f"/student/sessions/{sid}/consent", headers=h, json={"accepted": True, "rules_version": "rules-v1"})
+    client.post(f"/student/sessions/{sid}/consent", headers=h, json={"accepted": True, "rules_version": RULES_VERSION})
     out = []
 
     def go():

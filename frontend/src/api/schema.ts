@@ -426,6 +426,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/student/sessions/{sid}/integrity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report focus and paste signals from the page
+         * @description Fire and forget while the viva is running: tab hidden, window blur, paste, copy. Stored for faculty review with the server's
+         *     viva time; nothing here changes the mark. Outside `in_progress` nothing is stored (200, `recorded: 0`).
+         */
+        post: operations["student_integrity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/student/sessions/{sid}/result": {
         parameters: {
             query?: never;
@@ -820,13 +841,14 @@ export interface components {
         };
         /**
          * IntegrityEvent
-         * @description A recorded integrity signal (stretch goal; the list is usually empty).
+         * @description A recorded integrity signal: something to look at, never a verdict, and never part of the mark.
          * @example {
          *       "detail": {
-         *         "silence_ms": 21000
+         *         "client_id": "b1f4c0de",
+         *         "duration_ms": 9200
          *       },
          *       "id": 1,
-         *       "kind": "long_silence",
+         *       "kind": "tab_hidden",
          *       "t_ms": 312000
          *     }
          */
@@ -839,11 +861,79 @@ export interface components {
             id: number;
             /**
              * Kind
-             * @description e.g. tab_switch, long_silence.
+             * @description tab_hidden, window_blur, paste or copy (sent by the student page); other kinds may be added later.
              */
             kind: string;
             /** T Ms */
             t_ms: number;
+        };
+        /**
+         * IntegrityReport
+         * @description Signals from the student's page. The server stamps them with its own viva clock.
+         * @example {
+         *       "events": [
+         *         {
+         *           "client_id": "b1f4c0de",
+         *           "duration_ms": 9200,
+         *           "kind": "tab_hidden"
+         *         },
+         *         {
+         *           "chars": 312,
+         *           "client_id": "a8c2e7f1",
+         *           "kind": "paste"
+         *         }
+         *       ]
+         *     }
+         */
+        IntegrityReport: {
+            /** Events */
+            events: components["schemas"]["IntegritySignal"][];
+        };
+        /**
+         * IntegrityResponse
+         * @description How many signals were stored.
+         * @example {
+         *       "recorded": 2
+         *     }
+         */
+        IntegrityResponse: {
+            /**
+             * Recorded
+             * @description How many were stored. 0 when the viva is not in progress, a repeat, or the per-session limit was reached.
+             */
+            recorded: number;
+        };
+        /**
+         * IntegritySignal
+         * @description One thing the page noticed. A signal for faculty to look at, never a verdict and never part of the mark.
+         * @example {
+         *       "client_id": "b1f4c0de",
+         *       "duration_ms": 9200,
+         *       "kind": "tab_hidden"
+         *     }
+         */
+        IntegritySignal: {
+            /**
+             * Chars
+             * @description How many characters were pasted or copied (never the text).
+             */
+            chars?: number | null;
+            /**
+             * Client Id
+             * @description Random id from the page. Sending the same one twice records it once.
+             */
+            client_id?: string | null;
+            /**
+             * Duration Ms
+             * @description How long the student was away (tab_hidden, window_blur).
+             */
+            duration_ms?: number | null;
+            /**
+             * Kind
+             * @description tab_hidden: the tab was hidden. window_blur: the window lost focus while the tab stayed visible. paste / copy: text was pasted into or copied out of the page.
+             * @enum {string}
+             */
+            kind: "tab_hidden" | "window_blur" | "paste" | "copy";
         };
         /**
          * IssuedEntry
@@ -3902,6 +3992,69 @@ export interface operations {
             };
             /** @description `rules_version_mismatch`: The student consented to an older rules text. Show the current rules again. `invalid_state`: The action is not allowed in the current state. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `validation_error`: The request body, query or path failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    student_integrity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID (UUID) from join. */
+                sid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrityReport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrityResponse"];
+                };
+            };
+            /** @description `unauthorized`: Missing, malformed, unknown or replaced token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The token is valid but not allowed here (wrong role or someone else's session). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: No such viva, session, student or audio. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

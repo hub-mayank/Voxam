@@ -7,8 +7,8 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
 from ..api.errors import ApiError, ErrorCode
-from ..api.schemas.student import (AiTurn, AnswerRequest, AnswerResponse, ConsentRequest, ConsentResponse, JoinRequest,
-                                   JoinResponse, StartResponse, StatusResponse, StudentDimension, StudentResult)
+from ..api.schemas.student import (AiTurn, AnswerRequest, AnswerResponse, ConsentRequest, ConsentResponse, IntegrityReport,
+                                   IntegrityResponse, JoinRequest, JoinResponse, StartResponse, StatusResponse, StudentDimension, StudentResult)
 from ..clock import VivaClock
 from ..db import models as m
 from ..interviewer import Interviewer
@@ -21,6 +21,9 @@ from .throttle import SlidingWindow
 
 audit = logging.getLogger("aiviva.audit")
 POLL_SECONDS = 0.05
+
+
+INTEGRITY_LIMIT = 200  # per session; a page that floods signals cannot fill the table
 
 
 class _NoLLM:
@@ -339,6 +342,27 @@ class StudentService:
         return StatusResponse(status=s.status, phase=ai[-1].phase if ai else None, server_now=now, started_at=s.started_at,
                               deadline_at=s.deadline_at, remaining_ms=core.remaining_ms(s, now), last_client_seq=max(seqs, default=0),
                               current_turn=self._ai(ai[-1]) if ai else None)
+
+    def integrity(self, sid, body: IntegrityReport) -> IntegrityResponse:
+        """Store page signals with the server's viva time. Late, repeated or over-the-limit signals are dropped quietly: they must never
+        disturb the viva, and they never reach the scorer."""
+        db, now = self.db, self.now()
+        s = self._session(sid)
+        if s.status != SessionStatus.in_progress.value or s.started_at is None:
+            return IntegrityResponse(recorded=0)
+        stored = list(db.scalars(select(m.IntegrityEvent).where(m.IntegrityEvent.session_id == s.id)))
+        seen = {e.detail.get("client_id") for e in stored if e.detail}
+        t_ms = max(0, core.ms_between(now, s.started_at))
+        recorded = 0
+        for signal in body.events:
+            if len(stored) + recorded >= INTEGRITY_LIMIT or (signal.client_id and signal.client_id in seen):
+                continue
+            detail = {k: v for k, v in signal.model_dump(exclude={"kind"}).items() if v is not None}
+            db.add(m.IntegrityEvent(session_id=s.id, kind=signal.kind, t_ms=t_ms, detail=detail))
+            seen.add(signal.client_id)
+            recorded += 1
+        db.commit()
+        return IntegrityResponse(recorded=recorded)
 
     def result(self, sid) -> StudentResult:
         db = self.db

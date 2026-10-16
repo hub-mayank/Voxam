@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import ConfigDict, Field
@@ -87,6 +87,31 @@ class AnswerRequest(ApiRequest):
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "text": "A hash function maps the key to an index, and collisions use chaining.",
         "client_seq": 2, "t_start_ms": 41200, "t_end_ms": 52800}]})
+
+
+class IntegritySignal(ApiRequest):
+    """One thing the page noticed. A signal for faculty to look at, never a verdict and never part of the mark."""
+    kind: Literal["tab_hidden", "window_blur", "paste", "copy"] = Field(
+        description="tab_hidden: the tab was hidden. window_blur: the window lost focus while the tab stayed visible. "
+                    "paste / copy: text was pasted into or copied out of the page.")
+    duration_ms: Optional[int] = Field(None, ge=0, le=3_600_000, description="How long the student was away (tab_hidden, window_blur).")
+    chars: Optional[int] = Field(None, ge=0, le=100_000, description="How many characters were pasted or copied (never the text).")
+    client_id: Optional[str] = Field(None, min_length=1, max_length=40, description="Random id from the page. Sending the same one twice records it once.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{"kind": "tab_hidden", "duration_ms": 9200, "chars": None, "client_id": "b1f4c0de"}]})
+
+
+class IntegrityReport(ApiRequest):
+    """Signals from the student's page. The server stamps them with its own viva clock."""
+    events: list[IntegritySignal] = Field(min_length=1, max_length=20)
+    model_config = ConfigDict(json_schema_extra={"examples": [{"events": [
+        {"kind": "tab_hidden", "duration_ms": 9200, "chars": None, "client_id": "b1f4c0de"},
+        {"kind": "paste", "duration_ms": None, "chars": 312, "client_id": "a8c2e7f1"}]}]})
+
+
+class IntegrityResponse(ApiResponse):
+    """How many signals were stored."""
+    recorded: int = Field(description="How many were stored. 0 when the viva is not in progress, a repeat, or the per-session limit was reached.")
+    model_config = ConfigDict(json_schema_extra={"examples": [{"recorded": 2}]})
 
 
 class AnswerResponse(ApiResponse):

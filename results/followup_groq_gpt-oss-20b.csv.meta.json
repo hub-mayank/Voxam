@@ -1,0 +1,17 @@
+{
+  "provider": "live",
+  "model": "groq:openai/gpt-oss-20b",
+  "date": "2026-10-16",
+  "git_sha": "ca2f4ad3a5a722f254752ae18e9ebd15eaaa3e62",
+  "n": 54,
+  "n_unit": "scripted answers",
+  "personas": [
+    "strong",
+    "weak",
+    "idk"
+  ],
+  "bank": "question_bank.dsa.json",
+  "seconds_per_answer": 45,
+  "scripted_from": "question bank key_points",
+  "note": "the AI side is a real model; the student side is scripted from the bank's key points, so this shows how the interviewer adapts, not how real students answer"
+}

@@ -34,7 +34,7 @@ def test_total_math():
 
 def test_audit_fields_present():
     r = score("strong")
-    assert r["scorer_prompt_version"] == "scorer-v3" and r["rubric_version"] == "rubric-v1"
+    assert r["scorer_prompt_version"] == "scorer-v4" and r["rubric_version"] == "rubric-v1"
     assert r["model"] == "mock" and r["runs"] == 3 and len(r["run_totals"]) == 3
     assert all(d["evidence"] for d in r["dimensions"].values())
     assert set(r["evidence_timestamps"]) >= {i for d in r["dimensions"].values() for i in d["evidence"]}
@@ -104,7 +104,8 @@ from app.scorer import INJECTION, PROMPT_DIR, RULES, SCORER_PROMPT_VERSION, conf
 
 PROMPT_PINS = {"scorer-v1": "50dee8ec8fc3b4eb18e377847539ae56ac841067b59759cda673f47d24d3ff36",
                "scorer-v2": "6c79d3faa3de275cc6f58e0bd08442392baffaed33e4e6f28cb5456f3fc36e78",
-               "scorer-v3": "b678cb88c7f913ef8c77675c0f228f639fde59d3912524a47ebee8e523e17d5b"}  # a changed prompt needs a new version
+               "scorer-v3": "b678cb88c7f913ef8c77675c0f228f639fde59d3912524a47ebee8e523e17d5b",
+               "scorer-v4": "f9c53e34dfa3e36cd3ffe0f4271308303f39ad2ee1c6861f86b7f7010801649c"}  # a changed prompt needs a new version
 
 
 def test_every_prompt_file_is_pinned_so_a_change_needs_a_version_bump():
@@ -289,4 +290,11 @@ def test_sentences_that_instruct_the_scorer_never_reach_the_model_but_the_flag_a
     user = _user(build_transcript(events))
     assert "scoring override" not in user and "I use an index." in user and REMOVED in user
     assert confidence_flags(events, build_transcript(events), []), "faculty are still told"
+
+
+def test_speech_fillers_are_dropped_from_the_model_input_but_real_words_are_kept():
+    from app.scorer import neutralise
+    assert neutralise("Uh, a hash table is, um, an array of buckets, hmm. Like the index of the bucket.") == \
+        "a hash table is, an array of buckets, Like the index of the bucket."
+    assert neutralise("The human body of a function is its summary.") == "The human body of a function is its summary."
 

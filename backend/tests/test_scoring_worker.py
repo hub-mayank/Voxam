@@ -66,7 +66,7 @@ def test_the_worker_scores_an_ended_session_and_stores_the_audit_trail(env):
     assert step(app, clock) == "scored"
     rows = rows_of(app, sid)
     assert [r.run for r in rows] == [1, 2, 3] and status_of(app, sid) == "scored" and job_of(app, sid).status == "done"
-    assert {(r.rubric_version, r.prompt_version, r.model) for r in rows} == {("rubric-v1", "scorer-v3", "mock")}
+    assert {(r.rubric_version, r.prompt_version, r.model) for r in rows} == {("rubric-v1", "scorer-v4", "mock")}
     assert {r.run_spread for r in rows} == {round(max(r.total for r in rows) - min(r.total for r in rows), 2)}
     for r in rows:
         assert set(r.dims) == {"conceptual", "depth", "problem", "practical", "communication"}
@@ -80,7 +80,7 @@ def test_the_stored_result_reads_back_through_the_faculty_api(env):
     sid, h = ended_session(client, clock, codes)
     step(app, clock)
     d = client.get(f"/faculty/sessions/{sid}", headers=RAO).json()
-    assert d["status"] == "scored" and len(d["scoring"]["runs"]) == 3 and d["scoring"]["prompt_version"] == "scorer-v3"
+    assert d["status"] == "scored" and len(d["scoring"]["runs"]) == 3 and d["scoring"]["prompt_version"] == "scorer-v4"
     assert d["scoring"]["median_total"] == d["effective_total"] and d["effective_source"] == "ai"
     assert {x["idx"] for x in d["turns"]} >= {i for dim in d["scoring"]["dimensions"] for i in dim["evidence"]}, "evidence cites real turns"
     listed = client.get("/faculty/vivas/demo-viva/sessions", headers=RAO).json()["items"][0]

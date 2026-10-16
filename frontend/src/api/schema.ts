@@ -1895,6 +1895,11 @@ export interface components {
             /** @description Null until scored. */
             scoring?: components["schemas"]["Scoring"] | null;
             /**
+             * Scoring Error
+             * @description Only when status is failed: one plain sentence on why automatic marking did not finish. Null otherwise. Technical detail stays in the worker log, not here.
+             */
+            scoring_error?: string | null;
+            /**
              * Session Id
              * Format: uuid
              */
@@ -1995,6 +2000,11 @@ export interface components {
             needs_review: boolean;
             /** Overridden */
             overridden: boolean;
+            /**
+             * Scoring Error
+             * @description Only when status is failed: one plain sentence on why automatic marking did not finish. Null otherwise. Technical detail stays in the worker log, not here.
+             */
+            scoring_error?: string | null;
             /**
              * Session Id
              * Format: uuid

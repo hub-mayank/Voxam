@@ -71,6 +71,7 @@ Every non-2xx response is `{"error": {"code", "message", "details"}}`. Branch on
 6. `GET /faculty/sessions/{sid}`: transcript, `scoring` (3 runs, median, per-dimension reason + `evidence` turn numbers), `feedback`, `overrides`, `integrity_events`, `audio`.
    - Play `audio.url` in an `<audio>` tag (signed, no header needed, ~15 min lifetime; refetch the session for a new one). It supports `Range`, so seeking works. Click-to-seek: set `currentTime = turn.t_start_ms / 1000`. `t_start_ms` is null in text mode.
    - Show `effective_total` (latest override else AI) and, if different, the AI total.
+   - If `status` is `failed`, `scoring_error` (also on each row of the session list) says why in one sentence; show it next to a rescore button. It is null for every other status.
 7. `POST /faculty/sessions/{sid}/override` {new_total 0-100, reason}. Only for `scored`/`failed`. To clear a low-confidence flag without changing the mark use `POST /faculty/sessions/{sid}/review` {note}. `POST /faculty/sessions/{sid}/rescore` queues scoring again (only from `failed` or `scored`).
    - To let students see their marks: `PATCH /faculty/vivas/{id}` {"results_visible_to_students": true} (default false).
 8. Optional: `GET /faculty/vivas/{id}/export.csv` (download link; send the header via fetch + blob).

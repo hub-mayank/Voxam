@@ -66,6 +66,11 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
   const [restoring, setRestoring] = useState(() => load() !== null)
   const pending = useRef<{ text: string; seq: number } | null>(null)
   const api = useMemo(() => studentApi(state.token, fetchImpl), [state.token, fetchImpl])
+  const responseTime = () => {
+    const receivedAt = Date.now()
+    setNow(receivedAt)
+    return receivedAt
+  }
 
   const fail = useCallback((e: unknown) => {
     const err = e instanceof ApiError ? e : new ApiError('internal_error', e instanceof Error ? e.message : 'Unexpected error', 0)
@@ -82,7 +87,7 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
       dispatch({ type: 'joined', res })
       if (res.status === 'in_progress') {
         const st = await studentApi(res.session_token, fetchImpl).status(res.session_id)
-        dispatch({ type: 'status', res: st, now: Date.now() })
+        dispatch({ type: 'status', res: st, now: responseTime() })
       }
     } catch (e) {
       fail(e)
@@ -104,7 +109,8 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
     if (!state.sessionId) return
     dispatch({ type: 'busy', busy: true })
     try {
-      dispatch({ type: 'started', res: await api.start(state.sessionId), now: Date.now() })
+      const res = await api.start(state.sessionId)
+      dispatch({ type: 'started', res, now: responseTime() })
     } catch (e) {
       fail(e)
     }
@@ -122,7 +128,7 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
     try {
       const res = await api.answer(state.sessionId, clean, seq)
       pending.current = null
-      dispatch({ type: 'answered', res, text: clean, now: Date.now() })
+      dispatch({ type: 'answered', res, text: clean, now: responseTime() })
       return true
     } catch (e) {
       const err = fail(e)
@@ -136,7 +142,8 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
       } else if (err.code === 'bad_client_seq' && state.sessionId) {
         pending.current = null // the server's count is the truth: re-read it
         try {
-          dispatch({ type: 'status', res: await api.status(state.sessionId), now: Date.now() })
+          const status = await api.status(state.sessionId)
+          dispatch({ type: 'status', res: status, now: responseTime() })
         } catch {
           // the error above stays visible
         }
@@ -148,7 +155,8 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
   const refresh = useCallback(async () => {
     if (!state.sessionId) return
     try {
-      dispatch({ type: 'status', res: await api.status(state.sessionId), now: Date.now() })
+      const status = await api.status(state.sessionId)
+      dispatch({ type: 'status', res: status, now: responseTime() })
     } catch (e) {
       fail(e)
     }
@@ -174,7 +182,7 @@ export function useStudentSession(fetchImpl?: typeof fetch): StudentSession {
       (st) => {
         dispatch({ type: 'joined', res: { session_id: saved.sessionId, session_token: saved.token, status: st.status, resumed: true,
           viva_title: saved.vivaTitle, duration_ms: saved.durationMs, rules_text: saved.rulesText, rules_version: saved.rulesVersion } })
-        dispatch({ type: 'status', res: st, now: Date.now() })
+        dispatch({ type: 'status', res: st, now: responseTime() })
         setRestoring(false)
       },
       () => {

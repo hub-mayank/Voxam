@@ -162,6 +162,27 @@ describe('student screens', () => {
     expect(screen.getByText('Time is up. Thank you.')).toBeTruthy()
   })
 
+  it('a zero-time status refreshes once and leaves the answer locked', async () => {
+    saved()
+    let statusCalls = 0
+    const f = backend({
+      'GET /student/sessions/:sid/status': () => {
+        statusCalls += 1
+        return json({
+          status: 'in_progress', phase: 'wrapup', server_now: '', started_at: '', deadline_at: '',
+          remaining_ms: 0, last_client_seq: 2, current_turn: turn(4),
+        })
+      },
+    }).f
+    app(f, '/student/viva')
+
+    expect(await screen.findByText('Time is up. Your saved answers have been kept.')).toBeTruthy()
+    expect((screen.getByLabelText('Your answer') as HTMLTextAreaElement).disabled).toBe(true)
+    await waitFor(() => expect(statusCalls).toBe(2))
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    expect(statusCalls).toBe(2)
+  })
+
   it('a reload in the middle of the viva restores the question without asking for the code again', async () => {
     sessionStorage.setItem('voxam.student.session', JSON.stringify({
       sessionId: 'sid1', token: 'st_abc', vivaTitle: 'DSA viva', rulesText: 'r', rulesVersion: 'rules-v1', durationMs: 900000,

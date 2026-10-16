@@ -2,7 +2,14 @@
 // network failures are handled once. The error body is {error: {code, message, details}} (docs/API.md).
 import type { ErrorCode } from './types'
 
-export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+// Development: the backend on port 8000. A production build (finals: scripts/run_finals.sh) talks to the page's own address under /api,
+// which the preview server forwards to the backend, so one public https address (a tunnel) serves the whole product.
+export const API_URL: string = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? `${window.location.origin}/api` : 'http://localhost:8000')
+
+/** An absolute URL for an API path such as /student/join (keeps a base path like /api, which new URL(path, base) would drop). */
+export function apiHref(path: string): string {
+  return API_URL.replace(/\/+$/, '') + path
+}
 
 export class ApiError extends Error {
   constructor(
@@ -34,7 +41,7 @@ export interface RequestOptions {
 }
 
 function url(path: string, query?: RequestOptions['query']): string {
-  const u = new URL(path, API_URL)
+  const u = new URL(apiHref(path))
   for (const [k, v] of Object.entries(query ?? {})) {
     if (v !== undefined && v !== null && v !== '') u.searchParams.set(k, String(v))
   }

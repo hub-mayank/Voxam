@@ -4,7 +4,7 @@
 //   hold-to-talk button:  onPointerDown={voice.pressToTalk}  onPointerUp={voice.release}
 //   typing fallback:      voice.sendText('...')   (also used automatically when the microphone is unavailable)
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { API_URL } from '../../api/client'
+import { apiHref } from '../../api/client'
 import { startCapture, type Capture, type MicError } from './capture'
 import { VoiceClient, type SocketFactory } from './client'
 import { createPlayer, type Player } from './player'
@@ -86,7 +86,7 @@ export function useVoiceSession({ sessionId, token, mode = 'push_to_talk', langu
   const wantOpen = useRef(false)
   const spoken = useRef(new Set<number>())
 
-  const url = useMemo(() => `${API_URL.replace(/^http/, 'ws')}/student/sessions/${encodeURIComponent(sessionId)}/voice`, [sessionId])
+  const url = useMemo(() => apiHref(`/student/sessions/${encodeURIComponent(sessionId)}/voice`).replace(/^http/, 'ws'), [sessionId])
 
   const open = useCallback((resume: boolean) => {
     const c = new VoiceClient({

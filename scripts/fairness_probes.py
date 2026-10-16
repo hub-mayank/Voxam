@@ -61,8 +61,9 @@ def inject(events, phrase):
 
 
 def replace_answers(events, text):
+    """Every student answer, the opener included (a kept good opener would earn credit and hide whether the scorer rewards nonsense)."""
     out = copy.deepcopy(events)
-    for e in student_texts(out)[1:]:
+    for e in student_texts(out):
         e["text"] = text
     return out
 

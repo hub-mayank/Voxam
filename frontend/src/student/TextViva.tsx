@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from '../shared/Button'
 import { useSession } from './session/StudentSessionProvider'
 import StudentError from './StudentError'
@@ -8,12 +8,15 @@ import Timer from './Timer'
 function TextViva() {
   const session = useSession()
   const [text, setText] = useState('')
+  const refreshedAtZero = useRef(false)
   const over = session.remainingMs !== null && session.remainingMs <= 0
 
   // when the clock reaches zero the server decides what happens next: ask it once
   useEffect(() => {
-    if (over) void session.refresh()
-  }, [over])
+    if (!over || refreshedAtZero.current) return
+    refreshedAtZero.current = true
+    void session.refresh()
+  }, [over, session.refresh])
 
   async function send() {
     if (await session.submitAnswer(text)) setText('')

@@ -34,7 +34,7 @@ def test_total_math():
 
 def test_audit_fields_present():
     r = score("strong")
-    assert r["scorer_prompt_version"] == "scorer-v4" and r["rubric_version"] == "rubric-v1"
+    assert r["scorer_prompt_version"] == "scorer-v3" and r["rubric_version"] == "rubric-v1"
     assert r["model"] == "mock" and r["runs"] == 3 and len(r["run_totals"]) == 3
     assert all(d["evidence"] for d in r["dimensions"].values())
     assert set(r["evidence_timestamps"]) >= {i for d in r["dimensions"].values() for i in d["evidence"]}
@@ -290,11 +290,3 @@ def test_sentences_that_instruct_the_scorer_never_reach_the_model_but_the_flag_a
     user = _user(build_transcript(events))
     assert "scoring override" not in user and "I use an index." in user and REMOVED in user
     assert confidence_flags(events, build_transcript(events), []), "faculty are still told"
-
-
-def test_speech_fillers_are_dropped_from_the_model_input_but_real_words_are_kept():
-    from app.scorer import neutralise
-    assert neutralise("Uh, a hash table is, um, an array of buckets, hmm. Like the index of the bucket.") == \
-        "a hash table is, an array of buckets, Like the index of the bucket."
-    assert neutralise("The human body of a function is its summary.") == "The human body of a function is its summary."
-

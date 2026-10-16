@@ -49,15 +49,15 @@ function SessionDetail() {
   }, [api, sid, logout, attempt])
 
   if (!api) return null
-  if (!sid) return <Page title="Session detail"><p>No session selected.</p></Page>
-  if (loading) return <Page title="Session detail"><p role="status">Loading session...</p></Page>
+  if (!sid) return <Page title="Session detail" wide><p>No session selected.</p></Page>
+  if (loading) return <Page title="Session detail" wide><p role="status">Loading session...</p></Page>
   if (error) return (
-    <Page title="Session detail">
+    <Page title="Session detail" wide>
       <ErrorBanner error={error} />
       <Button onClick={() => setAttempt((previous) => previous + 1)}>Retry</Button>
     </Page>
   )
-  if (!detail) return <Page title="Session detail"><p>No session data available.</p></Page>
+  if (!detail) return <Page title="Session detail" wide><p>No session data available.</p></Page>
 
   const turns = [...detail.turns].sort((a, b) => a.idx - b.idx)
   const turnIndexes = new Set(turns.map((turn) => turn.idx))
@@ -73,7 +73,7 @@ function SessionDetail() {
   }
 
   return (
-    <Page title="Session detail">
+    <Page title="Session detail" wide>
       <p>{detail.student_id}{detail.student_name ? ` — ${detail.student_name}` : ''}</p>
       <p>Status: <Badge>{detail.status}</Badge></p>
       <p>

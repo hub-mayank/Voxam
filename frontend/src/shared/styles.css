@@ -14,8 +14,20 @@
 body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.5; }
 a { color: var(--accent); }
 .page { max-width: 1100px; margin: 0 auto; padding: 24px var(--gap); }
+.page:not(.wide) { max-width: 760px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); flex-wrap: wrap; margin-bottom: var(--gap); }
 .page-head h1 { margin: 0; font-size: 1.5rem; }
+.site-header { min-height: 56px; border-bottom: 1px solid var(--border); }
+.site-header-inner { max-width: 1100px; min-height: 56px; margin: 0 auto; padding: 0 var(--gap); display: flex; align-items: center; justify-content: space-between; }
+.site-brand { color: var(--text); font-size: 1.125rem; font-weight: 700; text-decoration: none; }
+.site-section { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+.home-destinations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); margin: 24px 0; }
+.home-card { min-height: 144px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); text-decoration: none; }
+.home-card:hover { border-color: var(--accent); }
+.home-card h2 { margin: 0; font-size: 1.2rem; }
+.home-card span { color: var(--muted); }
+.home-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 0; margin: 24px 0; list-style: none; }
+.home-facts li { padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--surface); }
 .btn { font: inherit; padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
 .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .btn.danger { color: var(--bad); border-color: var(--bad); }
@@ -37,3 +49,8 @@ a { color: var(--accent); }
 .field input, .field textarea, .field select { font: inherit; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 .muted { color: var(--muted); font-size: 0.9rem; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) {
+  .page { padding-top: 20px; }
+  .home-destinations, .home-facts { grid-template-columns: 1fr; }
+  .home-card { min-height: 112px; }
+}

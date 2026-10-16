@@ -14,13 +14,17 @@
 .question { font-size: 1.25rem; line-height: 1.4; margin: 0 0 var(--gap); }
 .timer { font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 600; }
 .timer.low { color: var(--warn); }
+.timer-note { color: var(--warn); font-weight: 600; }
+.timer-track { height: 6px; overflow: hidden; border-radius: 999px; background: var(--border); }
+.timer-progress { height: 100%; border-radius: inherit; background: var(--accent); transition: width 250ms linear; }
+.timer-track.low .timer-progress { background: var(--warn); }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 var(--gap); align-items: center; }
 .options { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--gap); margin: 0 0 var(--gap); display: grid; gap: 8px; }
 .options label { display: flex; gap: 8px; align-items: flex-start; }
-.talk { padding: 16px 28px; font-size: 1.1rem; }
+.talk { display: block; width: min(100%, 22rem); min-height: 64px; margin: 16px auto; padding: 16px 28px; font-size: 1.1rem; }
 .talk.live { background: var(--good); color: var(--accent-text); border-color: var(--good); }
-.log { list-style: none; padding: 0; margin: var(--gap) 0 0; display: grid; gap: 8px; }
-.log li { border-left: 3px solid var(--border); padding-left: 10px; }
+.log { list-style: none; max-height: 20rem; overflow-y: auto; overscroll-behavior: contain; padding: 8px; margin: var(--gap) 0 0; display: grid; gap: 8px; }
+.log li { border-left: 3px solid var(--good); padding: 8px 12px; border-radius: 0 var(--radius) var(--radius) 0; background: var(--surface); }
 .log .ai { border-left-color: var(--accent); }
 textarea.answer { width: 100%; min-height: 120px; font: inherit; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 .btn:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from '../shared/Button'
 import { useSession } from './session/StudentSessionProvider'
 import Timer from './Timer'
@@ -7,10 +7,10 @@ import type { AnswerMode, SpeakLanguage } from './phase'
 import { useVoiceSession } from './voice'
 
 const STATE_WORDS: Record<string, string> = {
-  listening: 'Listening: your turn to speak',
-  thinking: 'Thinking…',
-  speaking: 'The interviewer is speaking',
-  ended: 'The viva has ended',
+  listening: 'Listening — your turn',
+  thinking: 'Thinking',
+  speaking: 'Speaking — interviewer',
+  ended: 'Viva ended',
 }
 
 function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerMode, 'text'>; language: SpeakLanguage; sessionId: string; token: string }) {
@@ -18,6 +18,7 @@ function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerM
   const voice = useVoiceSession({ sessionId, token, mode, language })
   const [text, setText] = useState('')
   const [holding, setHolding] = useState(false)
+  const logRef = useRef<HTMLOListElement>(null)
 
   // Keep the REST answer sequence aligned after voice answers and reconnects.
   useEffect(() => {
@@ -38,11 +39,16 @@ function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerM
 
   const label = voice.serverState ? (voice.aiSpeaking && voice.serverState !== 'ended' ? STATE_WORDS.speaking : STATE_WORDS[voice.serverState]) : ''
   const open = voice.connection === 'open'
+  const visibleLabel = label || (open ? 'Ready' : 'Connecting')
   // listening, or speaking (barge-in): while the answer is being processed the server ignores a new press, so the button stays off
   const canTalk = open && (voice.serverState === 'listening' || voice.serverState === 'speaking')
   const level = Math.min(1, voice.level * 4)
   const levelWords = voice.level < 0.02 ? 'quiet' : level > 0.9 ? 'very loud' : 'good'
   const last = voice.transcript.at(-1)
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
+  }, [voice.transcript.length])
 
   function press() {
     if (!canTalk || holding) return
@@ -58,7 +64,7 @@ function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerM
 
   return (
     <div className="student">
-      <Timer remainingMs={voice.remainingMs} />
+      <Timer remainingMs={voice.remainingMs} totalMs={session.durationMs} />
       {voice.connection === 'idle' && (
         <section className="card">
           <p>
@@ -93,7 +99,7 @@ function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerM
         <section className="card" aria-label="Interviewer">
           <p className="question" aria-live="polite">{voice.aiText || 'Waiting for the first question…'}</p>
           <p className="chips">
-            <span className="badge info" role="status">{label || 'Connecting'}</span>
+            <span className="badge info" role="status">{visibleLabel}</span>
             <meter min={0} max={1} value={level} aria-label="Microphone level">{levelWords}</meter>
             <span>Microphone: {levelWords}</span>
           </p>
@@ -145,7 +151,8 @@ function VoiceViva({ mode, language, sessionId, token }: { mode: Exclude<AnswerM
           </Button>
         </section>
       )}
-      <ol className="log" aria-label="Conversation so far">
+      {session.lastSeq > 0 && voice.transcript.length <= 1 && <p className="muted">Earlier answers are saved.</p>}
+      <ol ref={logRef} className="log" role="log" aria-label="Conversation so far">
         {voice.transcript.map((line, i) => (
           <li key={i} className={line.role}>
             <strong>{line.role === 'ai' ? 'Interviewer' : line.role === 'student' ? 'You' : 'Note'}:</strong> {line.text}

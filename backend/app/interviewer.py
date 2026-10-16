@@ -30,6 +30,7 @@ FALLBACK_REPLIES = {
     "deeper": "Good. What edge cases or trade-offs would you worry about here?",
     "nudge": "You're partway there. Think about what happens as the input grows.",
     "redirect": "Let's bring it back to the question. Could you answer that directly?",
+    "cross_check": "Earlier you told me about a project. What was the hardest part of it, and what would you do differently now?",
 }
 DEFAULT_REPLY = "Okay, let's move on."
 
@@ -43,6 +44,10 @@ def is_no_answer(answer: str) -> bool:
     return len(text.split()) < 3 or (len(text.split()) <= 8 and bool(NO_ANSWER.search(text)))
 
 
+CROSS_CHECK_ID = "xcheck"
+CROSS_CHECK_MIN_WORDS = 8  # an opener answer shorter than this gives nothing specific to come back to
+
+
 class Interviewer:
     def __init__(self, llm, bank, clock: VivaClock, cfg: VivaConfig, seed=0):
         self.llm, self.bank, self.clock, self.cfg = llm, bank, clock, cfg
@@ -52,6 +57,8 @@ class Interviewer:
         self.followups = self.redirects = 0
         self.phase_name = None
         self.opener_answered = False
+        self.opener_text = ""
+        self.cross_checked = False
         self.log = []
 
     def _event(self, **kw):
@@ -88,6 +95,25 @@ class Interviewer:
         self.asked.append(q["id"])
         return q["text"]
 
+    def _cross_check_due(self, phase_name):
+        """Once per viva, at the first question of the depth phase: go back to something the student said in the opener."""
+        return (not self.cross_checked and phase_name == "depth" and len(self.opener_text.split()) >= CROSS_CHECK_MIN_WORDS)
+
+    def _cross_check(self, on_phrase_delta=None) -> str:
+        """Ask the student to explain a detail of their own opener again from another angle. Whoever really did the work answers easily;
+        an answer that was read out for them, or about a project that is not theirs, tends to contradict the opener. Faculty read both."""
+        self.cross_checked = True
+        user = (f"ACTION: cross_check\nTASK: name one specific tool, feature or choice the student mentioned below, using their own words, "
+                f"and ask why they chose it or how it works. Mention nothing they did not say.\n<answer>{self.opener_text}</answer>")
+        if on_phrase_delta is None:
+            text = self.llm.complete_text(PHRASE_SYS, user)
+        else:
+            text = self.llm.complete_text(PHRASE_SYS, user, on_delta=on_phrase_delta)
+        self.q, self.followups, self.redirects = {"id": CROSS_CHECK_ID, "text": text, "type": "cross_check"}, 0, 0
+        self.asked.append(CROSS_CHECK_ID)
+        self._event(role="ai", action="cross_check", text=text)
+        return text
+
     def _phase(self):
         """Clock phase, except: once the opener is answered, warm-up ends early (timings are caps, not waits)."""
         ph = self.clock.phase()
@@ -106,6 +132,7 @@ class Interviewer:
         self._event(role="student", text=answer)
         if self.q["id"] == "opener":
             self.opener_answered = True
+            self.opener_text = answer
         ph = self._phase()
 
         if ph.name in ("wrapup", "scoring"):
@@ -115,6 +142,8 @@ class Interviewer:
 
         if ph.name != self.phase_name:
             self.phase_name = ph.name
+            if self._cross_check_due(ph.name):
+                return self._cross_check(on_phrase_delta)
             text = self._new_question(ph.name)
             if text:
                 self._event(role="ai", action="new_question", text=text)
@@ -127,6 +156,8 @@ class Interviewer:
         if action == "move_on":
             t = self.q.get("topic")
             self.topic_points[t] = self.topic_points.get(t, 0) + policy.QUALITY_POINTS[quality]
+            if self._cross_check_due(ph.name):
+                return self._cross_check(on_phrase_delta)
             text = self._new_question(ph.name)
             if text is None:  # nothing left to ask: end gracefully, labelled honestly
                 self._event(role="ai", action="close", text=CLOSER)
@@ -169,18 +200,24 @@ class Interviewer:
             if t["role"] == "student":
                 if t.get("question_id") == OPENER["id"]:
                     self.opener_answered = True
+                    self.opener_text = t["text"]
                 previous = t
                 continue
             self.phase_name = t["phase"]
             action = t.get("action")
             if action == "open":
                 self.q = OPENER
-            elif action == "new_question":
+            elif action in ("new_question", "cross_check", "close"):
                 if previous and previous.get("quality"):  # reached by move_on; a phase change skips classification
                     topic = self.q.get("topic")
                     self.topic_points[topic] = self.topic_points.get(topic, 0) + policy.QUALITY_POINTS[previous["quality"]]
-                self.q, self.followups, self.redirects = known[t["question_id"]], 0, 0
-                self.asked.append(t["question_id"])
+                if action == "new_question":
+                    self.q, self.followups, self.redirects = known[t["question_id"]], 0, 0
+                    self.asked.append(t["question_id"])
+                elif action == "cross_check":
+                    self.q, self.followups, self.redirects = {"id": CROSS_CHECK_ID, "text": t["text"], "type": "cross_check"}, 0, 0
+                    self.asked.append(CROSS_CHECK_ID)
+                    self.cross_checked = True
             elif action == "redirect":
                 self.redirects += 1
             elif action in ("deeper", "nudge"):

@@ -17,6 +17,7 @@ from app.api.errors import ERROR_EXAMPLES, HTTP_STATUS, ErrorCode
 from app.api.main import create_app, openapi_json
 from app.api.schemas import common, faculty, student
 from app.api.settings import Settings, parse_faculty_tokens
+from app.services.rules import RULES_VERSION
 
 ROOT = Path(__file__).resolve().parents[2]
 FACULTY = {"tok-rao-0123456789": "dr-rao", "tok-iyer-0123456789": "dr-iyer"}
@@ -197,7 +198,7 @@ def test_auth_matrix_over_every_route():
         else:
             checked["public"] += 1
             assert path in ("/health", "/student/join"), f"{path} has no auth"
-    assert checked == {"faculty": 19, "student": 5, "public": 2}
+    assert checked == {"faculty": 19, "student": 6, "public": 2}
 
 
 def test_no_faculty_tokens_configured_means_everything_is_401():
@@ -261,8 +262,9 @@ def test_every_stub_response_validates_against_its_own_schema():
         body = {"json": {"question_ids": ["q001"]}} if path.endswith("/questions/approve") else body
         body = {"json": {"syllabus": "Arrays and hashing", "count": 2}} if path.endswith("/questions/generate") else body
         body = {"json": {"results_visible_to_students": True}} if method == "patch" else body
-        body = {"json": {"accepted": True, "rules_version": "rules-v1"}} if path.endswith("/consent") else body
+        body = {"json": {"accepted": True, "rules_version": RULES_VERSION}} if path.endswith("/consent") else body
         body = {"json": {"text": "hello", "client_seq": 1}} if path.endswith("/answer") else body
+        body = {"json": {"events": [{"kind": "paste", "chars": 5}]}} if path.endswith("/integrity") else body
         body = {"json": {"title": "t", "subject": "s", "topics": ["a"], "difficulty": "easy"}} if path == "/faculty/vivas" and method == "post" else body
         body = {"files": {"file": ("x.csv", b"a,b\n", "text/csv")}} if path.endswith(("/questions", "/roster")) and method == "post" else body
         r = client.request(method.upper(), url_for(path), headers=headers, **body)
@@ -330,7 +332,7 @@ def test_openapi_is_independent_of_the_environment():
 def test_openapi_basics():
     spec = make_app().openapi()
     ids = [op["operationId"] for _, _, op in operations(make_app())]
-    assert len(ids) == len(set(ids)) == 26
+    assert len(ids) == len(set(ids)) == 27
     assert all(op.get("summary") for _, _, op in operations(make_app()))
     assert set(spec["components"]["securitySchemes"]) == {"FacultyToken", "StudentToken"}
     assert "Voice" in spec["info"]["description"] and "VOICE_PROTOCOL.md" in spec["info"]["description"]

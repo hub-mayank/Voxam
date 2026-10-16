@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Path, Request
 from .auth import require_student
 from .deps import student_ops
 from .errors import ErrorCode, error_responses
-from .schemas.student import (AnswerRequest, AnswerResponse, ConsentRequest, ConsentResponse, JoinRequest,
-                              JoinResponse, StartResponse, StatusResponse, StudentResult)
+from .schemas.student import (AnswerRequest, AnswerResponse, ConsentRequest, ConsentResponse, IntegrityReport,
+                              IntegrityResponse, JoinRequest, JoinResponse, StartResponse, StatusResponse, StudentResult)
 from .stub import stub_marker
 
 AUTH = (ErrorCode.unauthorized, ErrorCode.forbidden)
@@ -73,6 +73,14 @@ def student_status(sid: UUID = SID, ops=Depends(student_ops)):
     """Poll for the timer: `remaining_ms` is computed from the server clock; show `server_now` skew-corrected.
     After a reload or rejoin use `current_turn` and `last_client_seq` to resume."""
     return ops.status(sid)
+
+
+@router.post("/sessions/{sid}/integrity", response_model=IntegrityResponse, summary="Report focus and paste signals from the page",
+             responses=error_responses(*AUTH, ErrorCode.not_found, ErrorCode.validation_error))
+def student_integrity(body: IntegrityReport, sid: UUID = SID, ops=Depends(student_ops)):
+    """Fire and forget while the viva is running: tab hidden, window blur, paste, copy. Stored for faculty review with the server's
+    viva time; nothing here changes the mark. Outside `in_progress` nothing is stored (200, `recorded: 0`)."""
+    return ops.integrity(sid, body)
 
 
 @router.get("/sessions/{sid}/result", response_model=StudentResult, summary="The student's own result",

@@ -11,6 +11,7 @@ period; MSOT said on 2026-10-08 that retention is about one month and configurab
 | Voice recording, including captured background sound | One stereo WAV per voice session: participant left, AI right; `AUDIO_DIR`, with its path in `sessions.audio_uri` |
 | Transcript and interview audit | `turns`: answer/question text, timings, phase, question ID, classification, model/prompt version and metadata such as STT confidence |
 | AI marking | `scores`: three runs, dimension marks, reasons, evidence references, feedback and confidence/review flags |
+| Page signals | `integrity_events`: when the viva tab was hidden or the window lost focus, and when text was pasted or copied, with the viva time and a length (milliseconds or characters). Never the pasted text. Shown to faculty, never to the scorer; rules text `rules-v2` tells the student |
 | Human review | `overrides` / `reviews`: reviewer identity, mark changes, reasons, notes and timestamps |
 | Participant and session details | `roster`: student ID and optional name; `sessions`: participant ID, status, consent timestamp/rules version and session times |
 | Login and processing state | HMAC-hashed access codes, hashed session tokens, failed-code counters, scoring jobs and possible error text |

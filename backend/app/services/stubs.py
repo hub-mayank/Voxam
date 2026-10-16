@@ -7,7 +7,7 @@ from ..api.errors import ApiError, ErrorCode
 from ..api.schemas.common import example_of
 from ..api.schemas.faculty import (OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewResult, RosterEntry,
                                    RosterList, RosterUploadResult, SessionDetail, SessionList, Viva, VivaList)
-from ..api.schemas.student import (AnswerResponse, ConsentResponse, JoinResponse, StartResponse, StatusResponse, StudentResult)
+from ..api.schemas.student import (AnswerResponse, ConsentResponse, IntegrityResponse, JoinResponse, StartResponse, StatusResponse, StudentResult)
 from ..api.stub import silent_wav
 
 CSV_EXAMPLE = ("student_id,name,status,ai_total,effective_total,overridden,low_confidence,needs_review,"
@@ -87,4 +87,5 @@ class StubStudent:
     def start(self, sid): return example_of(StartResponse)
     def answer(self, sid, body): return example_of(AnswerResponse)
     def status(self, sid): return example_of(StatusResponse)
+    def integrity(self, sid, body): return example_of(IntegrityResponse)
     def result(self, sid): return example_of(StudentResult)

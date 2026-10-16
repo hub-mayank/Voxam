@@ -381,13 +381,13 @@ class OverrideEntry(ApiResponse):
 
 
 class IntegrityEvent(ApiResponse):
-    """A recorded integrity signal (stretch goal; the list is usually empty)."""
+    """A recorded integrity signal: something to look at, never a verdict, and never part of the mark."""
     id: int
-    kind: str = Field(description="e.g. tab_switch, long_silence.")
+    kind: str = Field(description="tab_hidden, window_blur, paste or copy (sent by the student page); other kinds may be added later.")
     t_ms: int
     detail: dict = Field(default_factory=dict)
     model_config = ConfigDict(json_schema_extra={"examples": [
-        {"id": 1, "kind": "long_silence", "t_ms": 312000, "detail": {"silence_ms": 21000}}]})
+        {"id": 1, "kind": "tab_hidden", "t_ms": 312000, "detail": {"duration_ms": 9200, "client_id": "b1f4c0de"}}]})
 
 
 class ReviewRequest(ApiRequest):

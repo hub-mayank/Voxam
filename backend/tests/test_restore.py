@@ -124,3 +124,52 @@ def test_graceful_llm_answers_when_every_provider_fails():
     assert reply and "partway" in reply
     assert llm.served is None and len(llm.errors) >= 2
     assert any(e.get("action") == "classify_error" for e in iv.log)
+
+
+def test_the_cross_check_comes_once_at_the_start_of_depth_from_the_opener_and_is_rebuilt_from_stored_turns():
+    for seed in (0, 7, "session-a"):
+        tick, live = fresh(seed, 0)
+        live.start()
+        asked = []
+        for i, answer in enumerate(ANSWERS):
+            tick.t = 30 * (i + 1)
+            before = len(live.log)
+            live.respond(answer)
+            asked += [e for e in live.log[before:] if e.get("action") == "cross_check"]
+            if live.log[-1]["action"] == "close":
+                break
+        assert len(asked) == 1, "once per viva"
+        assert asked[0]["phase"] == "depth" and asked[0]["question_id"] == "xcheck" and asked[0]["t"] >= 300
+        assert asked[0]["text"] == "Going back to the project you described: why did you make that design choice?"
+        _, rebuilt = fresh(seed, 330)
+        rebuilt.restore(spoken_turns(live.log)[:next(i for i, e in enumerate(spoken_turns(live.log)) if e.get("action") == "cross_check") + 1])
+        assert rebuilt.cross_checked and rebuilt.q["id"] == "xcheck" and rebuilt.q["text"] == asked[0]["text"]
+
+
+def test_no_cross_check_when_the_opener_gave_nothing_to_come_back_to():
+    tick, live = fresh(0, 0)
+    live.start()
+    live.respond("a project")  # two words: nothing specific
+    for i in range(1, 12):
+        tick.t = 30 * (i + 1)
+        live.respond(LONG)
+        if live.log[-1]["action"] == "close":
+            break
+    assert not any(e.get("action") == "cross_check" for e in live.log) and not live.cross_checked
+
+
+def test_a_failed_model_falls_back_to_a_fixed_cross_check_line():
+    from app.interviewer import FALLBACK_REPLIES
+
+    class Down(MockLLM):
+        def complete_text(self, *a, **k):
+            raise RuntimeError("down")
+
+    tick, live = fresh(0, 0)
+    live.llm = GracefulLLM(Down())
+    live.start()
+    live.respond(LONG)
+    tick.t = 300
+    live.respond(LONG)
+    got = [e for e in live.log if e.get("action") == "cross_check"]
+    assert len(got) == 1 and got[0]["text"] == FALLBACK_REPLIES["cross_check"]

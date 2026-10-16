@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app.api.main import create_app
 from app.api.settings import Settings
 from app.llm.mock import MockLLM
+from app.services.rules import RULES_VERSION
 
 ROOT = Path(__file__).resolve().parents[2]
 PG_BASE = None        # set by conftest with --postgres
@@ -130,7 +131,7 @@ def join(client, code, viva_id="demo-viva", student_id="S1"):
 
 
 def start(client, sid, headers):
-    rules = client.post(f"/student/sessions/{sid}/consent", headers=headers, json={"accepted": True, "rules_version": "rules-v1"})
+    rules = client.post(f"/student/sessions/{sid}/consent", headers=headers, json={"accepted": True, "rules_version": RULES_VERSION})
     assert rules.status_code == 200, rules.text
     r = client.post(f"/student/sessions/{sid}/start", headers=headers)
     assert r.status_code == 200, r.text

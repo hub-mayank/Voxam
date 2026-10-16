@@ -108,7 +108,7 @@ function VivaList() {
   }
 
   return (
-    <Page title="Vivas" actions={<Button variant="primary" aria-expanded={createOpen} aria-controls="create-viva-form" onClick={() => {
+    <Page title="Vivas" wide actions={<Button variant="primary" aria-expanded={createOpen} aria-controls="create-viva-form" onClick={() => {
       setCreateError(null)
       setCreateOpen((open) => !open)
     }}>{createOpen ? 'Close form' : 'Create viva'}</Button>}>

@@ -91,10 +91,10 @@ function SessionList() {
   }, [load])
 
   if (!api) return null
-  if (!vivaId) return <Page title="Sessions"><p>No viva selected.</p></Page>
+  if (!vivaId) return <Page title="Sessions" wide><p>No viva selected.</p></Page>
 
   return (
-    <Page title="Sessions">
+    <Page title="Sessions" wide>
       <details>
         <summary>Manage question bank</summary>
         <BankUpload key={vivaId} vivaId={vivaId} />

@@ -35,7 +35,7 @@ function Login() {
 
   return (
     <Page title="Faculty login" wide>
-      <form onSubmit={handleSubmit} aria-busy={checking}>
+      <form className="faculty-login-form" onSubmit={handleSubmit} aria-busy={checking}>
         <label className="field" htmlFor="faculty-token">
           Faculty token
           <input

@@ -13,26 +13,28 @@ interface Props<T> {
 }
 
 function Table<T>({ columns, rows, rowKey, empty = 'Nothing here yet.' }: Props<T>) {
-  if (rows.length === 0) return <p>{empty}</p>
+  if (rows.length === 0) return <p className="empty-state">{empty}</p>
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          {columns.map((c) => (
-            <th key={c.header}>{c.header}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={rowKey(r)}>
+    <div className="table-wrap">
+      <table className="table">
+        <thead>
+          <tr>
             {columns.map((c) => (
-              <td key={c.header}>{c.cell(r)}</td>
+              <th key={c.header} scope="col">{c.header}</th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={rowKey(r)}>
+              {columns.map((c) => (
+                <td key={c.header} data-label={c.header}>{c.cell(r)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

@@ -10,12 +10,12 @@ describe('application home and shared header', () => {
     render(<App />)
 
     expect(screen.getByRole('link', { name: 'Voxam' }).getAttribute('href')).toBe('/')
-    expect(screen.getByRole('heading', { name: 'A fair, voice-first viva that your faculty can audit.' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'A thoughtful viva. A fairer way to show what you know.' })).toBeTruthy()
     expect(screen.getByRole('link', { name: /I am taking a viva/ }).getAttribute('href')).toBe('/student')
     expect(screen.getByRole('link', { name: /Faculty dashboard/ }).getAttribute('href')).toBe('/faculty')
-    expect(screen.getByText('It asks follow-up questions.')).toBeTruthy()
-    expect(screen.getByText('It marks against a fixed rubric.')).toBeTruthy()
-    expect(screen.getByText('Every mark has a transcript and audio to check.')).toBeTruthy()
+    expect(screen.getByText('Follow-up questions keep each conversation focused.')).toBeTruthy()
+    expect(screen.getByText('One shared rubric makes marking consistent.')).toBeTruthy()
+    expect(screen.getByText('Transcript and audio let faculty review each mark.')).toBeTruthy()
   })
 
   it('shows the student section label after following the student destination', () => {
@@ -25,5 +25,15 @@ describe('application home and shared header', () => {
 
     expect(screen.getByRole('banner').querySelector('.site-section')?.textContent).toBe('Viva')
     expect(screen.getByRole('heading', { name: 'Join your viva' })).toBeTruthy()
+  })
+
+  it('switches themes and persists the selected theme', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to dark theme' }))
+
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem('voxam.theme')).toBe('dark')
+    expect(screen.getByRole('button', { name: 'Switch to light theme' })).toBeTruthy()
   })
 })

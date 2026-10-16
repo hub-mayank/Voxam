@@ -21,9 +21,12 @@ const columns: Column<Viva>[] = [
   },
   {
     header: 'Sessions by status',
-    cell: (viva) => statuses.map((status) => (
-      <Badge key={status}>{status}: {viva.session_counts[status] ?? 0}</Badge>
-    )),
+    cell: (viva) => <span className="status-counts">{statuses.map((status) => {
+      const tone = status === 'scored' || status === 'ended' ? 'good'
+        : status === 'failed' || status === 'abandoned' ? 'bad'
+          : status === 'scoring' ? 'warn' : 'neutral'
+      return <Badge key={status} tone={tone}>{status.replace('_', ' ')}: {viva.session_counts[status] ?? 0}</Badge>
+    })}</span>,
   },
 ]
 
@@ -149,7 +152,7 @@ function VivaList() {
           </div>
         </form>
       )}
-      {loading ? <p role="status">Loading vivas...</p> : error ? (
+      {loading ? <div className="skeleton-list" role="status" aria-label="Loading vivas"><span className="sr-only">Loading vivas...</span><span className="skeleton skeleton-row" /><span className="skeleton skeleton-row" /><span className="skeleton skeleton-row" /></div> : error ? (
         <>
           <ErrorBanner error={error} />
           <Button onClick={() => {

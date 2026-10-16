@@ -379,5 +379,16 @@ describe('student screens', () => {
     await screen.findByText('Which language will you speak?')
     expect((screen.getByLabelText(/Hindi or Hinglish/) as HTMLInputElement).checked).toBe(true)
   })
+
+  it('done: a viva whose automatic marking failed says faculty will mark it, not "still being marked"', async () => {
+    saved()
+    const f = backend({
+      'GET /student/sessions/:sid/status': () => json({ status: 'failed', phase: 'wrapup', server_now: '', started_at: '', deadline_at: '', remaining_ms: 0, last_client_seq: 9, current_turn: turn(18, true) }),
+      'GET /student/sessions/:sid/result': () => err('invalid_state', 409, { status: 'failed', required_status: 'scored' }),
+    }).f
+    app(f, '/student/done')
+    await screen.findByText(/automatic marking did not finish/)
+    expect(screen.queryByText(/still being marked/)).toBeNull()
+  })
 })
 

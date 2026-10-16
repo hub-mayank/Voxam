@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { API_URL, ApiError } from '../api/client'
+import { apiHref, ApiError } from '../api/client'
 import type { SessionDetail } from '../api/types'
 import Button from '../shared/Button'
 import ErrorBanner from '../shared/ErrorBanner'
@@ -51,7 +51,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, Props>(function AudioPlayer({ 
             ref={player}
             controls
             preload="metadata"
-            src={new URL(audio.url, API_URL).href}
+            src={apiHref(audio.url)}
             onLoadedMetadata={() => {
               setLoading(false)
               if (pendingOffset.current !== null) {

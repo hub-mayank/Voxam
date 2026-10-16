@@ -26,6 +26,9 @@ Text mode runs fully offline with the mock LLM. It needs no Docker, database or 
     python -m app.cli --llm mock                     # text viva, writes session.jsonl
     python -m app.score session.jsonl --llm mock     # score it, writes score.json
 
+## Finals mode (one address, optional free tunnel)
+`FACULTY_TOKENS="you:$(openssl rand -hex 12)" scripts/run_finals.sh --fresh` serves the app and the API on `http://localhost:5173`; `TUNNEL=1` adds a free https link for other computers. We do not host the product anywhere (D26). See `docs/FINALS_RUNBOOK.md`.
+
 ## Local profile (one command)
     scripts/run_local.sh            # API + scoring worker on SQLite, a seeded LOCAL viva, access codes printed; Ctrl-C stops it
     scripts/run_local.sh --fresh    # start over with an empty database

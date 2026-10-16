@@ -10,6 +10,7 @@ import ErrorBanner from '../shared/ErrorBanner'
 import Page from '../shared/Page'
 import Table, { type Column } from '../shared/Table'
 import BankUpload from './BankUpload'
+import ExportRelease from './ExportRelease'
 import RosterUpload from './RosterUpload'
 
 // Request up to 20 sessions per page.
@@ -93,7 +94,7 @@ function SessionList() {
   if (!vivaId) return <Page title="Sessions"><p>No viva selected.</p></Page>
 
   return (
-    <Page title="Sessions">
+    <Page title="Sessions" actions={<ExportRelease vivaId={vivaId} />}>
       <details>
         <summary>Manage question bank</summary>
         <BankUpload key={vivaId} vivaId={vivaId} />

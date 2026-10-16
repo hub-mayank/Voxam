@@ -1,0 +1,19 @@
+{
+  "provider": "live",
+  "model": "groq:openai/gpt-oss-20b",
+  "date": "2026-10-16",
+  "git_sha": "ca2f4ad3a5a722f254752ae18e9ebd15eaaa3e62",
+  "n": 15,
+  "n_unit": "scorer runs",
+  "runs_per_transcript": 3,
+  "transcripts": [
+    "idk",
+    "injection",
+    "strong",
+    "strong_hinglish",
+    "weak"
+  ],
+  "failed_runs": [],
+  "scorer_prompt_version": "scorer-v3",
+  "note": ""
+}

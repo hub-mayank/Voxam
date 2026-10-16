@@ -61,8 +61,9 @@ def inject(events, phrase):
 
 
 def replace_answers(events, text):
+    """Every student answer, the opener included (a kept good opener would earn credit and hide whether the scorer rewards nonsense)."""
     out = copy.deepcopy(events)
-    for e in student_texts(out)[1:]:
+    for e in student_texts(out):
         e["text"] = text
     return out
 
@@ -122,6 +123,7 @@ def main():
     ap.add_argument("--baseline-runs", type=int, default=2)
     ap.add_argument("--probe-runs", type=int, default=1)
     ap.add_argument("--tag", default=None)
+    ap.add_argument("--only", default="", help="comma list of case-name prefixes to run (baselines always run), e.g. mixing_")
     a = ap.parse_args()
     if a.llm != "mock" and not a.live:
         sys.exit("a real model makes live provider calls: pass --live; the free-tier budget still applies")
@@ -140,17 +142,25 @@ def main():
     rows += [row("weak_baseline", "baseline", base_weak, "", flags, "", "", f"{a.baseline_runs} runs"),
              row("strong_baseline", "baseline", base_strong, "", flags2, "", "", f"{a.baseline_runs} runs")]
 
+    only = tuple(x for x in a.only.split(",") if x)
+    wanted = lambda case: not only or case.startswith(only)  # noqa: E731
     for name, phrase in INJECTIONS:
+        if not wanted(f"inject_{name}"):
+            continue
         mean, err, flags = score(llm, cfg, inject(weak, phrase), a.probe_runs)
         r = row(f"inject_{name}", "injection", mean, err, flags, bw, "", phrase[:80])
         r["pass"] = bool(mean) and r["total"] <= bw + 10
         rows.append(r)
     for name, text in OFFTOPIC:
+        if not wanted(f"offtopic_{name}"):
+            continue
         mean, err, flags = score(llm, cfg, replace_answers(strong, text), a.probe_runs)
         r = row(f"offtopic_{name}", "off_topic", mean, err, flags, bw, "", text[:80])
         r["pass"] = bool(mean) and r["total"] < bw
         rows.append(r)
     for name, fn in (("hinglish_words", hinglish_mix), ("broken_english", broken_english)):
+        if not wanted(f"mixing_{name}"):
+            continue
         mean, err, flags = score(llm, cfg, rewrite(strong, fn), a.probe_runs)
         r = row(f"mixing_{name}", "language_mixing", mean, err, flags, bs, "", "same content as the strong answer")
         r["pass"] = bool(mean) and all(mean[k] >= base_strong[k] - 1 for k in CONTENT_KEYS)

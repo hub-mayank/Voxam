@@ -1,0 +1,13 @@
+{
+  "provider": "live",
+  "model": "groq:openai/gpt-oss-20b",
+  "date": "2026-10-16",
+  "git_sha": "74e46b8b4b6898fa6ac94b60f350e6b31cba84f0",
+  "n": 17,
+  "n_unit": "scored cases",
+  "scorer_prompt_version": "scorer-v3",
+  "baseline_runs": 2,
+  "probe_runs": 1,
+  "rules": "injection <= weak baseline + 10; off-topic < weak baseline; mixing loses at most 1 point on content dimensions",
+  "note": "scripted transcripts derived from the strong and weak personas; one scorer run per probe unless stated"
+}

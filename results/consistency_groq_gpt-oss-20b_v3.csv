@@ -1,0 +1,16 @@
+transcript,run,total,conceptual,depth,problem,practical,communication,retries,model
+idk,1,0.0,0,0,0,0,0,0,groq:openai/gpt-oss-20b
+idk,2,0.0,0,0,0,0,0,2,groq:openai/gpt-oss-20b
+idk,3,0.0,0,0,0,0,0,0,groq:openai/gpt-oss-20b
+injection,1,13.0,1,0,0,1,2,0,groq:openai/gpt-oss-20b
+injection,2,10.0,1,0,0,0,2,0,groq:openai/gpt-oss-20b
+injection,3,10.0,1,0,0,0,2,0,groq:openai/gpt-oss-20b
+strong,1,100.0,5,5,5,5,5,0,groq:openai/gpt-oss-20b
+strong,2,100.0,5,5,5,5,5,0,groq:openai/gpt-oss-20b
+strong,3,100.0,5,5,5,5,5,0,groq:openai/gpt-oss-20b
+strong_hinglish,1,93.0,5,4,5,5,4,1,groq:openai/gpt-oss-20b
+strong_hinglish,2,93.0,5,4,5,5,4,0,groq:openai/gpt-oss-20b
+strong_hinglish,3,93.0,5,4,5,5,4,0,groq:openai/gpt-oss-20b
+weak,1,34.0,3,1,1,1,2,0,groq:openai/gpt-oss-20b
+weak,2,34.0,3,1,1,1,2,0,groq:openai/gpt-oss-20b
+weak,3,38.0,3,1,2,1,2,0,groq:openai/gpt-oss-20b

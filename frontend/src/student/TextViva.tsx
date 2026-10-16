@@ -9,7 +9,12 @@ function TextViva() {
   const session = useSession()
   const [text, setText] = useState('')
   const refreshedAtZero = useRef(false)
+  const logRef = useRef<HTMLOListElement>(null)
   const over = session.remainingMs !== null && session.remainingMs <= 0
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
+  }, [session.transcript.length])
 
   // when the clock reaches zero the server decides what happens next: ask it once
   useEffect(() => {
@@ -24,7 +29,7 @@ function TextViva() {
 
   return (
     <div className="student">
-      <Timer remainingMs={session.remainingMs} />
+      <Timer remainingMs={session.remainingMs} totalMs={session.durationMs} />
       <StudentError error={session.error} onDismiss={session.clearError} />
       <section className="card" aria-label="Question">
         <p className="question" aria-live="polite">{session.currentTurn?.text ?? 'Loading your question…'}</p>
@@ -42,7 +47,8 @@ function TextViva() {
         </Button>
         {over && <p role="status">Time is up. Your saved answers have been kept.</p>}
       </section>
-      <ol className="log" aria-label="Conversation so far">
+      {session.lastSeq > 0 && session.transcript.length <= 1 && <p className="muted">Earlier answers are saved.</p>}
+      <ol ref={logRef} className="log" role="log" aria-label="Conversation so far">
         {session.transcript.map((line, i) => (
           <li key={i} className={line.role}>
             <strong>{line.role === 'ai' ? 'Interviewer' : 'You'}:</strong> {line.text}

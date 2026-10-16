@@ -194,6 +194,7 @@ describe('student screens', () => {
       app(f, '/student/viva')
     })
     await screen.findAllByText('Question 6')
+    expect(screen.getByText('Earlier answers are saved.')).toBeTruthy()
     expect(where()).toBe('/student/viva')
   })
 
@@ -272,7 +273,7 @@ describe('student screens', () => {
     app(f, '/student/viva?mode=push_to_talk')
     const blocked = (await screen.findByRole('button', { name: 'Hold to talk' })) as HTMLButtonElement
     expect(blocked.disabled).toBe(false)
-    expect(screen.getByText('The interviewer is speaking')).toBeTruthy()
+    expect(screen.getByText('Speaking — interviewer')).toBeTruthy()
     // while the answer is being processed the server ignores a new press, so the button is off
     mocks.useVoiceSession.mockReturnValue({ ...voice, serverState: 'thinking', aiSpeaking: false })
     cleanup()

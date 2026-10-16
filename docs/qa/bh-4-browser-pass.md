@@ -1,15 +1,42 @@
-# BH-4 browser pass — code-review-only note (no browser run yet)
+# BH-4 browser pass — partial browser run (2026-10-16)
 
-`docs/qa/student-checklist.md` is the run sheet for a real browser
-pass. This note records the pass that was possible on the OLD
-BH-1–BH-3 screens (local branches): every checklist row traced
-through code. Nothing below is a browser result. The human browser
-run is still outstanding — see "What the human run still has to
-prove".
+`docs/qa/student-checklist.md` is the run sheet for the full browser
+pass. This file includes the earlier code-review-only trace and the
+partial local browser run recorded below. The required full browser
+run is still outstanding — see "What the human browser run still has
+to prove".
 
-Plainly: this note proves nothing about a browser. Do not cite it
-as browser evidence. Do not mark any row PASS on the basis of this
-note.
+The partial results below are browser evidence only for the exact
+screens, browsers, and viewport sizes named. They do not satisfy the
+full matrix, and unrun checklist rows remain open.
+
+## Partial browser results
+
+Run against the local seeded `local-dsa` viva on 2026-10-16. No
+production student data was used.
+
+- **Chrome, dark, desktop default (1633×865 CSS px):** completed Join,
+  accepted Rules, Ready, started a typing viva, submitted answers, and
+  reloaded during the viva. The server restored the current question
+  and the log displayed “Earlier answers are saved.” No duplicate
+  answer was observed.
+- **Chrome, dark, Viva at 390×844 CSS px:** the text-viva screen fit
+  with no horizontal document overflow (`scrollWidth` 390 px).
+- **Chrome, dark, Viva at 1280×800 CSS px:** the text-viva screen fit
+  with no horizontal document overflow (`scrollWidth` 1280 px).
+- **Safari, dark, desktop:** reached the Rules screen from Join. The
+  full student flow was not completed.
+- **Chrome, light, desktop:** visually inspected the text-viva screen;
+  this was not a full light-theme flow review.
+
+No reproducible defect was observed in those partial checks, so no
+failure issue was filed. The Done screen, all six screens at both
+requested widths, the remaining browsers, and the voice and resilience
+scenarios were not verified in this run. No microphone permission was
+granted.
+
+The row-by-row table below remains a **code-review-only** trace. The
+browser observations above are not upgrades to that table's verdicts.
 
 ## Scope required by docs/qa/BHAVESH_REPLY.md
 
@@ -46,7 +73,7 @@ Therefore:
   were not verified — do not invent them.
 - Every verdict below is "code-review only; needs browser".
 
-## Row-by-row (code-review only — none is a browser result)
+## Row-by-row (code-review only — verdicts are not browser results)
 
 | # | Checklist step | Main route / what to prove | Verdict |
 |---|---|---|---|

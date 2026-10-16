@@ -12,7 +12,7 @@ function Done() {
       <div className="student">
         <section className="card">
           <p>{session.closingText ?? 'Thank you. Your answers have been saved.'}</p>
-          <p>You can safely close this page. Your result appears below once your faculty releases it.</p>
+          <p>You can safely close this page.</p>
         </section>
         {session.sessionId && session.token && <ResultView />}
         {session.transcript.length > 0 && (

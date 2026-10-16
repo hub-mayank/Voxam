@@ -27,9 +27,9 @@ disabled action boxes take up half the page.
 Problem: a failed session shows "Not scored" with no explanation. Today this happens to any viva where the scorer model returns an
 invalid answer, and a faculty member cannot tell what to do.
 1. Failed status: a bad badge and one fixed sentence on the summary card: "Automatic marking did not finish. The answers and audio are saved. Request a rescore or enter a mark yourself."
-   Do **not** invent a reason, the API has no failure-reason field (see Questions).
+   Add the server's reason under it: `scoring_error` (a plain sentence, on both the session detail and each row of the sessions list; null unless the status is `failed`). Do not invent a reason of your own.
 2. Put **Request rescore** on the card for `failed` and `scored`, with the existing confirm step. After it, show "Queued" and poll the session every 5 s until the status changes; stop on unmount.
-3. In the sessions table, a `failed` row gets a bad badge and a "Rescore" link that opens the detail page focused on the rescore button.
+3. In the sessions table, a `failed` row gets a bad badge, its `scoring_error` sentence in muted text under the status, and a "Rescore" link that opens the detail page focused on the rescore button.
 4. Status badges everywhere use one mapping (scored = good, failed = bad, scoring = info, in_progress = info, ended/abandoned = warn). Put it in one function.
 
 ## PR 3: viva list (`VivaList.tsx`)
@@ -54,7 +54,7 @@ eight badges, most of them zero.
 - Screenshots of the four screens at both widths are in the PRs.
 
 ## Questions to put in your first PR
-- The API gives no reason for a failed session. Is a `scoring_error` field worth adding? (Mayank decides; Claude does the backend.)
+- None open. (`scoring_error` was added after this brief was first written: see `docs/API.md`.)
 
 ## Data you can use for review
 `scripts/run_local.sh` creates the LOCAL viva with students LOCAL01–10 and the WebD viva WEB01–05. For a populated dashboard use

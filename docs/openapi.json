@@ -2188,6 +2188,18 @@
             ],
             "description": "Null until scored."
           },
+          "scoring_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only when status is failed: one plain sentence on why automatic marking did not finish. Null otherwise. Technical detail stays in the worker log, not here.",
+            "title": "Scoring Error"
+          },
           "session_id": {
             "format": "uuid",
             "title": "Session Id",
@@ -2400,6 +2412,18 @@
           "overridden": {
             "title": "Overridden",
             "type": "boolean"
+          },
+          "scoring_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only when status is failed: one plain sentence on why automatic marking did not finish. Null otherwise. Technical detail stays in the worker log, not here.",
+            "title": "Scoring Error"
           },
           "session_id": {
             "format": "uuid",

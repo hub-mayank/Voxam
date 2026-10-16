@@ -251,10 +251,12 @@ class SessionSummary(ApiResponse):
     overridden: bool
     low_confidence: bool
     needs_review: bool = Field(description="low_confidence and neither a review (POST .../review) nor an override has been logged.")
+    scoring_error: Optional[str] = Field(None, description="Only when status is failed: one plain sentence on why automatic marking did not finish. "
+                                                         "Null otherwise. Technical detail stays in the worker log, not here.")
     model_config = ConfigDict(json_schema_extra={"examples": [{
         "session_id": SESSION_ID, "student_id": "S2024001", "student_name": "Asha Verma", "status": "scored",
         "started_at": "2026-10-12T05:30:12Z", "ended_at": "2026-10-12T05:44:58Z", "ai_total": 71.0,
-        "effective_total": 78.0, "overridden": True, "low_confidence": False, "needs_review": False}]})
+        "effective_total": 78.0, "overridden": True, "low_confidence": False, "needs_review": False, "scoring_error": None}]})
 
 
 class SessionList(ApiResponse):
@@ -265,7 +267,7 @@ class SessionList(ApiResponse):
         "items": [SessionSummary.model_config["json_schema_extra"]["examples"][0], {
             "session_id": "0b8f1d52-3c1e-4f55-9d4b-6a1f2c7e9a10", "student_id": "S2024003", "student_name": "Meera Nair",
             "status": "scored", "started_at": "2026-10-12T06:00:00Z", "ended_at": "2026-10-12T06:15:00Z",
-            "ai_total": 34.0, "effective_total": 34.0, "overridden": False, "low_confidence": True, "needs_review": True}],
+            "ai_total": 34.0, "effective_total": 34.0, "overridden": False, "low_confidence": True, "needs_review": True, "scoring_error": None}],
         "next_cursor": None}]})
 
 
@@ -436,6 +438,8 @@ class SessionDetail(ApiResponse):
     deadline_at: Optional[UtcDatetime] = None
     turns: list[Turn]
     scoring: Optional[Scoring] = Field(None, description="Null until scored.")
+    scoring_error: Optional[str] = Field(None, description="Only when status is failed: one plain sentence on why automatic marking did not finish. "
+                                                         "Null otherwise. Technical detail stays in the worker log, not here.")
     low_confidence: bool
     low_confidence_reasons: list[str]
     needs_review: bool = Field(description="low_confidence and neither a review nor an override has been logged.")
@@ -467,6 +471,7 @@ class SessionDetail(ApiResponse):
             {"idx": 7, "role": "student", "text": "I would check recent deploys, then logs and metrics, then reproduce the slow request.",
              "t_start_ms": 650000, "t_end_ms": 690000, "phase": "applied", "question_id": "q101", "action": None, "quality": "partial", "model": None, "prompt_version": None}],
         "scoring": Scoring.model_config["json_schema_extra"]["examples"][0],
+        "scoring_error": None,
         "low_confidence": False, "low_confidence_reasons": [], "needs_review": False,
         "effective_total": 78.0, "effective_source": "override",
         "audio": AudioRef.model_config["json_schema_extra"]["examples"][0],

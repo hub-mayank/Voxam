@@ -30,6 +30,7 @@ class Facts:
     reasons: list = field(default_factory=list)
     overrides: list = field(default_factory=list)
     reviews: list = field(default_factory=list)
+    scoring_error: str | None = None
 
     @property
     def effective(self):
@@ -42,6 +43,23 @@ class Facts:
     @property
     def needs_review(self):
         return self.low_confidence and not self.overrides and not self.reviews
+
+
+FAILURE_SENTENCES = (  # (start of the stored job error, what faculty read)
+    ("provider failed", "The scoring model was unavailable or over its usage limit."),
+    ("scorer failed after retries", "The scoring model returned its answer in the wrong format on every attempt."),
+    ("no student turns", "The student gave no answers, so there was nothing to score."),
+    ("the session has no turns", "The student gave no answers, so there was nothing to score."),
+    ("session is", "The session was not ready to be scored."),
+    ("could not store scores", "The scores were produced but could not be saved."),
+)
+FAILURE_OTHER = "Automatic marking failed for an unexpected reason."
+
+
+def failure_sentence(error: str | None) -> str:
+    """The stored job error is for developers and can quote model output. Faculty get one plain sentence chosen from it."""
+    text = (error or "").strip().lower()
+    return next((sentence for start, sentence in FAILURE_SENTENCES if text.startswith(start)), FAILURE_OTHER)
 
 
 def config_view(raw: dict) -> VivaConfigView:
@@ -76,8 +94,12 @@ def facts_for(db: Db, sessions: list, rubrics: dict) -> dict:
         overrides[row.session_id].append(row)
     for row in db.scalars(select(m.Review).where(m.Review.session_id.in_(ids)).order_by(m.Review.id)):
         reviews[row.session_id].append(row)
+    failed = [s.id for s in sessions if s.status == "failed"]
+    errors = dict(db.execute(select(m.Job.session_id, m.Job.error).where(m.Job.session_id.in_(failed), m.Job.kind == "score")).all()) if failed else {}
     for s in sessions:
         f = out[s.id]
+        if s.status == "failed":
+            f.scoring_error = failure_sentence(errors.get(s.id))
         f.scoring, f.low_confidence, f.reasons = core.aggregate_scores(scores[s.id], rubrics[s.viva_id])
         f.overrides, f.reviews = overrides[s.id], reviews[s.id]
     return out
@@ -95,7 +117,8 @@ def summary(s: m.Session, name, f: Facts) -> SessionSummary:
     total, _ = f.effective
     return SessionSummary(session_id=s.id, student_id=s.student_id, student_name=name, status=s.status, started_at=s.started_at,
                           ended_at=s.ended_at, ai_total=f.scoring.median_total if f.scoring else None, effective_total=total,
-                          overridden=bool(f.overrides), low_confidence=f.low_confidence, needs_review=f.needs_review)
+                          overridden=bool(f.overrides), low_confidence=f.low_confidence, needs_review=f.needs_review,
+                          scoring_error=f.scoring_error)
 
 
 def audio_file(uri) -> Path | None:
@@ -132,7 +155,7 @@ def detail(db: Db, s: m.Session, viva: m.Viva, name, secret: str, now) -> Sessio
         turns=[Turn(idx=t.idx, role=t.role, text=t.text, t_start_ms=t.t_start_ms, t_end_ms=t.t_end_ms, phase=t.phase or "",
                     question_id=t.question_id, action=t.action, quality=t.quality, model=t.model, prompt_version=t.prompt_version)
                for t in core.turns_of(db, s.id)],
-        scoring=f.scoring, low_confidence=f.low_confidence, low_confidence_reasons=f.reasons, needs_review=f.needs_review,
+        scoring=f.scoring, scoring_error=f.scoring_error, low_confidence=f.low_confidence, low_confidence_reasons=f.reasons, needs_review=f.needs_review,
         effective_total=total, effective_source=source, audio=audio_ref(s, secret, now),
         overrides=[override_entry(o) for o in f.overrides], reviews=[review_entry(r) for r in f.reviews],
         integrity_events=[IntegrityEvent(id=e.id, kind=e.kind, t_ms=e.t_ms, detail=e.detail or {}) for e in events])

@@ -1,5 +1,16 @@
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .student { max-width: 760px; }
+.student-steps-wrap { max-width: 760px; margin: 16px auto 0; padding: 0 var(--gap); }
+.student-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 0; list-style: none; }
+.student-step { min-width: 0; display: grid; grid-template-rows: 32px auto 1em; justify-items: center; align-content: start; gap: 4px; color: var(--muted); text-align: center; }
+.student-step-marker { width: 32px; height: 32px; display: grid; place-items: center; border: 2px solid var(--border); border-radius: 50%; font-size: 0.9rem; font-weight: 700; }
+.student-step.complete .student-step-marker { border-style: double; border-width: 3px; color: var(--good); }
+.student-step.current { color: var(--text); font-weight: 700; }
+.student-step.current .student-step-marker { border-width: 3px; border-color: var(--accent); }
+.student-step-name { font-size: 0.85rem; }
+.student-step-state { color: var(--accent); font-size: 0.7rem; line-height: 1; }
+.student .field input:not([type='checkbox']) { min-height: 44px; font-size: 16px; }
+.student button, .student .btn { min-height: 44px; }
 .question { font-size: 1.25rem; line-height: 1.4; margin: 0 0 var(--gap); }
 .timer { font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 600; }
 .timer.low { color: var(--warn); }

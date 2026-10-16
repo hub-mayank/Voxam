@@ -3,6 +3,7 @@ import { FacultyProvider } from './api/useFacultyApi'
 import { facultyRoutes } from './faculty/routes'
 import Page from './shared/Page'
 import { StudentSessionProvider } from './student/session/StudentSessionProvider'
+import StudentSteps from './student/StudentSteps'
 import { studentRoutes } from './student/routes'
 
 function Home() {
@@ -31,7 +32,7 @@ function Routes() {
   return useRoutes([
     { path: '/', element: <Home /> },
     { path: '/faculty', element: <FacultyProvider><Outlet /></FacultyProvider>, children: facultyRoutes },
-    { path: '/student', element: <StudentSessionProvider><Outlet /></StudentSessionProvider>, children: studentRoutes },
+    { path: '/student', element: <StudentSessionProvider><StudentSteps /><Outlet /></StudentSessionProvider>, children: studentRoutes },
   ])
 }
 

@@ -23,7 +23,7 @@ describe('application home and shared header', () => {
 
     fireEvent.click(screen.getByRole('link', { name: /I am taking a viva/ }))
 
-    expect(screen.getByText('Viva')).toBeTruthy()
+    expect(screen.getByRole('banner').querySelector('.site-section')?.textContent).toBe('Viva')
     expect(screen.getByRole('heading', { name: 'Join your viva' })).toBeTruthy()
   })
 })

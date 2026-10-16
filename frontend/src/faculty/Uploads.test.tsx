@@ -4,7 +4,7 @@ import { ApiError } from '../api/client'
 import BankUpload from './BankUpload'
 import RosterUpload from './RosterUpload'
 const mock = vi.hoisted(() => ({
-  api: { listQuestions: vi.fn(), uploadQuestions: vi.fn(), approveQuestions: vi.fn(), listRoster: vi.fn(), uploadRoster: vi.fn(),
+  api: { listQuestions: vi.fn(), uploadQuestions: vi.fn(), generateQuestions: vi.fn(), approveQuestions: vi.fn(), listRoster: vi.fn(), uploadRoster: vi.fn(),
     resetCode: vi.fn(), revokeCode: vi.fn() },
   logout: vi.fn(),
 }))
@@ -44,6 +44,20 @@ describe('Faculty uploads', () => {
     await act(async () => confirm({ ...emptyBank, items: [{ ...draft, source: 'bank', approved_by: 'test-reviewer' }] }))
     expect(screen.getByText('Question approved.')).toBeTruthy()
     expect(mock.api.approveQuestions).toHaveBeenCalledWith('test-viva', ['test-question'])
+  })
+  it('generates syllabus-based draft questions and keeps them unapproved until faculty approval', async () => {
+    const generated = { ...draft, id: 'gen-123', source: 'ai-draft' }
+    mock.api.generateQuestions.mockResolvedValue({ ...emptyBank, items: [generated] })
+    mock.api.approveQuestions.mockResolvedValue({ ...emptyBank, items: [{ ...generated, source: 'bank', approved_by: 'dr-rao' }] })
+    render(<BankUpload vivaId="test-viva" />)
+    await screen.findByText('No questions uploaded.')
+    fireEvent.change(screen.getByLabelText(/Generate drafts from syllabus/), { target: { value: 'Arrays and hash tables' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Generate draft questions' }))
+    await screen.findByText('AI drafts added. Review each question and approve it before use.')
+    expect(mock.api.generateQuestions).toHaveBeenCalledWith('test-viva', { syllabus: 'Arrays and hash tables', count: 10 })
+    expect(screen.getByText('ai-draft')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Approve gen-123' }))
+    await waitFor(() => expect(mock.api.approveQuestions).toHaveBeenCalledWith('test-viva', ['gen-123']))
   })
   it('lists every roster row error', async () => {
     mock.api.uploadRoster.mockRejectedValue(rowError())

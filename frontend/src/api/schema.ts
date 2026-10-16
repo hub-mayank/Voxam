@@ -231,6 +231,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/faculty/vivas/{viva_id}/questions/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate review-only questions from a syllabus
+         * @description Generates a bounded set of `ai-draft` questions using the configured LLM chain. Faculty must review and approve drafts
+         *     before the student interviewer can use them. Syllabus text is not stored; the endpoint is locked after any student joins.
+         */
+        post: operations["generate_questions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/faculty/vivas/{viva_id}/roster": {
         parameters: {
             query?: never;
@@ -761,6 +782,27 @@ export interface components {
             evidence: number[];
             /** Text */
             text: string;
+        };
+        /**
+         * GenerateQuestionsRequest
+         * @description Generate review-only question drafts from instructor-provided syllabus text.
+         * @example {
+         *       "count": 10,
+         *       "syllabus": "Arrays, hashing, collision handling, complexity analysis"
+         *     }
+         */
+        GenerateQuestionsRequest: {
+            /**
+             * Count
+             * @description Maximum number of draft questions to generate.
+             * @default 10
+             */
+            count: number;
+            /**
+             * Syllabus
+             * @description Course outline or syllabus text; do not include student data.
+             */
+            syllabus: string;
         };
         /**
          * Health
@@ -3235,6 +3277,87 @@ export interface operations {
             };
             /** @description `validation_error`: The request body, query or path failed validation. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    generate_questions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Viva ID (slug). */
+                viva_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateQuestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionList"];
+                };
+            };
+            /** @description `unauthorized`: Missing, malformed, unknown or replaced token. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The token is valid but not allowed here (wrong role or someone else's session). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: No such viva, session, student or audio. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_state`: The action is not allowed in the current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `validation_error`: The request body, query or path failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `provider_unavailable`: The language model is down after retries and fallback. Retry the same request (same client_seq); nothing was lost. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

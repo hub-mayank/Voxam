@@ -8,7 +8,7 @@ from ..session_state import SessionStatus
 from .auth import faculty_scheme, require_faculty
 from ..services.secrets_util import audio_signature_ok
 from .errors import ErrorCode, error_responses
-from .schemas.faculty import (ApproveQuestions, OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest,
+from .schemas.faculty import (ApproveQuestions, GenerateQuestionsRequest, OverrideRequest, OverrideResult, QuestionList, RescoreResult, ResetCodeResult, ReviewRequest,
                               ReviewResult, RosterEntry, RosterList, RosterUploadResult, SessionDetail, SessionList, Viva, VivaCreate,
                               VivaList, VivaUpdate)
 from .deps import faculty_ops
@@ -61,6 +61,14 @@ def upload_questions(viva_id: str = VIVA, file: UploadFile = File(description="A
 
     Locked (409 `invalid_state`) once any student has joined. A small bank is allowed but returns `warnings`."""
     return ops.upload_questions(viva_id, file.filename, file.file.read(MAX_UPLOAD))
+
+
+@router.post("/vivas/{viva_id}/questions/generate", response_model=QuestionList, summary="Generate review-only questions from a syllabus",
+             responses=error_responses(*AUTH, ErrorCode.not_found, ErrorCode.invalid_state, ErrorCode.provider_unavailable))
+def generate_questions(body: GenerateQuestionsRequest, request: Request, viva_id: str = VIVA, ops=Depends(faculty_ops)):
+    """Generates a bounded set of `ai-draft` questions using the configured LLM chain. Faculty must review and approve drafts
+    before the student interviewer can use them. Syllabus text is not stored; the endpoint is locked after any student joins."""
+    return ops.generate_questions(viva_id, body, request.app.state.llm_factory(None))
 
 
 @router.get("/vivas/{viva_id}/questions", response_model=QuestionList, summary="Get the question bank",

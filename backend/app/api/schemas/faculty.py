@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from ...session_state import SessionStatus
 from .common import ApiRequest, ApiResponse, UtcDatetime
@@ -156,6 +156,19 @@ class ApproveQuestions(ApiRequest):
     question_ids: Optional[list[str]] = Field(None, min_length=1, description="Which questions to approve. Omit to approve every ai-draft in the bank. "
                                                                               "A question that is already `bank` is left alone.")
     model_config = ConfigDict(json_schema_extra={"examples": [{"question_ids": ["c01", "c02"]}]})
+
+
+class GenerateQuestionsRequest(ApiRequest):
+    """Generate review-only question drafts from instructor-provided syllabus text."""
+    syllabus: str = Field(min_length=1, max_length=12000, description="Course outline or syllabus text; do not include student data.")
+    count: int = Field(10, ge=1, le=20, description="Maximum number of draft questions to generate.")
+    @field_validator("syllabus")
+    @classmethod
+    def syllabus_must_contain_text(cls, value):
+        if not value.strip():
+            raise ValueError("syllabus must contain non-whitespace text")
+        return value.strip()
+    model_config = ConfigDict(json_schema_extra={"examples": [{"syllabus": "Arrays, hashing, collision handling, complexity analysis", "count": 10}]})
 
 
 class QuestionList(ApiResponse):

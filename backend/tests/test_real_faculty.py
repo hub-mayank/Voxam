@@ -99,6 +99,53 @@ def test_bank_upload_csv_and_json_and_warnings(env):
     assert client.get(f"/faculty/vivas/{v}/questions", headers=RAO).json() == small, "an upload replaces the bank"
 
 
+def test_syllabus_generation_saves_only_reviewable_drafts_and_approval_uses_existing_flow(env):
+    app, client, clock, codes = env
+    v = fresh_viva(client, "generated-viva")
+
+    class DraftModel:
+        def __init__(self): self.calls = []
+        def complete_json(self, system, user, max_tokens, kind):
+            self.calls.append((system, user, max_tokens, kind))
+            return [{"topic": "a", "type": "concept" if i < 2 else "applied", "difficulty": 2, "text": f"Explain concept {i}?",
+                     "key_points": ["definition", "example", "trade-off"]} for i in range(3)]
+
+    model = DraftModel()
+    app.state.llm_factory = lambda spec: model
+    syllabus = "Arrays, hashing, and collision handling"
+    response = client.post(f"/faculty/vivas/{v}/questions/generate", headers=RAO, json={"syllabus": syllabus, "count": 3})
+    assert response.status_code == 200, response.text
+    questions = response.json()["items"]
+    assert len(questions) == 3 and len({q["id"] for q in questions}) == 3
+    assert {kind: sum(q["type"] == kind for q in questions) for kind in ("concept", "applied")} == {"concept": 2, "applied": 1}
+    assert all(q["source"] == "ai-draft" and q["approved_by"] is None for q in questions)
+    assert model.calls[0][2:] == (540, "generate") and syllabus in model.calls[0][1]
+    assert syllabus not in str(client.get(f"/faculty/vivas/{v}/questions", headers=RAO).json())
+    from app.services.core import bank_of
+    with db_of(app) as db:
+        assert bank_of(db, v) == [], "students must not receive AI drafts before faculty approval"
+    approved = client.post(f"/faculty/vivas/{v}/questions/approve", headers=RAO,
+                           json={"question_ids": [questions[0]["id"]]}).json()["items"]
+    assert next(q for q in approved if q["id"] == questions[0]["id"])["approved_by"] == "dr-rao"
+    assert next(q for q in approved if q["id"] == questions[1]["id"])["source"] == "ai-draft"
+    with db_of(app) as db:
+        assert [q["id"] for q in bank_of(db, v)] == [questions[0]["id"]]
+
+
+def test_question_generation_is_bounded_locked_after_join_and_atomic_on_bad_model_output(env):
+    app, client, clock, codes = env
+    v = fresh_viva(client, "broken-generated-viva")
+    app.state.llm_factory = lambda spec: type("BadModel", (), {"complete_json": lambda *args, **kwargs: []})()
+    bad = client.post(f"/faculty/vivas/{v}/questions/generate", headers=RAO, json={"syllabus": "Arrays", "count": 2})
+    assert bad.status_code == 503 and bad.json()["error"]["code"] == "provider_unavailable"
+    assert client.get(f"/faculty/vivas/{v}/questions", headers=RAO).json()["items"] == []
+    assert client.post(f"/faculty/vivas/{v}/questions/generate", headers=RAO, json={"syllabus": "  ", "count": 1}).status_code == 422
+    assert client.post(f"/faculty/vivas/{v}/questions/generate", headers=RAO, json={"syllabus": "Arrays", "count": 21}).status_code == 422
+    join(client, codes["S1"])
+    locked = client.post("/faculty/vivas/demo-viva/questions/generate", headers=RAO, json={"syllabus": "Arrays", "count": 1})
+    assert locked.status_code == 409 and locked.json()["error"]["details"]["reason"] == "students_joined"
+
+
 def test_a_bad_bank_upload_changes_nothing_and_reports_every_row(env):
     app, client, clock, codes = env
     v = fresh_viva(client)

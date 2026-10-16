@@ -10,6 +10,8 @@ function BankUpload({ vivaId }: { vivaId: string }) {
   const { api, logout } = useFacultyApi()
   const [bank, setBank] = useState<QuestionList | null>(null)
   const [file, setFile] = useState<File | null>(null)
+  const [syllabus, setSyllabus] = useState('')
+  const [draftCount, setDraftCount] = useState(10)
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
   const [message, setMessage] = useState('')
@@ -50,6 +52,24 @@ function BankUpload({ vivaId }: { vivaId: string }) {
     <section aria-label="Question bank">
       <h2>Question bank</h2>
       <p>Uploads replace the whole bank. Uploading and approving are locked once a student has joined.</p>
+      <form onSubmit={(event) => {
+        event.preventDefault()
+        if (!busy && syllabus.trim()) {
+          void perform(() => api.generateQuestions(vivaId, { syllabus: syllabus.trim(), count: draftCount }), 'AI drafts added. Review each question and approve it before use.')
+        }
+      }}>
+        <label className="field" htmlFor="question-syllabus">
+          Generate drafts from syllabus
+          <span className="muted">Paste course topics or a syllabus excerpt. The configured model provider may receive this text; do not include student or confidential information. Generated questions are saved as drafts and require faculty approval.</span>
+          <textarea id="question-syllabus" value={syllabus} onChange={(event) => setSyllabus(event.target.value)} maxLength={12000} rows={5} required disabled={busy} />
+        </label>
+        <label className="field" htmlFor="question-draft-count">
+          Number of questions (1–20)
+          <input id="question-draft-count" type="number" min={1} max={20} value={draftCount}
+            onChange={(event) => setDraftCount(Number(event.target.value))} required disabled={busy} />
+        </label>
+        <Button type="submit" disabled={busy || !syllabus.trim() || draftCount < 1 || draftCount > 20}>Generate draft questions</Button>
+      </form>
       <form onSubmit={(event) => {
         event.preventDefault()
         if (file && !busy) void perform(() => api.uploadQuestions(vivaId, file), 'Question bank saved.')

@@ -22,7 +22,9 @@ def viva_config(viva: m.Viva) -> VivaConfig:
 
 
 def bank_of(db: Db, viva_id: str) -> list:
-    rows = db.scalars(select(m.Question).where(m.Question.viva_id == viva_id).order_by(m.Question.id)).all()
+    # AI-authored questions stay out of student interviews until a faculty member approves them.
+    rows = db.scalars(select(m.Question).where(m.Question.viva_id == viva_id, m.Question.source == "bank")
+                      .order_by(m.Question.id)).all()
     return [{"id": q.id, "topic": q.topic, "type": q.type, "difficulty": q.difficulty, "text": q.text,
              "key_points": list(q.key_points or [])} for q in rows]
 

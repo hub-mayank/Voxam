@@ -71,7 +71,8 @@ If instead each person must run a full copy of the product on their own Mac, tel
    python scripts/marking_packet.py --viva webd-team --out ~/Documents/voxam-private/marking
    ```
    (same environment as the server: `DATABASE_URL`, `AUDIO_DIR`). Send each marker only their folder and `docs/qa/MARKER_GUIDE.md`.
-3. Markers: Vikas Sir marks the five DSA vivas and Devesh Sir the five Web Dev vivas; if they have time, each also marks two of the other's for an agreement check.
+3. Markers, by subject: **Devesh Sir (DSA 301 instructor) marks the five DSA vivas, Vikas Sir the five Web Dev vivas.** Each should also read the bank for his own subject before the vivas (`config/question_bank.dsa-team.csv`, `config/question_bank.webd-team.csv`), which is the expert review the banks still need.
+   For an agreement check, each marker also marks the **same four vivas from the other subject's pair**: Devesh marks WEB02 and WEB05, Vikas marks DSA02 and DSA03 (one strong and one weak in each subject). `compare_markers.py` compares the two markers only on vivas both have marked, so these four give the human-versus-human figure.
 4. When the sheets are back: `python scripts/compare_markers.py --mapping <_private/mapping.csv> --sheet vikas.csv --sheet devesh.csv`, then `python scripts/build_report.py`.
 5. Update the **TO FILL** rows in `docs/SUBMISSION.md` from the generated files only.
 

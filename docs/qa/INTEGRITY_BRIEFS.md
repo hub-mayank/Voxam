@@ -32,7 +32,7 @@ Done when: `npm run check` green, tests above, and Tejas's browser sheet (below)
 
 ---
 
-## Parth: show the signals and the cross-check to faculty (about half a day)
+## Parth: show the signals and the cross-check to faculty (DONE by Claude on 19 Oct, see `faculty/IntegritySignals.tsx`; Parth only restyles it inside his layout PRs)
 **Paths:** `frontend/src/faculty/` only. Build on top of your session-detail PR 1 (summary card) if it is merged; otherwise add it to the current layout.
 
 Data already in `GET /faculty/sessions/{sid}`: `integrity_events[]` = `{ id, kind, t_ms, detail }` where `t_ms` is the viva clock in milliseconds, and `detail` has `duration_ms` or `chars`. Turns have `action` and `question_id`.

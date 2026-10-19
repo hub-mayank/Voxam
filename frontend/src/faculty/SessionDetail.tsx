@@ -8,6 +8,7 @@ import Button from '../shared/Button'
 import ErrorBanner from '../shared/ErrorBanner'
 import Page from '../shared/Page'
 import AudioPlayer, { type AudioPlayerHandle } from './AudioPlayer'
+import IntegritySignals from './IntegritySignals'
 import ReviewActions from './ReviewActions'
 
 function SessionDetail() {
@@ -92,6 +93,8 @@ function SessionDetail() {
         ) : <p>No low-confidence reasons provided.</p>}
       </section>
 
+      <IntegritySignals events={detail.integrity_events} onPlay={detail.audio.available && detail.audio.url ? (ms) => audioPlayer.current?.playFrom(ms) : undefined} />
+
       <section aria-labelledby="scores-heading">
         <h2 id="scores-heading">Dimension scores</h2>
         {!scoring ? <p>Scoring is not available for this session yet.</p> : (
@@ -140,7 +143,7 @@ function SessionDetail() {
         <h2 id="transcript-heading">Transcript</h2>
         {turns.length === 0 ? <p>No transcript turns available.</p> : turns.map((turn) => (
           <article key={turn.idx} id={turnId(turn.idx)} className="card" tabIndex={-1}>
-            <h3>Turn {turn.idx} — {turn.role}</h3>
+            <h3>Turn {turn.idx} — {turn.role}{turn.action === 'cross_check' && <> <span title="Asked once, from something the student said in the opener"><Badge tone="info">Cross-check</Badge></span></>}</h3>
             <p style={{ whiteSpace: 'pre-wrap' }}>{turn.text}</p>
             {detail.audio.available && detail.audio.url && turn.t_start_ms != null && (
               <Button onClick={() => {

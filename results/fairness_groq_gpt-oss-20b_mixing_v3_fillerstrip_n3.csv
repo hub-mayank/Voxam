@@ -1,0 +1,5 @@
+case,kind,error,flags,baseline_total,pass,note,total,conceptual,depth,problem,practical,communication
+weak_baseline,baseline,,,,,2 runs,9.0,1,0,0,0,1.5
+strong_baseline,baseline,,,,,2 runs,100.0,5,5,5,5,5
+mixing_hinglish_words,language_mixing,,,100.0,True,same content as the strong answer,96.33,5,4.67,5,5,4
+mixing_broken_english,language_mixing,,,100.0,True,same content as the strong answer,93.67,5,4,5,5,4.33

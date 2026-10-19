@@ -50,9 +50,18 @@ def neutralise(text: str) -> str:
     return text if len(kept) == len(parts) else " ".join([*kept, REMOVED])
 
 
+FILLER = re.compile(r"\b(?:u+h+m*|u+m+|e+r+m*|h+m+)\b[,.]?(?:\s+like\b)?[,]?\s*", re.I)
+
+
+def strip_fillers(text: str) -> str:
+    """Spoken fillers ("um", "uh", "er", "hmm", and a "like" that directly follows one) carry no meaning, and the model has been seen
+    to read them as hesitation and lower Depth. Only the model's input is cleaned; the stored transcript keeps every word."""
+    return " ".join(FILLER.sub("", text).split())
+
+
 def _user(transcript):
     lines = [f"[{t['idx']}] (t={t['t']}s, {t['phase']}) {t['speaker']}: "
-             f"{neutralise(t['text']) if t['speaker'] == 'STUDENT' else t['text']}" for t in transcript]
+             f"{strip_fillers(neutralise(t['text'])) if t['speaker'] == 'STUDENT' else t['text']}" for t in transcript]
     return "TRANSCRIPT:\n" + "\n".join(lines)
 
 

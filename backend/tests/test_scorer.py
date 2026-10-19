@@ -290,3 +290,17 @@ def test_sentences_that_instruct_the_scorer_never_reach_the_model_but_the_flag_a
     user = _user(build_transcript(events))
     assert "scoring override" not in user and "I use an index." in user and REMOVED in user
     assert confidence_flags(events, build_transcript(events), []), "faculty are still told"
+
+
+def test_fillers_are_dropped_from_the_model_input_but_never_a_real_word_and_the_transcript_stays():
+    from app.scorer import _user, build_transcript, strip_fillers
+    assert strip_fillers("Hash table uh like maps keys, um to buckets, hmm, and er collisions use chaining.") == \
+        "Hash table maps keys, to buckets, and collisions use chaining."
+    assert strip_fillers("Uhh, the algorithm gives a human-readable umbrella summary.") == "the algorithm gives a human-readable umbrella summary."
+    assert strip_fillers("I like hash tables because lookups are fast.") == "I like hash tables because lookups are fast."
+    assert strip_fillers("An index speeds up reads.") == "An index speeds up reads."
+    events = [{"role": "ai", "text": "Q um?", "t": 0, "phase": "warmup"},
+              {"role": "student", "text": "An index uh like speeds reads.", "t": 5, "phase": "warmup"}]
+    transcript = build_transcript(events)
+    assert "An index speeds reads." in _user(transcript) and "Q um?" in _user(transcript), "only student turns are cleaned"
+    assert transcript[1]["text"] == "An index uh like speeds reads.", "the stored transcript keeps every word"

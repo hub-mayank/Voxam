@@ -44,6 +44,7 @@ def is_no_answer(answer: str) -> bool:
     return len(text.split()) < 3 or (len(text.split()) <= 8 and bool(NO_ANSWER.search(text)))
 
 
+DIFFICULTY_BAND = {"fundamentals": (1, 2), "depth": (2, 5)}
 CROSS_CHECK_ID = "xcheck"
 CROSS_CHECK_MIN_WORDS = 8  # an opener answer shorter than this gives nothing specific to come back to
 
@@ -76,6 +77,8 @@ class Interviewer:
     def _pick(self, phase_name):
         want = "applied" if phase_name == "applied" else "concept"
         pool = [q for q in self.bank if q["type"] == want and q["id"] not in self.asked]
+        low, high = DIFFICULTY_BAND.get(phase_name, (1, 5))  # easier questions first, harder once the student has settled in
+        pool = [q for q in pool if low <= q["difficulty"] <= high] or pool  # an empty band never leaves the interview without a question
         if phase_name == "depth" and self.topic_points:
             best = max(self.topic_points, key=self.topic_points.get)
             strong = [q for q in pool if q["topic"] == best]

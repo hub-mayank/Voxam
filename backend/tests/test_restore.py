@@ -173,3 +173,28 @@ def test_a_failed_model_falls_back_to_a_fixed_cross_check_line():
     live.respond(LONG)
     got = [e for e in live.log if e.get("action") == "cross_check"]
     assert len(got) == 1 and got[0]["text"] == FALLBACK_REPLIES["cross_check"]
+
+
+def bank_with(difficulties, kind="concept"):
+    return [{"id": f"{kind}{i}", "topic": f"t{i}", "type": kind, "difficulty": d, "text": f"Q{i}?", "key_points": ["a", "b", "c"]}
+            for i, d in enumerate(difficulties)]
+
+
+def test_fundamentals_ask_easier_questions_and_depth_asks_harder_ones():
+    bank = bank_with([1, 2, 1, 2, 3, 3, 3, 2, 3])
+    for seed in range(20):
+        tick, iv = fresh(seed, 0)
+        iv.bank = bank
+        by_id = {q["id"]: q for q in bank}
+        assert by_id[iv._pick("fundamentals")["id"]]["difficulty"] <= 2, seed
+        assert by_id[iv._pick("depth")["id"]]["difficulty"] >= 2, seed
+
+
+def test_an_empty_difficulty_band_falls_back_instead_of_leaving_no_question():
+    tick, iv = fresh(0, 0)
+    iv.bank = bank_with([3, 3, 3])
+    assert iv._pick("fundamentals") is not None, "only hard questions: still ask one"
+    iv.bank = bank_with([1, 1, 1])
+    assert iv._pick("depth") is not None, "only easy questions: still ask one"
+    iv.bank = bank_with([1, 5, 3], kind="applied")
+    assert iv._pick("applied") is not None, "applied is not banded"

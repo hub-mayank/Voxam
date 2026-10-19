@@ -194,6 +194,7 @@ describe('student screens', () => {
       app(f, '/student/viva')
     })
     await screen.findAllByText('Question 6')
+    expect(screen.getByText('Earlier answers are saved.')).toBeTruthy()
     expect(where()).toBe('/student/viva')
   })
 
@@ -272,7 +273,7 @@ describe('student screens', () => {
     app(f, '/student/viva?mode=push_to_talk')
     const blocked = (await screen.findByRole('button', { name: 'Hold to talk' })) as HTMLButtonElement
     expect(blocked.disabled).toBe(false)
-    expect(screen.getByText('The interviewer is speaking')).toBeTruthy()
+    expect(screen.getByText('Speaking — interviewer')).toBeTruthy()
     // while the answer is being processed the server ignores a new press, so the button is off
     mocks.useVoiceSession.mockReturnValue({ ...voice, serverState: 'thinking', aiSpeaking: false })
     cleanup()
@@ -315,17 +316,25 @@ describe('student screens', () => {
   })
   const resultBody = (overridden = false) => ({
     total: 72.5, overridden, feedback: [{ text: 'Explain collisions with an example.', evidence: [3, 5] }],
-    dimensions: [{ key: 'conceptual', weight: 30, score: 4 }, { key: 'communication', weight: 10, score: 3 }],
+    dimensions: [
+      { key: 'conceptual', weight: 30, score: 4 },
+      { key: 'depth', weight: 25, score: 3.5 },
+      { key: 'problem', weight: 20, score: 4 },
+      { key: 'practical', weight: 15, score: 3 },
+      { key: 'communication', weight: 10, score: 3 },
+    ],
   })
 
   it('done: a released result shows the total, each dimension in words and the feedback with its turns', async () => {
     saved()
     app(backend({ ...ended(), 'GET /student/sessions/:sid/result': () => json(resultBody()) }).f, '/student/done')
     await screen.findByText('Your result: 72.5 / 100')
-    expect(screen.getByText(/Conceptual understanding: 4 \/ 5/)).toBeTruthy()
-    expect(screen.getByText(/Communication: 3 \/ 5/)).toBeTruthy()
+    expect(screen.getByText('Conceptual understanding')).toBeTruthy()
+    expect(screen.getByText('Communication')).toBeTruthy()
     expect(screen.getByText(/Explain collisions/)).toBeTruthy()
     expect(screen.getByText(/turns 3, 5/)).toBeTruthy()
+    expect(screen.getAllByRole('progressbar')).toHaveLength(5)
+    expect(screen.getByRole('progressbar', { name: 'Depth and reasoning score' }).getAttribute('aria-valuenow')).toBe('3.5')
   })
 
   it('done: an overridden total says a person changed it', async () => {

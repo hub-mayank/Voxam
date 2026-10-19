@@ -18,6 +18,12 @@ const PAGE_SIZE = 20
 const statuses: SessionStatus[] = [
   'created', 'consented', 'in_progress', 'ended', 'scoring', 'scored', 'abandoned', 'failed',
 ]
+const statusTone = (status: SessionStatus): 'good' | 'warn' | 'bad' | 'neutral' => {
+  if (status === 'scored' || status === 'ended') return 'good'
+  if (status === 'failed' || status === 'abandoned') return 'bad'
+  if (status === 'scoring') return 'warn'
+  return 'neutral'
+}
 const columns: Column<SessionSummary>[] = [
   {
     header: 'Student',
@@ -27,8 +33,8 @@ const columns: Column<SessionSummary>[] = [
       </Link>
     ),
   },
-  { header: 'Status', cell: (session) => session.status },
-  { header: 'Score', cell: (session) => session.effective_total ?? 'Not scored' },
+  { header: 'Status', cell: (session) => <Badge tone={statusTone(session.status)}>{session.status.replace('_', ' ')}</Badge> },
+  { header: 'Score', cell: (session) => session.effective_total === null ? <span className="muted">Not scored</span> : <span className="score-value">{session.effective_total}<span className="muted"> / 100</span></span> },
   {
     header: 'Review',
     cell: (session) => (

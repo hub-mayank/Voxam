@@ -15,7 +15,7 @@ def test_a_good_file_passes_and_a_small_bank_gets_notes():
 
 
 def test_the_shipped_banks_pass_the_same_check_the_upload_uses():
-    for name in ("question_bank.dsa.csv", "question_bank.webdev.csv"):
+    for name in ("question_bank.dsa.csv", "question_bank.webdev.csv", "question_bank.webd-team.csv"):
         out = run(ROOT / "config" / name)
         assert out.returncode == 0 and "ok: 30 questions" in out.stdout, name
 

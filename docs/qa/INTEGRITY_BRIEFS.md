@@ -11,7 +11,7 @@ Bhavesh does his integrity PR **after** his viva-screen UX PR (PR 3 of his brief
 
 ---
 
-## Bhavesh: report the signals from the viva page (about half a day)
+## Bhavesh: report the signals from the viva page (DONE by Claude on 19 Oct, see `student/integrity/`; Bhavesh only reviews and checks it in the browsers)
 **Paths:** new `frontend/src/student/integrity/`, one line in `student/screens/Viva.tsx`, one function in `student/` API client. Nothing else.
 
 API (already live): `POST /student/sessions/{sid}/integrity` with `{ events: [{ kind, duration_ms?, chars?, client_id? }] }`, 1-20 events per call.
@@ -32,7 +32,7 @@ Done when: `npm run check` green, tests above, and Tejas's browser sheet (below)
 
 ---
 
-## Parth: show the signals and the cross-check to faculty (about half a day)
+## Parth: show the signals and the cross-check to faculty (DONE by Claude on 19 Oct, see `faculty/IntegritySignals.tsx`; Parth only restyles it inside his layout PRs)
 **Paths:** `frontend/src/faculty/` only. Build on top of your session-detail PR 1 (summary card) if it is merged; otherwise add it to the current layout.
 
 Data already in `GET /faculty/sessions/{sid}`: `integrity_events[]` = `{ id, kind, t_ms, detail }` where `t_ms` is the viva clock in milliseconds, and `detail` has `duration_ms` or `chars`. Turns have `action` and `question_id`.

@@ -30,6 +30,6 @@ against instructions hidden in answers (`neutralise()`, `INJECTION`).
 - Voice-based "second speaker" or "reading aloud" detectors: no measured accuracy, so no claim. Possible later work needs a labelled set of vivas where such a tool was really used.
 
 ## Evidence status
-Tests prove the signals are stored, deduplicated, bounded and shown to faculty, and that the cross-check happens once and is rebuilt
+The page side (`frontend/src/student/integrity/`) reports a signal only after the student has been away 3 s or more, and sends lengths, never text. Tests prove the signals are stored, deduplicated, bounded and shown to faculty, and that the cross-check happens once and is rebuilt
 from stored turns. **No test shows that any signal detects cheating**; there is no labelled data for that. Browser-level behaviour
 (which events fire in Chrome and Safari) is checked by hand in `docs/qa/integrity-browser-check.md`.

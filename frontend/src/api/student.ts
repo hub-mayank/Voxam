@@ -1,6 +1,6 @@
 // One typed function per student endpoint (docs/API.md). The session token is the Authorization bearer.
 import { request, type RequestOptions } from './client'
-import type { AnswerResponse, ConsentResponse, JoinRequest, JoinResponse, StartResponse, StatusResponse, StudentResult } from './types'
+import type { AnswerResponse, ConsentResponse, IntegrityResponse, IntegritySignal, JoinRequest, JoinResponse, StartResponse, StatusResponse, StudentResult } from './types'
 
 export function studentApi(token: string | null, fetchImpl?: typeof fetch) {
   const o = (extra: Partial<RequestOptions> = {}): RequestOptions => ({ token, fetchImpl, ...extra })
@@ -13,6 +13,8 @@ export function studentApi(token: string | null, fetchImpl?: typeof fetch) {
     answer: (sid: string, text: string, clientSeq: number) =>
       request<AnswerResponse>('POST', `${s(sid)}/answer`, o({ json: { text, client_seq: clientSeq } })),
     status: (sid: string) => request<StatusResponse>('GET', `${s(sid)}/status`, o()),
+    integrity: (sid: string, events: IntegritySignal[]) =>
+      request<IntegrityResponse>('POST', `${s(sid)}/integrity`, o({ json: { events } })),
     result: (sid: string) => request<StudentResult>('GET', `${s(sid)}/result`, o()),
   }
 }

@@ -1,0 +1,4 @@
+id,topic,type,difficulty,text,key_points,source
+d01,arrays,concept,1,"Explain what an array is and why reading an element by index is fast.",contiguous memory|index to address arithmetic|constant time access|fixed size or resizable,bank
+d02,hashing,concept,2,"How does a hash table handle two keys that land in the same slot?",hash function maps key to index|collision|chaining or open addressing|load factor and resizing,bank
+d03,graphs,applied,3,"You have to find the shortest route between two stations when every hop costs the same. How would you do it?",model as a graph|breadth first search|queue and visited set|why BFS and not DFS,bank

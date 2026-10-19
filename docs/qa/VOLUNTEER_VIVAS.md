@@ -43,6 +43,21 @@ Rules for everyone: do not read the question bank beforehand, answer in your own
    ```
    `LLM_DAILY_CALL_CAP` defaults to 30 calls a day, which would stop the run after one or two vivas; 300 is a decision for Mayank to make (it stays inside the free-tier token limit). The tunnel prints an https link: send it to the others. This is also the rehearsal for the finals.
 
+## On each person's own Mac (the student side)
+Everyone sits at their own Mac and opens the same https link; **only Mayank's Mac runs the server** (models, scoring, database, recordings), so all ten vivas end up in one place for the markers.
+Nothing needs installing on the other four Macs. Each of you needs:
+- **Chrome** (not Safari for the real run; Tejas checks Safari separately in the browser sheet), up to date.
+- **Headphones**, so the interviewer's voice is not picked up by your microphone, and a quiet room.
+- Microphone permission for the link's site: Chrome asks the first time; if you pressed Block, fix it under the lock icon next to the address.
+- A stable connection (Wi-Fi is fine; do not use a VPN). Close other tabs and apps that use the microphone (Zoom, Meet).
+- Your student ID and access code (Mayank sends each person only their own, privately), the link `<link>/student`, and the viva id (`dsa-team` or `webd-team`).
+- Do the **microphone check on the Ready screen** before starting; if the level bar stays "quiet", fix the input device in System Settings first.
+- Keep the tab open and in front for the whole 15 minutes (that is also what the integrity signals watch).
+
+**Rehearsal tonight (10 minutes, one other person):** Mayank starts the server with the tunnel, the other person opens the link from their own Mac, joins with a test code, and says three sentences with voice. If it works, tomorrow is only the vivas.
+
+If instead each person must run a full copy of the product on their own Mac, tell Mayank first: it needs `whisper-cpp`, the voice models, Piper and a Groq key on every Mac (about an hour each), and the ten sessions would sit in five databases, which `marking_packet.py` and `compare_markers.py` do not merge.
+
 ## During the vivas
 - Run them one or two at a time. Tejas keeps the browser sheet (`docs/qa/integrity-browser-check.md`) and the cross-check log (`docs/qa/integrity-cross-check-log.md`) while the others play.
 - Student page: `<link>/student`, viva id `dsa-team` or `webd-team`, your ID and code.
